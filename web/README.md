@@ -23,35 +23,33 @@ A global hub to showcase AI/vibe-coded student projects. Discover, collaborate, 
 
 ### Prerequisites
 
-- Node.js 18+ 
-- npm, yarn, or pnpm
+- Node.js 18 LTS (see `.nvmrc`), Node 20 also works
+- npm (recommended). If using npm, pass `--legacy-peer-deps` during install for now
 
 ### Installation
 
 1. Clone the repository
 2. Install dependencies:
-   \`\`\`bash
-   npm install
-   # or
-   yarn install
-   # or
-   pnpm install
-   \`\`\`
+   ```bash
+   npm install --legacy-peer-deps
+   ```
 
-3. Run the development server:
-   \`\`\`bash
-   npm run dev
-   # or
-   yarn dev
-   # or
-   pnpm dev
-   \`\`\`
+3. Environment variables:
+   ```bash
+   cp .env.local.example .env.local
+   # fill in Supabase envs later; UI runs without them for now
+   ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+4. Run the development server on port 3002 (avoids conflicts):
+   ```bash
+   npm run dev -- -p 3002
+   ```
+
+5. Open [http://localhost:3002](http://localhost:3002) in your browser
 
 ## Project Structure
 
-\`\`\`
+```
 ├── app/                    # Next.js App Router pages
 │   ├── (routes)/          # Route groups
 │   ├── globals.css        # Global styles
@@ -66,7 +64,7 @@ A global hub to showcase AI/vibe-coded student projects. Discover, collaborate, 
 │   └── utils.ts          # Utility functions
 ├── constants/            # App constants
 └── README.md
-\`\`\`
+```
 
 ## Mock Data Layer
 
