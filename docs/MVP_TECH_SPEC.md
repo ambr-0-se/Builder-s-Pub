@@ -102,3 +102,64 @@ References
 - NFRs: `docs/NFR.md`
 - Analytics: `docs/ANALYTICS.md`
 
+
+Development Plan (MVP)
+
+> Practical, small stages aligned to the imported UI under `web/`. Each stage lists concrete tasks and a simple acceptance check. Create one PR per stage and prefer “Squash and merge”.
+
+- Stage 0 — Stabilize UI scaffold (web/)
+  - Tasks: add Node version (`engines` or `.nvmrc`), `web/.env.local.example`, run instructions in `web/README.md`.
+  - Done when: fresh clone runs `npm i --legacy-peer-deps && npm run dev -p 3002` successfully.
+
+- Stage 1 — Supabase project + schema
+  - Tasks: create project; apply `supabase/schema.sql` and `supabase/rls_policies.sql`; run `supabase/seed/seed_mvp.sql`.
+  - Done when: tables/RLS exist, seeds present; env vars documented in `ops/ENVIRONMENT.md` and `.env.local.example`.
+
+- Stage 2 — Auth (magic link)
+  - Tasks: add `@supabase/supabase-js`; implement magic-link sign-in/out; session restore; `/auth/callback` handler; replace `useAuthMock()` with real hook.
+  - Done when: sign in/out works; session persists; create/upvote/comment routes gate properly.
+
+- Stage 3 — Profiles
+  - Tasks: ensure profile auto-create for new users; implement view/edit with validation (display name 1–80, URL checks).
+  - Done when: user can read/update own profile; RLS blocks others.
+
+- Stage 4 — Tags from DB (governance)
+  - Tasks: load technology/category tags from DB; remove constants; keep admin-only creation in MVP.
+  - Done when: filters and forms use DB tags end-to-end.
+
+- Stage 5 — Projects core
+  - Tasks: server actions `createProject`, `listProjects`, `getProject`; enforce field limits and valid demo URL; persist `techTagIds[]` and `categoryTagIds[]` via `project_tags`.
+  - Done when: create redirects to detail; list supports Recent/Popular and tag filters (AND across types, OR within type).
+
+- Stage 6 — Comments
+  - Tasks: `addComment`, `deleteComment` (author-only), render list on detail; 1–1000 char validation.
+  - Done when: authenticated user can add/delete own comments; UI shows errors cleanly.
+
+- Stage 7 — Upvotes
+  - Tasks: `upvoteProject` enforcing single upvote (PK); optimistic UI with rollback; disable after upvote.
+  - Done when: count updates instantly; duplicate upvotes are blocked with a friendly message.
+
+- Stage 8 — Collaboration board
+  - Tasks: `create/list/get/update/delete` with owner-only writes; kind and skills substring filters wired to DB.
+  - Done when: CRUD works under RLS; list filters return expected results.
+
+- Stage 9 — Search + pagination
+  - Tasks: case-insensitive substring search over title/description; add cursor pagination (default 20/page) to projects/collabs.
+  - Done when: `/search` returns expected results; lists paginate with next/prev.
+
+- Stage 10 — Demo embed + SEO
+  - Tasks: `DemoEmbed` (YouTube/Vercel inline; else external link); add `Metadata` to key routes and OG on project detail.
+  - Done when: supported demos embed; titles/descriptions render for core pages.
+
+- Stage 11 — Rate limits (MVP-light)
+  - Tasks: simple per-user throttling (edge function or table) for create/comment/upvote to meet targets.
+  - Done when: excessive requests are rejected with clear UI.
+
+- Stage 12 — Analytics
+  - Tasks: replace analytics mock with provider or structured logging; instrument events per `docs/ANALYTICS.md`.
+  - Done when: core flows emit events with required properties.
+
+- Stage 13 — QA, docs, deploy
+  - Tasks: happy-path tests for server actions; doc updates in this file and `supabase/schema.md`; deploy `web/` to Vercel.
+  - Done when: green build on main; smoke tests pass on preview.
+
