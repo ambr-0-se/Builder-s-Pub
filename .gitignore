@@ -1,0 +1,25 @@
+# Node/Next.js
+node_modules/
+.next/
+out/
+dist/
+build/
+
+# Env & local configs
+.env
+.env.*
+!.env.example
+.env.local
+
+# OS/Editor
+.DS_Store
+*.log
+.vscode/
+.idea/
+
+# Vercel/Supabase
+.vercel/
+.supabase/
+
+# Coverage
+coverage/
