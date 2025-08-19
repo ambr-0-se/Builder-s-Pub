@@ -61,7 +61,7 @@ export default function RegionTimezone({ initialRegion, initialTimezone }: { ini
           onChange={(e) => setRegion(e.target.value)}
         >
           <option value="">Select a country/region</option>
-          {countries.map((c) => (
+          {countries.map((c: { value: string; label: string }) => (
             <option key={c.value} value={c.label}>
               {c.label}
             </option>
