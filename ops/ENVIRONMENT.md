@@ -11,7 +11,7 @@ Required Environment Variables
 - NEXT_PUBLIC_POSTHOG_HOST (optional, defaults to https://us.posthog.com)
 
 Node & Tooling
-- Node.js 18+ (LTS recommended)
+- Node.js 18.18–23.x (per `web/package.json` engines)
 - Package manager: npm or pnpm
 
 Local Setup

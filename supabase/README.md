@@ -11,6 +11,7 @@ Supabase Setup (MVP)
 
 3) Seed data (optional)
 - Run `seed/seed_mvp.sql` to create baseline tags.
+ - For RLS verification with real users, run `seed/seed_rls_verify.sql` after replacing `USER1_UUID` and `USER2_UUID` with two auth user IDs.
 
 4) Configure Auth
 - Enable Email (magic link) authentication in Authentication -> Providers.

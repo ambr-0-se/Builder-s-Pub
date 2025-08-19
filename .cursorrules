@@ -57,6 +57,7 @@ You act as a senior full stack engineer focused on product quality, robust code,
     -   **Database changes:** document in `supabase/schema.md`.
     -   **New components:** document in `docs/COMPONENTS.md`.
     -   **High-level plans:** document in a root-level planning doc.
+-   **Development stage completion** Mark down "Done" when the goal of development stage is met
 
 ## Learning & Vibe Coding
 
