@@ -39,3 +39,9 @@ References
 - Schema & RLS: `supabase/schema.md`, `supabase/rls_policies.sql`
 - Auth: `docs/AUTH.md`
 
+Profiles (Stage 3)
+- getMyProfile(): `-> { profile: { userId, displayName, bio?, githubUrl?, linkedinUrl?, websiteUrl? } | null, isAuthenticated: boolean, error? }`
+- updateMyProfile(formData): `-> { ok: true } | { ok: false, error: 'validation_error'|'unauthorized'|string, fieldErrors? }`
+  - Validation: display_name 1–80; URLs must be `http/https`. Writes occur under user session; RLS enforces owner-only updates.
+  - Auto-create on first sign-in via `/api/profile/ensure`.
+

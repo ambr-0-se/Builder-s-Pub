@@ -1,21 +1,19 @@
-"use client"
-
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useAuth } from "@/lib/api/auth"
-import { useRouter } from "next/navigation"
+import { getMyProfile } from "./actions"
 
-export default function ProfilePage() {
-  const { isAuthenticated, user } = useAuth()
-  const router = useRouter()
+export default async function ProfilePage() {
+  const { profile, isAuthenticated } = await getMyProfile()
 
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated || !profile) {
     return (
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
         <h1 className="text-2xl font-bold text-gray-900 mb-4">Sign In Required</h1>
         <p className="text-gray-600 mb-6">You need to sign in to view your profile.</p>
-        <Button onClick={() => router.push("/")}>Go Home</Button>
+        <Button asChild>
+          <Link href="/">Go Home</Link>
+        </Button>
       </div>
     )
   }
@@ -28,16 +26,16 @@ export default function ProfilePage() {
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-4">
               <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-2xl font-bold">{user.displayName.charAt(0).toUpperCase()}</span>
+                <span className="text-white text-2xl font-bold">{profile.displayName.charAt(0).toUpperCase()}</span>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{user.displayName}</h1>
-                {user.bio && <p className="text-gray-600 mt-1">{user.bio}</p>}
+                <h1 className="text-2xl font-bold text-gray-900">{profile.displayName}</h1>
+                {profile.bio && <p className="text-gray-600 mt-1">{profile.bio}</p>}
 
                 <div className="flex items-center space-x-4 mt-3">
-                  {user.githubUrl && (
+                  {profile.githubUrl && (
                     <a
-                      href={user.githubUrl}
+                      href={profile.githubUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-gray-600 hover:text-gray-900"
@@ -45,9 +43,9 @@ export default function ProfilePage() {
                       GitHub
                     </a>
                   )}
-                  {user.linkedinUrl && (
+                  {profile.linkedinUrl && (
                     <a
-                      href={user.linkedinUrl}
+                      href={profile.linkedinUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-gray-600 hover:text-gray-900"
@@ -55,9 +53,9 @@ export default function ProfilePage() {
                       LinkedIn
                     </a>
                   )}
-                  {user.websiteUrl && (
+                  {profile.websiteUrl && (
                     <a
-                      href={user.websiteUrl}
+                      href={profile.websiteUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-gray-600 hover:text-gray-900"

@@ -40,7 +40,23 @@ export default function AuthCallbackPage() {
         error = e
       }
 
-      if (error) {
+      if (!error) {
+        try {
+          const tokens = hashParams.get("access_token") && hashParams.get("refresh_token")
+            ? {
+                access_token: hashParams.get("access_token") as string,
+                refresh_token: hashParams.get("refresh_token") as string,
+              }
+            : undefined
+          await fetch("/api/profile/ensure", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: tokens ? JSON.stringify(tokens) : undefined,
+          })
+        } catch (_) {
+          // Non-blocking
+        }
+      } else {
         // eslint-disable-next-line no-alert
         window.alert("Authentication failed. Please try again.")
       }
