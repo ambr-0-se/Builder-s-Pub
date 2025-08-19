@@ -29,6 +29,10 @@ Indexes (key)
 
 RLS Summary
 - profiles: select all; insert/update only self
+
+Notes (Stage 3 Profiles)
+- Profiles are auto-created at first sign-in by an app endpoint `/api/profile/ensure` called from `/auth/callback`.
+- This keeps schema unchanged (no DB triggers) and respects RLS by performing writes under the authenticated user session.
 - projects: select soft_deleted=false; insert/update/delete only owner
 - comments: select soft_deleted=false; insert only author; delete only author
 - project_upvotes: select all; insert/delete only same user

@@ -115,12 +115,18 @@ Development Plan (MVP)
   - Tasks: create project; apply `supabase/schema.sql` and `supabase/rls_policies.sql`; run `supabase/seed/seed_mvp.sql`.
   - Done when: tables/RLS exist, seeds present; env vars documented in `ops/ENVIRONMENT.md` and `.env.local.example`.
 
-- Stage 2 — Auth (magic link)
+- Stage 2 — Auth (magic link) -- Done
   - Tasks: add `@supabase/supabase-js`; implement magic-link sign-in/out; session restore; `/auth/callback` handler; replace `useAuthMock()` with real hook.
   - Done when: sign in/out works; session persists; create/upvote/comment routes gate properly.
 
 - Stage 3 — Profiles
   - Tasks: ensure profile auto-create for new users; implement view/edit with validation (display name 1–80, URL checks).
+  - Implementation notes:
+    - Auto-create via `/api/profile/ensure` called in `/auth/callback` after session is set (tokens passed once if cookies not present).
+    - Server actions at `web/app/profile/actions.ts` handle `getMyProfile` and `updateMyProfile` under RLS.
+    - Edit page uses server-fetched initial values and submits via a server action form with `useActionState` + `useFormStatus`.
+    - Additional profile fields (preliminary): `x_url, region, timezone, skills[], building_now, looking_for, contact`.
+    - Region/Timezone UI: country dropdown + timezone list from `@vvo/tzdb` (labels: `GMT±HH:MM — Abbr — IANA`, sorted by current offset).
   - Done when: user can read/update own profile; RLS blocks others.
 
 - Stage 4 — Tags from DB (governance)
@@ -162,4 +168,9 @@ Development Plan (MVP)
 - Stage 13 — QA, docs, deploy
   - Tasks: happy-path tests for server actions; doc updates in this file and `supabase/schema.md`; deploy `web/` to Vercel.
   - Done when: green build on main; smoke tests pass on preview.
+
+
+- Stage 14 — Collaboration visibility (auth-only)
+  - Tasks: gate `/collaborations` and `/collaborations/[id]` behind authentication; anonymous users are redirected to sign-in or see a friendly login-required screen; update navbar/links to hide collaboration entry points for non-auth users; enforce RLS to deny `select` on collaboration tables for anon; update tests and docs accordingly.
+  - Done when: non-logged-in users cannot view collaboration lists or details (server and client enforced); logged-in users retain normal access.
 

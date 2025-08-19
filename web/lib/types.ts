@@ -5,6 +5,13 @@ export interface Profile {
   githubUrl?: string
   linkedinUrl?: string
   websiteUrl?: string
+  xUrl?: string
+  region?: string
+  timezone?: string
+  skills?: string[]
+  buildingNow?: string
+  lookingFor?: string
+  contact?: string
 }
 
 export interface Tag {
