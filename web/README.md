@@ -72,7 +72,6 @@ The application currently uses a mock data layer that simulates API calls with r
 
 ### Key Mock Services
 
-- `mockAuth.ts` - Authentication simulation
 - `mockProjects.ts` - Project CRUD operations
 - `mockCollabs.ts` - Collaboration management
 - `analytics.ts` - Event tracking simulation
@@ -81,10 +80,9 @@ The application currently uses a mock data layer that simulates API calls with r
 
 The following areas are marked for Supabase integration:
 
-1. **Authentication** (`lib/api/mockAuth.ts`)
-   - Replace `useAuthMock()` with Supabase auth
-   - Implement magic link authentication
-   - Handle auth callbacks in `/auth/callback`
+1. **Authentication** (`lib/api/auth.ts`)
+   - `useAuth()` provides `isAuthenticated`, `user`, `signIn(email?)`, `signOut()`
+   - Magic link authentication via Supabase; callback handled at `/auth/callback`
 
 2. **Database Operations**
    - Replace mock API calls with Supabase client

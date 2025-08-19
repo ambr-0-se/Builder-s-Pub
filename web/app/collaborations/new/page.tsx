@@ -8,13 +8,13 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select } from "@/components/ui/select"
 import { createCollab } from "@/lib/api/mockCollabs"
-import { useAuthMock } from "@/lib/api/mockAuth"
+import { useAuth } from "@/lib/api/auth"
 import { useAnalyticsMock } from "@/lib/analytics"
 import { showToast } from "@/components/ui/toast"
 
 export default function NewCollaborationPage() {
   const router = useRouter()
-  const { isAuthenticated } = useAuthMock()
+  const { isAuthenticated } = useAuth()
   const { track } = useAnalyticsMock()
 
   const [formData, setFormData] = useState({

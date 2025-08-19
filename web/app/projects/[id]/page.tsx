@@ -4,13 +4,16 @@ import { notFound } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { getProject } from "@/lib/api/mockProjects"
+import { CommentCta } from "@/components/features/projects/comment-cta"
+import { UpvoteButton } from "@/components/features/projects/upvote-button"
 
 interface ProjectDetailPageProps {
   params: { id: string }
 }
 
 export async function generateMetadata({ params }: ProjectDetailPageProps): Promise<Metadata> {
-  const project = await getProject(params.id)
+  const { id } = await params
+  const project = await getProject(id)
 
   if (!project) {
     return {
@@ -30,7 +33,8 @@ export async function generateMetadata({ params }: ProjectDetailPageProps): Prom
 }
 
 export default async function ProjectDetailPage({ params }: ProjectDetailPageProps) {
-  const project = await getProject(params.id)
+  const { id } = await params
+  const project = await getProject(id)
 
   if (!project) {
     notFound()
@@ -81,9 +85,12 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
                   </Link>
                 </Button>
               )}
-              <Button variant="outline" size="sm">
-                ❤️ Upvote ({project.upvoteCount})
-              </Button>
+              <UpvoteButton
+                projectId={project.project.id}
+                initialCount={project.upvoteCount}
+                hasUserUpvoted={project.hasUserUpvoted}
+                interactive
+              />
             </div>
           </div>
         </div>
@@ -98,11 +105,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
           {/* Comments Section */}
           <div className="mt-12 border-t border-gray-200 pt-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Comments</h3>
-
-            <div className="text-center py-8 text-gray-500">
-              <p>TODO: Implement comment system</p>
-              <p className="text-sm mt-2">Comments will be added when Supabase integration is complete</p>
-            </div>
+            <CommentCta projectId={project.project.id} />
           </div>
         </div>
       </div>

@@ -7,11 +7,11 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { useAuthMock } from "@/lib/api/mockAuth"
+import { useAuth } from "@/lib/api/auth"
 import { showToast } from "@/components/ui/toast"
 
 export default function EditProfilePage() {
-  const { isAuthenticated, user } = useAuthMock()
+  const { isAuthenticated, user } = useAuth()
   const router = useRouter()
 
   const [formData, setFormData] = useState({

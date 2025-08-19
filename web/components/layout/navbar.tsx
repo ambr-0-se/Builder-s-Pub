@@ -4,16 +4,16 @@ import type React from "react"
 
 import Link from "next/link"
 import { useState } from "react"
-import { useAuthMock } from "@/lib/api/mockAuth"
+import { useAuth } from "@/lib/api/auth"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useRouter } from "next/navigation"
 
 export function Navbar() {
-  const { isAuthenticated, user, signIn, signOut } = useAuthMock()
+  const { isAuthenticated, user, signIn, signOut } = useAuth()
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const router = useRouter()
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,7 +66,7 @@ export function Navbar() {
                 </Button>
               </div>
             ) : (
-              <Button onClick={signIn}>Sign In</Button>
+              <Button onClick={() => router.push("/auth/sign-in")}>Sign In</Button>
             )}
           </div>
 
@@ -113,7 +113,7 @@ export function Navbar() {
                   </Button>
                 </div>
               ) : (
-                <Button onClick={signIn} className="w-full">
+                <Button onClick={() => router.push("/auth/sign-in")} className="w-full">
                   Sign In
                 </Button>
               )}

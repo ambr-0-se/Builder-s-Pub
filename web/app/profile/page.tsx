@@ -3,11 +3,11 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useAuthMock } from "@/lib/api/mockAuth"
+import { useAuth } from "@/lib/api/auth"
 import { useRouter } from "next/navigation"
 
 export default function ProfilePage() {
-  const { isAuthenticated, user } = useAuthMock()
+  const { isAuthenticated, user } = useAuth()
   const router = useRouter()
 
   if (!isAuthenticated || !user) {
