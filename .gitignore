@@ -20,6 +20,7 @@ build/
 # Vercel/Supabase
 .vercel/
 .supabase/
+supabase/.temp/
 
 # Coverage
 coverage/
