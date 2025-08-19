@@ -9,7 +9,7 @@ begin;
 
 -- Replace these with real UUIDs from Auth → Users
 with users as (
-  select 'USER1_UUID'::uuid as user1_id, 'USER2_UUID'::uuid as user2_id
+  select 'd77d8ba8-8e5d-4c28-9c2e-d7fddee9999e'::uuid as user1_id, '8856c26b-7e00-457c-b457-7ff85a4be51f'::uuid as user2_id
 ),
 ensure_profiles as (
   -- Ensure both profiles exist (idempotent)
