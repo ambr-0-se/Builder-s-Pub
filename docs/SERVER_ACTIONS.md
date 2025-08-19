@@ -43,7 +43,7 @@ Profiles (Stage 3)
 - getMyProfile(): `-> { profile: { userId, displayName, bio?, githubUrl?, linkedinUrl?, websiteUrl? } | null, isAuthenticated: boolean, error? }`
 - updateMyProfile(formData): `-> UpdateProfileState | null` where `UpdateProfileState = { fieldErrors?: Record<string,string>; formError?: string } | null`
   - Submits via a server action form: `<form action={updateMyProfile}>`
-  - Validation: display_name 1–80; URLs must be `http/https`. Writes occur under user session; RLS enforces owner-only updates.
+  - Validation: display_name 1–80; bio ≤ 4000; building_now/looking_for ≤ 280; contact ≤ 200; URLs must be `http/https`. Writes occur under user session; RLS enforces owner-only updates.
   - On success: `revalidatePath('/profile')` then `redirect('/profile')`.
   - Auto-create on first sign-in via `/api/profile/ensure` (called by `/auth/callback`).
 

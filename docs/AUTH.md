@@ -42,4 +42,5 @@ Cookie sync for server actions (Profiles)
 Server action forms
 - Profile edits use a server action form (`<form action={updateMyProfile}>`) instead of a client `fetch` to an API route.
 - Benefits: built-in CSRF protection, fewer moving parts, direct access to auth cookies on the server, simpler redirects (`redirect('/profile')`).
+- The callback posts session tokens to `/api/profile/ensure` once to set server cookies immediately (covers both PKCE and magic-link hash flows).
 

@@ -126,6 +126,7 @@ Development Plan (MVP)
     - Server actions at `web/app/profile/actions.ts` handle `getMyProfile` and `updateMyProfile` under RLS.
     - Edit page uses server-fetched initial values and submits via a server action form with `useActionState` + `useFormStatus`.
     - Additional profile fields (preliminary): `x_url, region, timezone, skills[], building_now, looking_for, contact`.
+    - Region/Timezone UI: country dropdown + timezone list from `@vvo/tzdb` (labels: `GMT±HH:MM — Abbr — IANA`, sorted by current offset).
   - Done when: user can read/update own profile; RLS blocks others.
 
 - Stage 4 — Tags from DB (governance)
