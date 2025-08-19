@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { redirect } from "next/navigation"
 import { Globe } from "lucide-react"
 import { SiGithub, SiLinkedin } from "react-icons/si"
 import { getMyProfile } from "./actions"
@@ -8,17 +9,7 @@ import { getMyProfile } from "./actions"
 export default async function ProfilePage() {
   const { profile, isAuthenticated } = await getMyProfile()
 
-  if (!isAuthenticated || !profile) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Sign In Required</h1>
-        <p className="text-gray-600 mb-6">You need to sign in to view your profile.</p>
-        <Button asChild>
-          <Link href="/">Go Home</Link>
-        </Button>
-      </div>
-    )
-  }
+  if (!isAuthenticated || !profile) redirect("/")
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

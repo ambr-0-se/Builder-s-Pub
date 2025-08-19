@@ -67,21 +67,21 @@ export default function EditForm({ initial, action }: EditFormProps) {
           <label htmlFor="buildingNow" className="block text-sm font-medium text-gray-700 mb-2">
             What I’m building now (≤280 chars)
           </label>
-          <Textarea id="buildingNow" name="buildingNow" defaultValue={initial.buildingNow || ""} rows={3} />
+          <Textarea id="buildingNow" name="buildingNow" defaultValue={initial.buildingNow || ""} rows={3} maxLength={280} />
         </div>
 
         <div>
           <label htmlFor="lookingFor" className="block text-sm font-medium text-gray-700 mb-2">
             What I’m looking for (≤280 chars)
           </label>
-          <Textarea id="lookingFor" name="lookingFor" defaultValue={initial.lookingFor || ""} rows={3} />
+          <Textarea id="lookingFor" name="lookingFor" defaultValue={initial.lookingFor || ""} rows={3} maxLength={280} />
         </div>
 
         <div>
           <label htmlFor="contact" className="block text-sm font-medium text-gray-700 mb-2">
             Contact (preferred)
           </label>
-          <Input id="contact" name="contact" defaultValue={initial.contact || ""} placeholder="email or other link" />
+          <Input id="contact" name="contact" defaultValue={initial.contact || ""} placeholder="email or other link" maxLength={200} />
         </div>
 
         <div>
@@ -95,6 +95,7 @@ export default function EditForm({ initial, action }: EditFormProps) {
             placeholder="Tell us about yourself..."
             rows={4}
             error={state?.fieldErrors?.bio}
+            maxLength={4000}
           />
         </div>
 
