@@ -1,56 +1,20 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
+import { useActionState } from "react"
+import { useFormStatus } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { showToast } from "@/components/ui/toast"
+import type { UpdateProfileState } from "../actions"
 
 interface EditFormProps {
   initial: { displayName: string; bio: string; githubUrl: string; linkedinUrl: string; websiteUrl: string }
+  action: (formData: FormData) => Promise<UpdateProfileState>
 }
 
-export default function EditForm({ initial }: EditFormProps) {
-  const [formData, setFormData] = useState(initial)
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {}
-    if (!formData.displayName.trim()) newErrors.displayName = "Display name is required"
-    else if (formData.displayName.length > 80) newErrors.displayName = "Display name must be 80 characters or less"
-    const urlPattern = /^https?:\/\/.+/
-    if (formData.githubUrl && !urlPattern.test(formData.githubUrl)) newErrors.githubUrl = "GitHub URL must be a valid HTTP/HTTPS URL"
-    if (formData.linkedinUrl && !urlPattern.test(formData.linkedinUrl)) newErrors.linkedinUrl = "LinkedIn URL must be a valid HTTP/HTTPS URL"
-    if (formData.websiteUrl && !urlPattern.test(formData.websiteUrl)) newErrors.websiteUrl = "Website URL must be a valid HTTP/HTTPS URL"
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!validateForm()) return
-    setIsSubmitting(true)
-    try {
-      const res = await fetch("/api/profile/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        if (data?.error === "validation_error" && data?.fieldErrors) setErrors(data.fieldErrors)
-        else showToast("Failed to update profile. Please try again.", "error")
-        return
-      }
-      showToast("Profile updated successfully!", "success")
-      window.location.href = "/profile"
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
+export default function EditForm({ initial, action }: EditFormProps) {
+  const wrapped = async (_prev: UpdateProfileState, formData: FormData) => action(formData)
+  const [state, formAction] = useActionState(wrapped, null)
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
@@ -58,20 +22,20 @@ export default function EditForm({ initial }: EditFormProps) {
         <p className="text-gray-600 mt-2">Update your profile information</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form action={formAction} className="space-y-6">
         <div>
           <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-2">
             Display Name *
           </label>
           <Input
             id="displayName"
-            value={formData.displayName}
-            onChange={(e) => setFormData((prev) => ({ ...prev, displayName: e.target.value }))}
+            name="displayName"
+            defaultValue={initial.displayName}
             placeholder="Your display name"
-            error={errors.displayName}
+            error={state?.fieldErrors?.displayName}
             maxLength={80}
           />
-          <p className="text-xs text-gray-500 mt-1">{formData.displayName.length}/80 characters</p>
+          <p className="text-xs text-gray-500 mt-1">Max 80 characters</p>
         </div>
 
         <div>
@@ -80,11 +44,11 @@ export default function EditForm({ initial }: EditFormProps) {
           </label>
           <Textarea
             id="bio"
-            value={formData.bio}
-            onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
+            name="bio"
+            defaultValue={initial.bio}
             placeholder="Tell us about yourself..."
             rows={4}
-            error={errors.bio}
+            error={state?.fieldErrors?.bio}
           />
         </div>
 
@@ -94,11 +58,11 @@ export default function EditForm({ initial }: EditFormProps) {
           </label>
           <Input
             id="githubUrl"
+            name="githubUrl"
             type="url"
-            value={formData.githubUrl}
-            onChange={(e) => setFormData((prev) => ({ ...prev, githubUrl: e.target.value }))}
+            defaultValue={initial.githubUrl}
             placeholder="https://github.com/username"
-            error={errors.githubUrl}
+            error={state?.fieldErrors?.githubUrl}
           />
         </div>
 
@@ -108,11 +72,11 @@ export default function EditForm({ initial }: EditFormProps) {
           </label>
           <Input
             id="linkedinUrl"
+            name="linkedinUrl"
             type="url"
-            value={formData.linkedinUrl}
-            onChange={(e) => setFormData((prev) => ({ ...prev, linkedinUrl: e.target.value }))}
+            defaultValue={initial.linkedinUrl}
             placeholder="https://linkedin.com/in/username"
-            error={errors.linkedinUrl}
+            error={state?.fieldErrors?.linkedinUrl}
           />
         </div>
 
@@ -122,24 +86,35 @@ export default function EditForm({ initial }: EditFormProps) {
           </label>
           <Input
             id="websiteUrl"
+            name="websiteUrl"
             type="url"
-            value={formData.websiteUrl}
-            onChange={(e) => setFormData((prev) => ({ ...prev, websiteUrl: e.target.value }))}
+            defaultValue={initial.websiteUrl}
             placeholder="https://yourwebsite.com"
-            error={errors.websiteUrl}
+            error={state?.fieldErrors?.websiteUrl}
           />
         </div>
 
+        {state?.formError && (
+          <p className="text-sm text-red-600" role="alert">
+            {state.formError}
+          </p>
+        )}
+
         <div className="flex gap-4 pt-6">
-          <Button type="submit" disabled={isSubmitting} className="flex-1">
-            {isSubmitting ? "Saving..." : "Save Changes"}
-          </Button>
-          <Button type="button" variant="outline" onClick={() => (window.location.href = "/profile")} disabled={isSubmitting}>
-            Cancel
-          </Button>
+          <SubmitButton />
+          <Button type="button" variant="outline" onClick={() => (window.location.href = "/profile")}>Cancel</Button>
         </div>
       </form>
     </div>
+  )
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus()
+  return (
+    <Button type="submit" disabled={pending} className="flex-1">
+      {pending ? "Saving..." : "Save Changes"}
+    </Button>
   )
 }
 
