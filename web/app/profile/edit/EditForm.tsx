@@ -82,7 +82,7 @@ export default function EditForm({ initial, action }: EditFormProps) {
 
         <div>
           <label htmlFor="websiteUrl" className="block text-sm font-medium text-gray-700 mb-2">
-            Website URL
+            Personal Website URL
           </label>
           <Input
             id="websiteUrl"

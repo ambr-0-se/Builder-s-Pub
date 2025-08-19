@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Globe } from "lucide-react"
+import { SiGithub, SiLinkedin } from "react-icons/si"
 import { getMyProfile } from "./actions"
 
 export default async function ProfilePage() {
@@ -39,8 +41,9 @@ export default async function ProfilePage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-gray-600 hover:text-gray-900"
+                      aria-label="GitHub"
                     >
-                      GitHub
+                      <SiGithub className="w-5 h-5" style={{ color: "#181717" }} />
                     </a>
                   )}
                   {profile.linkedinUrl && (
@@ -49,8 +52,9 @@ export default async function ProfilePage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-gray-600 hover:text-gray-900"
+                      aria-label="LinkedIn"
                     >
-                      LinkedIn
+                      <SiLinkedin className="w-5 h-5" style={{ color: "#0A66C2" }} />
                     </a>
                   )}
                   {profile.websiteUrl && (
@@ -59,8 +63,9 @@ export default async function ProfilePage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-gray-600 hover:text-gray-900"
+                      aria-label="Personal website"
                     >
-                      Website
+                      <Globe className="w-5 h-5" />
                     </a>
                   )}
                 </div>
