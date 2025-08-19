@@ -15,6 +15,11 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
+  const handleSignOut = async () => {
+    await signOut()
+    router.push("/")
+  }
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
@@ -61,7 +66,7 @@ export function Navbar() {
                 <Link href="/profile" className="text-gray-700 hover:text-gray-900">
                   {user?.displayName}
                 </Link>
-                <Button variant="outline" size="sm" onClick={signOut}>
+                <Button variant="outline" size="sm" onClick={handleSignOut}>
                   Sign Out
                 </Button>
               </div>
@@ -108,7 +113,7 @@ export function Navbar() {
                   <Link href="/profile" className="block text-gray-700 hover:text-gray-900">
                     {user?.displayName}
                   </Link>
-                  <Button variant="outline" size="sm" onClick={signOut} className="w-full bg-transparent">
+                  <Button variant="outline" size="sm" onClick={handleSignOut} className="w-full bg-transparent">
                     Sign Out
                   </Button>
                 </div>
