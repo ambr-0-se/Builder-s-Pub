@@ -8,14 +8,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { createProject } from "@/lib/api/mockProjects"
-import { useAuthMock } from "@/lib/api/mockAuth"
+import { useAuth } from "@/lib/api/auth"
 import { useAnalyticsMock } from "@/lib/analytics"
 import { showToast } from "@/components/ui/toast"
 import { TECHNOLOGY_TAGS, CATEGORY_TAGS } from "@/constants/tags"
 
 export default function NewProjectPage() {
   const router = useRouter()
-  const { isAuthenticated } = useAuthMock()
+  const { isAuthenticated } = useAuth()
   const { track } = useAnalyticsMock()
 
   const [formData, setFormData] = useState({

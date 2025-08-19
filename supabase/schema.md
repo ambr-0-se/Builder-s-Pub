@@ -1,7 +1,7 @@
 Schema Overview (MVP)
 
 > Purpose: Human-readable database overview — tables, relationships, indexes, and RLS summary for the MVP.
-> See also: [Schema SQL](schema.sql) · [RLS policies](rls_policies.sql) · [MVP Tech Spec](../docs/MVP_TECH_SPEC.md)
+> See also: [Schema SQL](schema.sql) · [RLS policies](rls_policies.sql) · [MVP Tech Spec](../docs/MVP_TECH_SPEC.md) · [Server Actions](../docs/SERVER_ACTIONS.md) · [Auth](../docs/AUTH.md)
 
 Tables
 - profiles(user_id PK, display_name, bio, github_url, linkedin_url, website_url, created_at, updated_at)

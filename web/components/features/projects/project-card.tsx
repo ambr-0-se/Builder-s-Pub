@@ -6,67 +6,15 @@ import Link from "next/link"
 import type { ProjectWithRelations } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { upvoteProject } from "@/lib/api/mockProjects"
-import { useAuthMock } from "@/lib/api/mockAuth"
 import { useAnalyticsMock } from "@/lib/analytics"
-import { useState } from "react"
-import { showToast } from "@/components/ui/toast"
 
 interface ProjectCardProps {
   project: ProjectWithRelations
   onUpvoteChange?: () => void
 }
 
-export function ProjectCard({ project, onUpvoteChange }: ProjectCardProps) {
-  const { isAuthenticated } = useAuthMock()
+export function ProjectCard({ project }: ProjectCardProps) {
   const { track } = useAnalyticsMock()
-  const [isUpvoting, setIsUpvoting] = useState(false)
-  const [localUpvoteCount, setLocalUpvoteCount] = useState(project.upvoteCount)
-  const [hasUpvoted, setHasUpvoted] = useState(project.hasUserUpvoted || false)
-
-  const handleUpvote = async (e: React.MouseEvent) => {
-    e.preventDefault()
-
-    if (!isAuthenticated) {
-      showToast("Please sign in to upvote projects", "error")
-      return
-    }
-
-    if (isUpvoting) return
-
-    setIsUpvoting(true)
-
-    // Optimistic update
-    const newCount = hasUpvoted ? localUpvoteCount - 1 : localUpvoteCount + 1
-    setLocalUpvoteCount(newCount)
-    setHasUpvoted(!hasUpvoted)
-
-    try {
-      const result = await upvoteProject(project.project.id)
-
-      if ("error" in result) {
-        // Rollback optimistic update
-        setLocalUpvoteCount(localUpvoteCount)
-        setHasUpvoted(hasUpvoted)
-
-        if (result.error === "unauthorized") {
-          showToast("Please sign in to upvote", "error")
-        } else if (result.error === "conflict") {
-          showToast("You have already upvoted this project", "error")
-        }
-      } else {
-        track("project_upvoted", { projectId: project.project.id })
-        onUpvoteChange?.()
-      }
-    } catch (error) {
-      // Rollback optimistic update
-      setLocalUpvoteCount(localUpvoteCount)
-      setHasUpvoted(hasUpvoted)
-      showToast("Failed to upvote project", "error")
-    } finally {
-      setIsUpvoting(false)
-    }
-  }
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
@@ -86,13 +34,7 @@ export function ProjectCard({ project, onUpvoteChange }: ProjectCardProps) {
           </div>
         </div>
 
-        <Button
-          variant={hasUpvoted ? "default" : "outline"}
-          size="sm"
-          onClick={handleUpvote}
-          disabled={isUpvoting}
-          className="flex flex-col items-center min-w-[60px] h-auto py-2"
-        >
+        <Button variant={"outline"} size="sm" disabled className="flex flex-col items-center min-w-[60px] h-auto py-2">
           <svg className="w-4 h-4 mb-1" fill="currentColor" viewBox="0 0 20 20">
             <path
               fillRule="evenodd"
@@ -100,7 +42,7 @@ export function ProjectCard({ project, onUpvoteChange }: ProjectCardProps) {
               clipRule="evenodd"
             />
           </svg>
-          <span className="text-xs">{localUpvoteCount}</span>
+          <span className="text-xs">{project.upvoteCount}</span>
         </Button>
       </div>
 

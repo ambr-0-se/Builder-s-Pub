@@ -1,0 +1,36 @@
+Authentication (Stage 2)
+
+Purpose: Describe current auth flows, required settings, and integration points.
+
+Flows
+- Email Magic Link
+  - Sign in at `/auth/sign-in` using email
+  - Supabase sends a magic link to the user
+  - After submit, the app routes to `/auth/check-email?email=...&redirectTo=...` to confirm the link is sent
+  - The link returns to `/auth/callback` and completes the session
+  - We support both styles of Supabase responses:
+    - PKCE `?code=...` → handled by `exchangeCodeForSession`
+    - Token hash `#access_token=...&refresh_token=...` → handled by `setSession`
+
+Key Files
+- Client: `web/lib/supabaseClient.ts` — Supabase browser client
+- Hook: `web/lib/api/auth.ts` — `useAuth()` with `signIn(email, { redirectTo })` and `signOut()`
+- Pages: `web/app/auth/sign-in/page.tsx`, `web/app/auth/callback/page.tsx`
+
+Environment & Provider Setup
+- Required env vars (client): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- Supabase Dashboard → Auth → URL Configuration:
+  - Site URL: `http://localhost:3002`
+  - Additional Redirect URLs: `http://localhost:3002/auth/callback`
+- Provider: Auth → Providers → Email (magic links)
+
+Multi-Tab Behavior
+- We set `multiTab: false` to avoid cross-tab token refresh conflicts during development.
+
+Redirects
+- `useAuth().signIn(_, { redirectTo })` appends a `?redirectTo=...` query which the callback uses to send users back.
+
+References
+- Tech Spec: `docs/MVP_TECH_SPEC.md`
+- Env setup: `ops/ENVIRONMENT.md`
+

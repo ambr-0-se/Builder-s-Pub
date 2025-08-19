@@ -71,7 +71,7 @@ Core UI requirements (MVP scope)
 - Tag pages optional: selecting a tag chips pre-fills filters on /projects
 
 Auth States (stubbed for now; Supabase later)
-- Create a simple `useAuthMock()` with boolean isAuthenticated, user stub
+- Auth uses Supabase via `useAuth()`; mock removed from runtime components
 - Gate actions (comment, upvote, create/edit) behind auth; show sign-in prompt if not auth
 - Include /auth/callback placeholder page
 - Place clear TODOs where Supabase integration will replace mocks
@@ -139,7 +139,7 @@ Project structure (suggestion)
 - app/(routes)/...
 - components/ui/... (reusable primitives)
 - components/features/projects/..., collaborations/..., profile/...
-- lib/api/mockProjects.ts, mockCollabs.ts, mockAuth.ts, analytics.ts
+- lib/api/mockProjects.ts, mockCollabs.ts, analytics.ts
 - constants/tags.ts
 - styles/globals.css
 - README with run instructions
