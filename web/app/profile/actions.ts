@@ -1,5 +1,7 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
+import { redirect } from "next/navigation"
 import { getServerSupabase } from "@/lib/supabaseServer"
 import { profileSchema } from "./schema"
 
@@ -12,11 +14,22 @@ export async function getMyProfile() {
   } = await supabase.auth.getUser()
   if (!user) return { profile: null, isAuthenticated: false }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("profiles")
-    .select("user_id, display_name, bio, github_url, linkedin_url, website_url")
+    .select("user_id, display_name, bio, github_url, linkedin_url, website_url, x_url, region, timezone, skills, building_now, looking_for, contact")
     .eq("user_id", user.id)
     .maybeSingle()
+
+  if (error) {
+    // Fallback for older schemas without the new columns
+    const fallback = await supabase
+      .from("profiles")
+      .select("user_id, display_name, bio, github_url, linkedin_url, website_url")
+      .eq("user_id", user.id)
+      .maybeSingle()
+    data = fallback.data as any
+    error = fallback.error as any
+  }
 
   if (error) {
     return { profile: null, isAuthenticated: true, error: error.message }
@@ -40,17 +53,26 @@ export async function getMyProfile() {
       githubUrl: data.github_url || undefined,
       linkedinUrl: data.linkedin_url || undefined,
       websiteUrl: data.website_url || undefined,
+      xUrl: data.x_url || undefined,
+      region: data.region || undefined,
+      timezone: data.timezone || undefined,
+      skills: data.skills || undefined,
+      buildingNow: data.building_now || undefined,
+      lookingFor: data.looking_for || undefined,
+      contact: data.contact || undefined,
     },
     isAuthenticated: true,
   }
 }
 
-export async function updateMyProfile(formData: FormData) {
+export type UpdateProfileState = { fieldErrors?: Record<string, string>; formError?: string } | null
+
+export async function updateMyProfile(formData: FormData): Promise<UpdateProfileState> {
   const supabase = await getServerSupabase()
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return { ok: false, error: "unauthorized" }
+  if (!user) return { formError: "unauthorized" }
 
   const parsed = profileSchema.safeParse({
     displayName: formData.get("displayName") || "",
@@ -58,6 +80,13 @@ export async function updateMyProfile(formData: FormData) {
     githubUrl: formData.get("githubUrl") || "",
     linkedinUrl: formData.get("linkedinUrl") || "",
     websiteUrl: formData.get("websiteUrl") || "",
+    xUrl: formData.get("xUrl") || "",
+    region: formData.get("region") || "",
+    timezone: formData.get("timezone") || "",
+    skills: formData.get("skills") || "",
+    buildingNow: formData.get("buildingNow") || "",
+    lookingFor: formData.get("lookingFor") || "",
+    contact: formData.get("contact") || "",
   })
 
   if (!parsed.success) {
@@ -66,10 +95,10 @@ export async function updateMyProfile(formData: FormData) {
       const key = issue.path[0] as string
       if (!fieldErrors[key]) fieldErrors[key] = issue.message
     }
-    return { ok: false, error: "validation_error", fieldErrors }
+    return { fieldErrors }
   }
 
-  const { displayName, bio, githubUrl, linkedinUrl, websiteUrl } = parsed.data
+  const { displayName, bio, githubUrl, linkedinUrl, websiteUrl, xUrl, region, timezone, skills, buildingNow, lookingFor, contact } = parsed.data
 
   const { error } = await supabase
     .from("profiles")
@@ -81,15 +110,23 @@ export async function updateMyProfile(formData: FormData) {
         github_url: githubUrl || null,
         linkedin_url: linkedinUrl || null,
         website_url: websiteUrl || null,
+        x_url: xUrl || null,
+        region: region || null,
+        timezone: timezone || null,
+        skills: skills ? (typeof skills === "string" ? skills.split(",").map((s) => s.trim()).filter(Boolean) : skills) : null,
+        building_now: buildingNow || null,
+        looking_for: lookingFor || null,
+        contact: contact || null,
       },
       { onConflict: "user_id" }
     )
 
   if (error) {
-    return { ok: false, error: error.message }
+    return { formError: error.message }
   }
 
-  return { ok: true }
+  revalidatePath("/profile")
+  redirect("/profile")
 }
 
 

@@ -25,6 +25,21 @@ export const profileSchema = z.object({
     .startsWith("http", "Website URL must be a valid HTTP/HTTPS URL")
     .optional()
     .or(z.literal("")),
+  xUrl: z
+    .string()
+    .url("X URL must be a valid HTTP/HTTPS URL")
+    .startsWith("http", "X URL must be a valid HTTP/HTTPS URL")
+    .optional()
+    .or(z.literal("")),
+  region: z.string().max(120).optional().or(z.literal("")),
+  timezone: z.string().max(120).optional().or(z.literal("")),
+  skills: z
+    .string()
+    .optional()
+    .or(z.literal("")),
+  buildingNow: z.string().max(280).optional().or(z.literal("")),
+  lookingFor: z.string().max(280).optional().or(z.literal("")),
+  contact: z.string().max(200).optional().or(z.literal("")),
 })
 
 

@@ -5,10 +5,12 @@ import { useFormStatus } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import dynamic from "next/dynamic"
+const RegionTimezone = dynamic(() => import("./RegionTimezone"), { ssr: false })
 import type { UpdateProfileState } from "../actions"
 
 interface EditFormProps {
-  initial: { displayName: string; bio: string; githubUrl: string; linkedinUrl: string; websiteUrl: string }
+  initial: { displayName: string; bio: string; githubUrl: string; linkedinUrl: string; websiteUrl: string; xUrl?: string; region?: string; timezone?: string; skills?: string[]; buildingNow?: string; lookingFor?: string; contact?: string }
   action: (formData: FormData) => Promise<UpdateProfileState>
 }
 
@@ -36,6 +38,50 @@ export default function EditForm({ initial, action }: EditFormProps) {
             maxLength={80}
           />
           <p className="text-xs text-gray-500 mt-1">Max 80 characters</p>
+        </div>
+
+        <div>
+          <label htmlFor="xUrl" className="block text-sm font-medium text-gray-700 mb-2">
+            X (Twitter) URL
+          </label>
+          <Input
+            id="xUrl"
+            name="xUrl"
+            type="url"
+            defaultValue={initial.xUrl || ""}
+            placeholder="https://x.com/username"
+            error={state?.fieldErrors?.xUrl}
+          />
+        </div>
+
+        <RegionTimezone initialRegion={initial.region} initialTimezone={initial.timezone} />
+
+        <div>
+          <label htmlFor="skills" className="block text-sm font-medium text-gray-700 mb-2">
+            Skills / Interests (comma-separated)
+          </label>
+          <Input id="skills" name="skills" defaultValue={(initial.skills || []).join(", ")} placeholder="React, TypeScript, LLMs" />
+        </div>
+
+        <div>
+          <label htmlFor="buildingNow" className="block text-sm font-medium text-gray-700 mb-2">
+            What I’m building now (≤280 chars)
+          </label>
+          <Textarea id="buildingNow" name="buildingNow" defaultValue={initial.buildingNow || ""} rows={3} />
+        </div>
+
+        <div>
+          <label htmlFor="lookingFor" className="block text-sm font-medium text-gray-700 mb-2">
+            What I’m looking for (≤280 chars)
+          </label>
+          <Textarea id="lookingFor" name="lookingFor" defaultValue={initial.lookingFor || ""} rows={3} />
+        </div>
+
+        <div>
+          <label htmlFor="contact" className="block text-sm font-medium text-gray-700 mb-2">
+            Contact (preferred)
+          </label>
+          <Input id="contact" name="contact" defaultValue={initial.contact || ""} placeholder="email or other link" />
         </div>
 
         <div>

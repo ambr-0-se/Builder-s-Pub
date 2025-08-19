@@ -122,9 +122,10 @@ Development Plan (MVP)
 - Stage 3 — Profiles
   - Tasks: ensure profile auto-create for new users; implement view/edit with validation (display name 1–80, URL checks).
   - Implementation notes:
-    - Auto-create via `/api/profile/ensure` called in `/auth/callback` after session is set.
+    - Auto-create via `/api/profile/ensure` called in `/auth/callback` after session is set (tokens passed once if cookies not present).
     - Server actions at `web/app/profile/actions.ts` handle `getMyProfile` and `updateMyProfile` under RLS.
-    - Edit page uses server-fetched initial values and submits to a server endpoint with validation.
+    - Edit page uses server-fetched initial values and submits via a server action form with `useActionState` + `useFormStatus`.
+    - Additional profile fields (preliminary): `x_url, region, timezone, skills[], building_now, looking_for, contact`.
   - Done when: user can read/update own profile; RLS blocks others.
 
 - Stage 4 — Tags from DB (governance)

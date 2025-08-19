@@ -69,6 +69,26 @@ export default async function ProfilePage() {
                     </a>
                   )}
                 </div>
+                <div className="mt-4 space-y-2 text-sm text-gray-700">
+                  {profile.skills && profile.skills.length > 0 && (
+                    <p><span className="font-medium">Skills/Interests:</span> {profile.skills.join(", ")}</p>
+                  )}
+                  {profile.region && (
+                    <p><span className="font-medium">Region:</span> {profile.region}</p>
+                  )}
+                  {profile.timezone && (
+                    <p><span className="font-medium">Timezone:</span> {profile.timezone}</p>
+                  )}
+                  {profile.buildingNow && (
+                    <p><span className="font-medium">Building now:</span> {profile.buildingNow}</p>
+                  )}
+                  {profile.lookingFor && (
+                    <p><span className="font-medium">Looking for:</span> {profile.lookingFor}</p>
+                  )}
+                  {profile.contact && (
+                    <p><span className="font-medium">Contact:</span> {profile.contact}</p>
+                  )}
+                </div>
               </div>
             </div>
 

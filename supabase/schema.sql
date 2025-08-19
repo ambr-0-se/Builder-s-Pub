@@ -11,6 +11,13 @@ create table if not exists profiles (
   github_url text,
   linkedin_url text,
   website_url text,
+  x_url text,
+  region text,
+  timezone text,
+  skills text[],
+  building_now text,
+  looking_for text,
+  contact text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

@@ -42,15 +42,21 @@ export default function AuthCallbackPage() {
 
       if (!error) {
         try {
-          const tokens = hashParams.get("access_token") && hashParams.get("refresh_token")
-            ? {
-                access_token: hashParams.get("access_token") as string,
-                refresh_token: hashParams.get("refresh_token") as string,
-              }
-            : undefined
+          // Prefer session tokens from the client after exchange; covers PKCE flow without hash tokens
+          const { data } = await supabase.auth.getSession()
+          const tokens = data.session
+            ? { access_token: data.session.access_token, refresh_token: data.session.refresh_token }
+            : hashParams.get("access_token") && hashParams.get("refresh_token")
+              ? {
+                  access_token: hashParams.get("access_token") as string,
+                  refresh_token: hashParams.get("refresh_token") as string,
+                }
+              : undefined
           await fetch("/api/profile/ensure", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            cache: "no-store",
             body: tokens ? JSON.stringify(tokens) : undefined,
           })
         } catch (_) {
@@ -61,7 +67,7 @@ export default function AuthCallbackPage() {
         window.alert("Authentication failed. Please try again.")
       }
       const redirect = new URL(window.location.href).searchParams.get("redirectTo") || "/"
-      router.replace(redirect)
+      window.location.replace(redirect)
     }
 
     handleCallback()

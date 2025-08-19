@@ -39,3 +39,7 @@ Cookie sync for server actions (Profiles)
 - If the server hasn’t seen the auth cookies yet (fresh sign-in), the callback also sends the `access_token` and `refresh_token` once so the server can set the cookie via `supabase.auth.setSession(...)`.
 - This ensures `getServerSupabase()` sees the authenticated user immediately, enabling RLS-protected profile reads/writes on the next request.
 
+Server action forms
+- Profile edits use a server action form (`<form action={updateMyProfile}>`) instead of a client `fetch` to an API route.
+- Benefits: built-in CSRF protection, fewer moving parts, direct access to auth cookies on the server, simpler redirects (`redirect('/profile')`).
+

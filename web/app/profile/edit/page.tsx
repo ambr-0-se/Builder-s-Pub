@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
 import EditForm from "./EditForm"
-import { getMyProfile } from "../actions"
+import { getMyProfile, updateMyProfile } from "../actions"
 
 export default async function EditProfilePage() {
   const { profile, isAuthenticated } = await getMyProfile()
@@ -25,7 +25,15 @@ export default async function EditProfilePage() {
         githubUrl: profile.githubUrl || "",
         linkedinUrl: profile.linkedinUrl || "",
         websiteUrl: profile.websiteUrl || "",
+        xUrl: profile.xUrl || "",
+        region: profile.region || "",
+        timezone: profile.timezone || "",
+        skills: profile.skills || [],
+        buildingNow: profile.buildingNow || "",
+        lookingFor: profile.lookingFor || "",
+        contact: profile.contact || "",
       }}
+      action={updateMyProfile}
     />
   )
 }
