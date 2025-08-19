@@ -107,11 +107,11 @@ Development Plan (MVP)
 
 > Practical, small stages aligned to the imported UI under `web/`. Each stage lists concrete tasks and a simple acceptance check. Create one PR per stage and prefer “Squash and merge”.
 
-- Stage 0 — Stabilize UI scaffold (web/)
+- Stage 0 — Stabilize UI scaffold (web/) -- Done
   - Tasks: add Node version (`engines` or `.nvmrc`), `web/.env.local.example`, run instructions in `web/README.md`.
   - Done when: fresh clone runs `npm i --legacy-peer-deps && npm run dev -p 3002` successfully.
 
-- Stage 1 — Supabase project + schema
+- Stage 1 — Supabase project + schema -- Done
   - Tasks: create project; apply `supabase/schema.sql` and `supabase/rls_policies.sql`; run `supabase/seed/seed_mvp.sql`.
   - Done when: tables/RLS exist, seeds present; env vars documented in `ops/ENVIRONMENT.md` and `.env.local.example`.
 

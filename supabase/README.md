@@ -11,10 +11,17 @@ Supabase Setup (MVP)
 
 3) Seed data (optional)
 - Run `seed/seed_mvp.sql` to create baseline tags.
+ - For RLS verification with real users, run `seed/seed_rls_verify.sql` after replacing `USER1_UUID` and `USER2_UUID` with two auth user IDs.
 
 4) Configure Auth
 - Enable Email (magic link) authentication in Authentication -> Providers.
 - Set Redirect URLs for local and production.
+   - Local: `http://localhost:3002/auth/callback`
+   - Production: `https://<your-domain>/auth/callback`
+ - Copy keys into `web/.env.local`:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (server-only; do not expose to client)
 
 5) Storage (optional for MVP)
 - Create a public bucket if you plan to host images or demos later.
@@ -22,4 +29,5 @@ Supabase Setup (MVP)
 Notes
 - RLS is enabled; verify read/write operations work via SQL editor or app.
 - Keep service role key on server only; never expose to client.
+ - Ensure indexes (lower(title), lower(description)) exist for search performance.
 
