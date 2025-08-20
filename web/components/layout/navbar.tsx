@@ -17,7 +17,8 @@ export function Navbar({ isAdmin }: { isAdmin?: boolean }) {
 
   const handleSignOut = async () => {
     await signOut()
-    router.push("/")
+    router.replace("/")
+    router.refresh()
   }
 
   const handleSearch = (e: React.FormEvent) => {

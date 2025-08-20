@@ -57,18 +57,47 @@ export function useAuth(): AuthState {
   }, [])
 
   const signOut = useCallback(async () => {
+    // Sign out on client to clear local session
     await supabase.auth.signOut()
+    // Also clear httpOnly server cookies via API to keep SSR in sync
+    try {
+      await fetch("/api/auth/signout", { method: "POST", credentials: "include" })
+    } catch (_) {
+      // non-blocking
+    }
   }, [])
 
-  const profile: Profile | null = useMemo(() => {
-    if (!sessionUser) return null
-    // Map minimal fields to existing Profile shape until real profile table is wired in Stage 3
-    const displayName = sessionUser.user_metadata?.full_name || sessionUser.email || "User"
-    return {
-      userId: sessionUser.id,
-      displayName,
+  const [dbProfile, setDbProfile] = useState<Profile | null>(null)
+
+  useEffect(() => {
+    let aborted = false
+    const load = async () => {
+      if (!sessionUser) {
+        setDbProfile(null)
+        return
+      }
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, display_name")
+        .eq("user_id", sessionUser.id)
+        .maybeSingle()
+      if (aborted) return
+      if (!error && data) {
+        setDbProfile({ userId: data.user_id as string, displayName: (data as any).display_name as string })
+      } else {
+        const displayName = sessionUser.user_metadata?.full_name || sessionUser.email || "User"
+        setDbProfile({ userId: sessionUser.id, displayName })
+      }
+    }
+    load()
+    return () => {
+      aborted = true
     }
   }, [sessionUser])
+
+  const profile: Profile | null = useMemo(() => {
+    return sessionUser ? dbProfile : null
+  }, [sessionUser, dbProfile])
 
   return {
     isAuthenticated: !!sessionUser,

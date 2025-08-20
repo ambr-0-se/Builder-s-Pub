@@ -38,7 +38,9 @@ Upvotes
   - AC: Enforced by DB PK (project_id, user_id); unvote is out of scope for MVP.
 
 Discover/Search
-- As a user, I can filter by technology/category tags and search by title/description.
+- As a user, I can search projects and collaborations with optional keyword(s) and filters.
+  - Projects: optional q (keywords), technology tags, category tags.
+  - Collaborations: optional q (keywords), kind (ongoing|planned|individual|organization), skills substring.
   - AC: Filters are AND across tag types, OR within a type; case-insensitive substring search.
 
 Collaboration Board
@@ -55,11 +57,11 @@ Routes (Information Architecture)
 - /profile, /profile/edit
 - /projects, /projects/new, /projects/[id]
 - /collaborations, /collaborations/new, /collaborations/[id]
-- /search?q=...&tech=...&cat=...
+- /search?q=...&tech=...&cat=...&type=projects|collabs
 
 Server Actions / API Contracts (shapes)
 - createProject(input): { title, tagline, description, demoUrl, sourceUrl?, techTagIds[], categoryTagIds[] } -> { id } | validation_error
-- listProjects(params): { cursor?, limit=20, sort='recent'|'popular', techTagIds?, categoryTagIds? } -> { items[], nextCursor? }
+- listProjects(params): { cursor?, limit=20, sort='recent'|'popular', q?, techTagIds?, categoryTagIds? } -> { items[], nextCursor? }
 - getProject(id): -> { project, tags: {technology[], category[]}, upvoteCount, comments[] }
 - upvoteProject(projectId): -> { ok: true } | { error: 'conflict'|'unauthorized' }
 - addComment(projectId, body): -> { id }
@@ -68,7 +70,7 @@ Server Actions / API Contracts (shapes)
 - deleteProject(id): owner-only -> { ok: true }
 
 - createCollab(input): { kind, title, description, skills[], region?, commitment? } -> { id }
-- listCollabs(params): { kind?, skills?, cursor?, limit=20 } -> { items[], nextCursor? }
+- listCollabs(params): { cursor?, limit=20, q?, kind?, skills? } -> { items[], nextCursor? }
 - getCollab(id), updateCollab(id, fields), deleteCollab(id)
 
 Validation & UX States
@@ -82,7 +84,11 @@ Tag Governance
 - Only admins create new tags in MVP; users select existing.
 
 Search & Trending
-- Search: case-insensitive substring over title + description (DB index-backed).
+- Search (MVP algorithm):
+  - Projects: case-insensitive substring over title, tagline, description.
+  - Collaborations: case-insensitive substring over title, description, and skills list.
+  - Ranking (projects): title match > tagline match > description match; tie-break by upvotes desc, then created_at desc.
+  - Ranking (collabs): title/description/skills match; tie-break by created_at desc.
 - Trending: order by upvotes desc, then created_at desc (simple MVP).
 
 Rate Limits (MVP targets)
@@ -131,7 +137,7 @@ Development Plan (MVP)
     - Region/Timezone UI: country dropdown + timezone list from `@vvo/tzdb` (labels: `GMT±HH:MM — Abbr — IANA`, sorted by current offset).
   - Done when: user can read/update own profile; RLS blocks others.
 
-- Stage 4 — Tags from DB (governance) -- Implemented
+- Stage 4 — Tags from DB (governance) -- Done
   - Tasks: load technology/category tags from DB; remove constants; keep admin-only creation in MVP.
   - Implementation: added `tags` RLS (public select), `web/lib/api/tags.ts`, `web/hooks/useTags.ts`; refactored `FilterBar`, `Projects/New`, `Search` to use DB tags; removed `web/constants/tags.ts`; updated mocks; added admin UI at `/admin/tags` with service-role client and email-based access control; fixed server-side tag loading to use anonymous client for public pages; fixed service client to be a utility function (not server action).
   - Done when: filters and forms use DB tags end-to-end; admins can create new tags via UI. (Met)
@@ -153,8 +159,15 @@ Development Plan (MVP)
   - Done when: CRUD works under RLS; list filters return expected results.
 
 - Stage 9 — Search + pagination
-  - Tasks: case-insensitive substring search over title/description; add cursor pagination (default 20/page) to projects/collabs.
-  - Done when: `/search` returns expected results; lists paginate with next/prev.
+  - Tasks:
+    - Implement unified /search supporting type=projects|collabs (tabs or param).
+    - Add q? keyword search and ranking per “Search & Trending”.
+    - Projects: support techTagIds/categoryTagIds (AND across types, OR within type).
+    - Collaborations: support kind and skills substring filters.
+    - Add cursor pagination (default 20/page) to both.
+  - Done when:
+    - /search returns expected results for both types with the ranking rules.
+    - Tag/type filters and q can be used independently or together.
 
 - Stage 10 — Demo embed + SEO
   - Tasks: `DemoEmbed` (YouTube/Vercel inline; else external link); add `Metadata` to key routes and OG on project detail.
