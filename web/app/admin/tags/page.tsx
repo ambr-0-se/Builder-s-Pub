@@ -1,5 +1,6 @@
 import { isAdmin } from "@/lib/server/admin"
-import { AdminCreateTagForm } from "./AdminCreateTagForm"
+import { AdminTagManager } from "./tag-manager"
+import { getAllTagsServer } from "@/lib/server/tags"
 
 export default async function AdminTagsPage() {
   const ok = await isAdmin()
@@ -12,14 +13,12 @@ export default async function AdminTagsPage() {
     )
   }
 
-  return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Manage Tags</h1>
+  const all = await getAllTagsServer()
 
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Create New Tag</h2>
-        <AdminCreateTagForm />
-      </div>
+  return (
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <h1 className="text-3xl font-bold text-gray-900 mb-6">Manage Tags</h1>
+      <AdminTagManager initialTechnology={all.technology} initialCategory={all.category} />
     </div>
   )
 }
