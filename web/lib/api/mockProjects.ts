@@ -1,7 +1,20 @@
-import type { Project, ProjectWithRelations, ListProjectsParams } from "@/lib/types"
-import { TECHNOLOGY_TAGS, CATEGORY_TAGS } from "@/constants/tags"
+import type { Project, ProjectWithRelations, ListProjectsParams, Tag } from "@/lib/types"
 
 // Mock data
+// Minimal inline tags to keep mocks working without constants
+const T: Tag[] = [
+  { id: 1, name: "LLMs", type: "technology" },
+  { id: 2, name: "NLP", type: "technology" },
+  { id: 3, name: "Computer Vision", type: "technology" },
+  { id: 7, name: "React", type: "technology" },
+  { id: 8, name: "Next.js", type: "technology" },
+]
+const C: Tag[] = [
+  { id: 11, name: "Productivity", type: "category" },
+  { id: 12, name: "Education", type: "category" },
+  { id: 16, name: "DevTools", type: "category" },
+]
+
 const MOCK_PROJECTS: ProjectWithRelations[] = [
   {
     project: {
@@ -15,10 +28,7 @@ const MOCK_PROJECTS: ProjectWithRelations[] = [
       sourceUrl: "https://github.com/user/ai-code-review",
       createdAt: new Date("2024-01-15"),
     },
-    tags: {
-      technology: [TECHNOLOGY_TAGS[0], TECHNOLOGY_TAGS[7]], // LLMs, Next.js
-      category: [CATEGORY_TAGS[5]], // DevTools
-    },
+    tags: { technology: [T[0], T[4]], category: [C[2]] },
     upvoteCount: 42,
     comments: [],
     owner: {
@@ -40,10 +50,7 @@ const MOCK_PROJECTS: ProjectWithRelations[] = [
       sourceUrl: "https://github.com/user2/study-planner",
       createdAt: new Date("2024-01-10"),
     },
-    tags: {
-      technology: [TECHNOLOGY_TAGS[0], TECHNOLOGY_TAGS[6]], // LLMs, React
-      category: [CATEGORY_TAGS[1]], // Education
-    },
+    tags: { technology: [T[0], T[3]], category: [C[1]] },
     upvoteCount: 28,
     comments: [],
     owner: {
@@ -64,10 +71,7 @@ const MOCK_PROJECTS: ProjectWithRelations[] = [
       demoUrl: "https://voice-tasks.netlify.app",
       createdAt: new Date("2024-01-05"),
     },
-    tags: {
-      technology: [TECHNOLOGY_TAGS[1], TECHNOLOGY_TAGS[4]], // NLP, Audio
-      category: [CATEGORY_TAGS[0]], // Productivity
-    },
+    tags: { technology: [T[1], T[2]], category: [C[0]] },
     upvoteCount: 35,
     comments: [],
     owner: {

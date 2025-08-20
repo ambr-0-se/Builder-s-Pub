@@ -12,11 +12,12 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { listProjects } from "@/lib/api/mockProjects"
 import type { ProjectWithRelations } from "@/lib/types"
 import { useAnalyticsMock } from "@/lib/analytics"
-import { TECHNOLOGY_TAGS, CATEGORY_TAGS } from "@/constants/tags"
+import { useTags } from "@/hooks/useTags"
 
 export default function SearchPage() {
   const searchParams = useSearchParams()
   const { track } = useAnalyticsMock()
+  const { technology, category } = useTags()
 
   const [query, setQuery] = useState(searchParams.get("q") || "")
   const [projects, setProjects] = useState<ProjectWithRelations[]>([])
@@ -27,18 +28,23 @@ export default function SearchPage() {
 
   // Initialize filters from URL params
   useEffect(() => {
+    // Wait until tags load to translate names -> IDs
+    const techReady = technology.length > 0
+    const categoryReady = category.length > 0
+    if (!techReady && !categoryReady) return
+
     const techParam = searchParams.get("tech")
     const categoryParam = searchParams.get("category")
 
     if (techParam) {
       const techNames = Array.isArray(techParam) ? techParam : [techParam]
-      const techIds = TECHNOLOGY_TAGS.filter((tag) => techNames.includes(tag.name)).map((tag) => tag.id)
+      const techIds = technology.filter((tag) => techNames.includes(tag.name)).map((tag) => tag.id)
       setSelectedTechTags(techIds)
     }
 
     if (categoryParam) {
       const categoryNames = Array.isArray(categoryParam) ? categoryParam : [categoryParam]
-      const categoryIds = CATEGORY_TAGS.filter((tag) => categoryNames.includes(tag.name)).map((tag) => tag.id)
+      const categoryIds = category.filter((tag) => categoryNames.includes(tag.name)).map((tag) => tag.id)
       setSelectedCategoryTags(categoryIds)
     }
 
@@ -46,7 +52,7 @@ export default function SearchPage() {
     if (searchParams.get("q") || techParam || categoryParam) {
       performSearch()
     }
-  }, [searchParams])
+  }, [searchParams, technology, category])
 
   const performSearch = async () => {
     setLoading(true)

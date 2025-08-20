@@ -47,6 +47,13 @@ A global hub to showcase AI/vibe-coded student projects. Discover, collaborate, 
 
 5. Open [http://localhost:3002](http://localhost:3002) in your browser
 
+### Admin access
+
+- Set `ADMIN_EMAILS` in `web/.env.local` to a comma-separated list of admin emails
+- Admin dashboard: `/admin`
+- Manage tags: `/admin/tags` (create Technology/Category tags)
+- Service role writes are server-only via `SUPABASE_SERVICE_ROLE_KEY` (never expose to client)
+
 ## Project Structure
 
 ```

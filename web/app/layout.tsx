@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { Navbar } from "@/components/layout/navbar"
+import { isAdmin } from "@/lib/server/admin"
 import { Footer } from "@/components/layout/footer"
 import { ToastContainer } from "@/components/ui/toast"
 
@@ -20,16 +21,17 @@ export const metadata: Metadata = {
     generator: 'v0.app'
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const admin = await isAdmin()
   return (
     <html lang="en">
       <body className={inter.className}>
         <div className="min-h-screen bg-gray-50 flex flex-col">
-          <Navbar />
+          <Navbar isAdmin={admin} />
           <main className="flex-1">{children}</main>
           <Footer />
         </div>

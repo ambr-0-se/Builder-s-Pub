@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-export function Navbar() {
+export function Navbar({ isAdmin }: { isAdmin?: boolean }) {
   const { isAuthenticated, user, signIn, signOut } = useAuth()
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
@@ -60,6 +60,11 @@ export function Navbar() {
             <Link href="/search" className="text-gray-700 hover:text-gray-900 font-medium">
               Tags
             </Link>
+            {isAdmin && (
+              <Link href="/admin" className="text-gray-700 hover:text-gray-900 font-medium">
+                Admin
+              </Link>
+            )}
 
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
@@ -107,6 +112,11 @@ export function Navbar() {
               <Link href="/search" className="block text-gray-700 hover:text-gray-900 font-medium">
                 Tags
               </Link>
+              {isAdmin && (
+                <Link href="/admin" className="block text-gray-700 hover:text-gray-900 font-medium">
+                  Admin
+                </Link>
+              )}
 
               {isAuthenticated ? (
                 <div className="space-y-2">

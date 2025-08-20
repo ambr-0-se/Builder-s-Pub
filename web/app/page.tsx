@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { listProjects } from "@/lib/api/mockProjects"
 import { listCollabs } from "@/lib/api/mockCollabs"
-import { TECHNOLOGY_TAGS, CATEGORY_TAGS } from "@/constants/tags"
+import { getAllTagsServer } from "@/lib/server/tags"
 
 export const metadata: Metadata = {
   title: "Builder's Pub - Showcase Your AI Projects",
@@ -16,8 +16,15 @@ export default async function HomePage() {
   const { items: recentProjects } = await listProjects({ limit: 3, sort: "recent" })
   const { items: popularProjects } = await listProjects({ limit: 3, sort: "popular" })
   const { items: collaborations } = await listCollabs({ limit: 3 })
-
-  const popularTags = [...TECHNOLOGY_TAGS.slice(0, 4), ...CATEGORY_TAGS.slice(0, 4)]
+  // Load tags from DB with fallback for errors
+  let popularTags: Array<{ id: number; name: string; type: string }> = []
+  try {
+    const allTags = await getAllTagsServer()
+    popularTags = [...allTags.technology.slice(0, 4), ...allTags.category.slice(0, 4)]
+  } catch (error) {
+    console.error("Failed to load tags for landing page:", error)
+    // Fallback to empty array - page will still work without tags
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
