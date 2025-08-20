@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache"
 import { isAdmin } from "@/lib/server/admin"
 import { getServiceSupabase } from "@/lib/supabaseService"
 import { validateTagInput } from "@/lib/validation/tags"
+import type { Tag } from "@/lib/types"
 
-export type CreateTagState = { fieldErrors?: Record<string, string>; formError?: string; success?: boolean } | null
+export type CreateTagState = { fieldErrors?: Record<string, string>; formError?: string; success?: boolean; tag?: Tag } | null
 
 export async function createTag(_prev: CreateTagState, formData: FormData): Promise<CreateTagState> {
   const ok = await isAdmin()
@@ -18,7 +19,11 @@ export async function createTag(_prev: CreateTagState, formData: FormData): Prom
 
   try {
     const supabase = getServiceSupabase()
-    const { error } = await supabase.from("tags").insert({ name: name.trim(), type })
+    const { data, error } = await supabase
+      .from("tags")
+      .insert({ name: name.trim(), type })
+      .select("id,name,type")
+      .single()
     if (error) {
       if ((error as any).code === "23505" || (error.message || "").toLowerCase().includes("duplicate")) {
         return { formError: "Tag already exists (name + type must be unique)." }
@@ -29,7 +34,8 @@ export async function createTag(_prev: CreateTagState, formData: FormData): Prom
     revalidatePath("/")
     revalidatePath("/projects")
     revalidatePath("/search")
-    return { success: true }
+    revalidatePath("/admin/tags")
+    return { success: true, tag: data as Tag }
   } catch (e: any) {
     return { formError: e?.message || "Failed to create tag" }
   }

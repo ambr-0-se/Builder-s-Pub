@@ -55,12 +55,7 @@ export function AdminTagManager({
         setError(res.formError || Object.values(res.fieldErrors || {})[0] || "Failed to create tag")
         return
       }
-      // Refetch is fine later; for now, optimistically update
-      const newTag: Tag = {
-        id: Math.floor(Math.random() * 1_000_000),
-        name: type === "technology" ? techInput.trim() : catInput.trim(),
-        type,
-      }
+      const newTag = res?.tag as Tag
       if (type === "technology") {
         setTechnology((prev) => [...prev, newTag].sort((a, b) => a.name.localeCompare(b.name)))
         setTechInput("")

@@ -51,3 +51,8 @@ Implementation notes
 - Prefer server action forms over client `fetch` + API routes for authenticated writes.
 - Use `useFormState/useFormStatus` in a client component for inline errors and pending state.
 
+Admin (Tags)
+- createTag(formData): `{ name, type }` -> `{ success: true, tag: { id, name, type } } | { fieldErrors?, formError? }`
+  - Admin-only via `isAdmin()` and service role client (server-only)
+  - On success, returns the inserted tag for optimistic UI updates; revalidates `/`, `/projects`, `/search`, `/admin/tags`
+

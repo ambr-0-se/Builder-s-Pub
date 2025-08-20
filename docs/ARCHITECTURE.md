@@ -17,6 +17,12 @@ Data Flow (MVP)
 - Mock data layer in `web/lib/api/*` for projects/collabs; will be replaced by server actions in later stages.
 - Server actions contracts are defined in `docs/SERVER_ACTIONS.md` and `docs/MVP_TECH_SPEC.md`.
 
+Admin Routes
+- `/admin` — dashboard for admin-only actions (email allowlist via `ADMIN_EMAILS`)
+- `/admin/tags` — tag governance: list existing tags and create new ones
+  - Reads use anonymous/public client (RLS select)
+  - Writes use service role client on the server; never exposed to the client
+
 Security & RLS
 - All writes happen under authenticated sessions; RLS policies enforce owner-only writes and soft delete. See `supabase/rls_policies.sql` and summary in `supabase/schema.md`.
 
