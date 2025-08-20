@@ -40,6 +40,12 @@ create policy comments_insert_auth on comments for insert with check (auth.uid()
 drop policy if exists comments_delete_own on comments;
 create policy comments_delete_own on comments for delete using (auth.uid() = author_id);
 
+-- Tags (read-only for public; writes remain admin-only via service role or dashboard)
+alter table tags enable row level security;
+
+drop policy if exists tags_select_all on tags;
+create policy tags_select_all on tags for select using (true);
+
 -- Project Upvotes
 alter table project_upvotes enable row level security;
 

@@ -11,12 +11,13 @@ import { createProject } from "@/lib/api/mockProjects"
 import { useAuth } from "@/lib/api/auth"
 import { useAnalyticsMock } from "@/lib/analytics"
 import { showToast } from "@/components/ui/toast"
-import { TECHNOLOGY_TAGS, CATEGORY_TAGS } from "@/constants/tags"
+import { useTags } from "@/hooks/useTags"
 
 export default function NewProjectPage() {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
   const { track } = useAnalyticsMock()
+  const { technology, category, loading } = useTags()
 
   const [formData, setFormData] = useState({
     title: "",
@@ -219,7 +220,7 @@ export default function NewProjectPage() {
             Technology Tags * {errors.techTags && <span className="text-red-600">({errors.techTags})</span>}
           </label>
           <div className="flex flex-wrap gap-2">
-            {TECHNOLOGY_TAGS.map((tag) => (
+            {technology.map((tag) => (
               <button
                 key={tag.id}
                 type="button"
@@ -241,7 +242,7 @@ export default function NewProjectPage() {
             Category Tags * {errors.categoryTags && <span className="text-red-600">({errors.categoryTags})</span>}
           </label>
           <div className="flex flex-wrap gap-2">
-            {CATEGORY_TAGS.map((tag) => (
+            {category.map((tag) => (
               <button
                 key={tag.id}
                 type="button"

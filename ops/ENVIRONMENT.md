@@ -7,6 +7,7 @@ Required Environment Variables
 - NEXT_PUBLIC_SUPABASE_URL
 - NEXT_PUBLIC_SUPABASE_ANON_KEY
 - SUPABASE_SERVICE_ROLE_KEY (server-only; never exposed to client)
+- ADMIN_EMAILS (comma-separated list of admin email addresses for tag management)
 - NEXT_PUBLIC_POSTHOG_KEY (optional, analytics)
 - NEXT_PUBLIC_POSTHOG_HOST (optional, defaults to https://us.posthog.com)
 
@@ -25,8 +26,14 @@ Local Setup
    - Note: The app shows a confirmation screen at `/auth/check-email` after requesting a link; the callback must still point to `/auth/callback`.
 6) Start app: `npm run dev -- -p 3002` (from `web/`)
 
+Status (local machine)
+- Completed: `.env.local` configured with Supabase URL/keys; app runs on `http://localhost:3002`.
+- Completed: Schema + RLS applied; `seed/seed_mvp.sql` executed.
+- Completed: Auth email provider enabled; Dashboard Site URL set to `http://localhost:3002`; redirect added for `/auth/callback`.
+
 Notes
 - Service role key must only be used on the server (Edge Functions or server actions).
 - Prefer server actions or RPC for writes; avoid exposing privileged operations to the client.
- - Verify RLS by testing: anonymous can read public content; only owners can write/delete their content.
+- Verify RLS by testing: anonymous can read public content; only owners can write/delete their content.
+- Admin UI: accessible at `/admin/tags` for users listed in ADMIN_EMAILS environment variable.
 

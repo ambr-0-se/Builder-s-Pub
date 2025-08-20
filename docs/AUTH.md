@@ -24,6 +24,10 @@ Environment & Provider Setup
   - Additional Redirect URLs: `http://localhost:3002/auth/callback`
 - Provider: Auth → Providers → Email (magic links)
 
+Local Status
+- Completed: Email provider enabled; Site URL configured to `http://localhost:3002`; redirect for `/auth/callback` added.
+- Completed: Env set in `web/.env.local`.
+
 Multi-Tab Behavior
 - We set `multiTab: false` to avoid cross-tab token refresh conflicts during development.
 

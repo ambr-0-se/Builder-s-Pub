@@ -29,6 +29,7 @@ Indexes (key)
 
 RLS Summary
 - profiles: select all; insert/update only self
+ - tags: select all (read-only in MVP; writes via admin/service role)
 
 Notes (Stage 3 Profiles)
 - Profiles are auto-created at first sign-in by an app endpoint `/api/profile/ensure` called from `/auth/callback`.

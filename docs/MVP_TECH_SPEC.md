@@ -110,16 +110,18 @@ Development Plan (MVP)
 - Stage 0 — Stabilize UI scaffold (web/) -- Done
   - Tasks: add Node version (`engines` or `.nvmrc`), `web/.env.local.example`, run instructions in `web/README.md`.
   - Done when: fresh clone runs `npm i --legacy-peer-deps && npm run dev -p 3002` successfully.
+  - Completed locally: `.env.local` created and app runs on `http://localhost:3002`.
 
 - Stage 1 — Supabase project + schema -- Done
   - Tasks: create project; apply `supabase/schema.sql` and `supabase/rls_policies.sql`; run `supabase/seed/seed_mvp.sql`.
   - Done when: tables/RLS exist, seeds present; env vars documented in `ops/ENVIRONMENT.md` and `.env.local.example`.
+  - Completed locally: schema + RLS applied; `seed_mvp.sql` executed; Auth → Email enabled; Site URL set to `http://localhost:3002`; redirect added for `/auth/callback`; env set in `web/.env.local`.
 
 - Stage 2 — Auth (magic link) -- Done
   - Tasks: add `@supabase/supabase-js`; implement magic-link sign-in/out; session restore; `/auth/callback` handler; replace `useAuthMock()` with real hook.
   - Done when: sign in/out works; session persists; create/upvote/comment routes gate properly.
 
-- Stage 3 — Profiles
+- Stage 3 — Profiles -- Done
   - Tasks: ensure profile auto-create for new users; implement view/edit with validation (display name 1–80, URL checks).
   - Implementation notes:
     - Auto-create via `/api/profile/ensure` called in `/auth/callback` after session is set (tokens passed once if cookies not present).
@@ -129,9 +131,10 @@ Development Plan (MVP)
     - Region/Timezone UI: country dropdown + timezone list from `@vvo/tzdb` (labels: `GMT±HH:MM — Abbr — IANA`, sorted by current offset).
   - Done when: user can read/update own profile; RLS blocks others.
 
-- Stage 4 — Tags from DB (governance)
+- Stage 4 — Tags from DB (governance) -- Implemented
   - Tasks: load technology/category tags from DB; remove constants; keep admin-only creation in MVP.
-  - Done when: filters and forms use DB tags end-to-end.
+  - Implementation: added `tags` RLS (public select), `web/lib/api/tags.ts`, `web/hooks/useTags.ts`; refactored `FilterBar`, `Projects/New`, `Search` to use DB tags; removed `web/constants/tags.ts`; updated mocks; added admin UI at `/admin/tags` with service-role client and email-based access control; fixed server-side tag loading to use anonymous client for public pages; fixed service client to be a utility function (not server action).
+  - Done when: filters and forms use DB tags end-to-end; admins can create new tags via UI. (Met)
 
 - Stage 5 — Projects core
   - Tasks: server actions `createProject`, `listProjects`, `getProject`; enforce field limits and valid demo URL; persist `techTagIds[]` and `categoryTagIds[]` via `project_tags`.

@@ -21,7 +21,7 @@ You are a senior full stack engineer focused on product quality, robust code, an
 2. **Plan before coding:** validate contracts (DB columns/indexes/RLS, server actions, env/redirects) and design the smallest safe change.
    - **Step-by-step:** restate understanding and plan specific goals for each stage before coding.
    - Read relevant code and the docs in "Where to look first" to confirm assumptions.
-   - Ask user's approval before implementation
+   - **ASK APPROVAL** Ask user's approval before implementation
 3. **Implement:** write clear multi-line code, preserve style/indentation, and design for robustness, scalability, and modularity.
    - **Detailed Explanation:** while coding, explain code, schemas, architecture, file structure, and key decisions in detail.
 4. **Tests & fast feedback:** add/adjust unit/integration tests when applicable; run lint/build/tests locally and fix failures.
