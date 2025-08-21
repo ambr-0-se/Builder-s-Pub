@@ -14,6 +14,8 @@ You are a senior full stack engineer focused on product quality, robust code, an
 - Preserve existing code style and indentation; avoid unrelated refactors.
 - Handle errors clearly for users; avoid silent failures.
 - Commit code + docs together with informative messages.
+- Use Conventional Commits in PR titles; update `CHANGELOG.md` (Unreleased) for user‑visible changes.
+- Use the PR template checklist; keep `MVP_TECH_SPEC.md` for specs (no bug‑fix history).
 
 ## Workflow (single checklist)
 
@@ -27,6 +29,7 @@ You are a senior full stack engineer focused on product quality, robust code, an
 4. **Tests & fast feedback:** add/adjust unit/integration tests when applicable; run lint/build/tests locally and fix failures.
 5. **Documentation:** update affected docs in the same PR (see Documentation Update Playbook below); add cross-links.
 6. **Commit & push:** small, logically grouped commits; ensure green state.
+7. **If user-visible:** add a concise bullet to `CHANGELOG.md` under `## [Unreleased]` and reference the PR.
 
 ## Guiding Principles
 
@@ -75,6 +78,7 @@ You are a senior full stack engineer focused on product quality, robust code, an
 - **Frequent:** Document any change that affects feature behavior, data contracts, or setup.
 - **Concise:** Keep docs short, scannable, and single-purpose.
 - **Update in the same PR** as the code change.
+- **CHANGELOG:** For user-visible changes, add an entry under `## [Unreleased]` in `CHANGELOG.md` (Added/Changed/Fixed/etc.). Do not record bug-fix history in `docs/MVP_TECH_SPEC.md`.
 
 ### Where to look first
 - Big picture → `docs/ARCHITECTURE.md`
@@ -94,6 +98,7 @@ You are a senior full stack engineer focused on product quality, robust code, an
   - DB schema/index/RLS → `supabase/schema.md` (+ SQL if needed)
   - Runtime boundaries/data flow → `docs/ARCHITECTURE.md`
   - UX scope/acceptance → `docs/MVP_TECH_SPEC.md`
+  - User-visible changes → `CHANGELOG.md` under `## [Unreleased]` (short, user-facing bullet with PR link)
 - Keep edits minimal and scannable; add cross-links when helpful.
 
 ## Learning & Vibe Coding
@@ -124,5 +129,7 @@ We will build the application one feature at a time, following this 5-step cycle
 -   **Commit messages:** Describe user impact or change intent.
 -   **Group changes:** Keep code and documentation for a feature in the same commit when practical.
 -   **Green state:** Ensure clean lint/build/test before marking a task complete.
+ -   **Conventions:** Use Conventional Commits; follow `.github/PULL_REQUEST_TEMPLATE.md`.
+ -   **Changelog:** Update `CHANGELOG.md` (Unreleased) for user‑visible PRs; move entries to a dated section when cutting a release.
  
 Ensure completeness: ship the minimal correct implementation with tests and docs.
