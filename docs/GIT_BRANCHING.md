@@ -17,9 +17,15 @@ Purpose: keep `main` stable while shipping small, reviewable PRs per stage.
 
 ## PR rules
 - One PR per small stage/task; squash-merge.
-- Title prefix matches branch type: `feat:`, `fix:`, `chore:`, `docs:`.
-- Description includes: scope, run steps, acceptance checks, and known limitations.
-- Link to `docs/MVP_TECH_SPEC.md` stage when relevant.
+- Use Conventional Commits in titles: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`.
+- Description includes: scope, run steps, acceptance checks, known limitations, and related docs.
+- If user-visible: update `CHANGELOG.md` under `## [Unreleased]` with a concise bullet and link the PR.
+- Link to `docs/MVP_TECH_SPEC.md` stage or other docs as relevant.
+
+### Changelog updates
+- Add a bullet under `## [Unreleased]` by category (Added/Changed/Fixed/Deprecated/Removed/Security).
+- Keep bullets short and user-facing; include a PR link (e.g., [#123]).
+- When cutting a release, move `Unreleased` entries into a new dated section and tag the commit.
 
 ## Merge order for current MVP
 1) UI import → `feat/v0-ui-import` into `main`.

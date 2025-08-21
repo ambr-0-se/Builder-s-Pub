@@ -101,6 +101,7 @@ Definition of Done (per feature)
 - Tests: unit for utils; integration for server actions/happy paths.
 - Analytics events instrumented.
 - Docs updated: `supabase/schema.md` and this spec.
+- If user-visible change: add a bullet to `CHANGELOG.md` under `## [Unreleased]`.
 
 References
 - Schema: `supabase/schema.sql` and `supabase/schema.md`
