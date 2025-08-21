@@ -20,7 +20,13 @@ export async function getServerSupabase() {
   return createServerClient(supabaseUrl || "", supabaseAnonKey || "", {
     cookies: {
       get(name: string) {
-        return cookieStore.get(name)?.value
+        const value = cookieStore.get(name)?.value
+        // Return undefined for blank values to avoid JSON.parse errors inside @supabase/ssr
+        // when cookies have been cleared (empty string) but still present on the request.
+        if (typeof value === "string" && value.trim().length === 0) {
+          return undefined as unknown as string
+        }
+        return value
       },
       set(name: string, value: string, options: any) {
         try {

@@ -14,7 +14,8 @@ export async function POST(req: Request) {
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name: string) {
-        return cookieStore.get(name)?.value
+        const value = cookieStore.get(name)?.value
+        return typeof value === "string" && value.trim().length === 0 ? undefined as unknown as string : value
       },
       set(name: string, value: string, options: any) {
         res.cookies.set({ name, value, ...options, secure: isHttps, sameSite: "lax", path: "/" })
