@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { getProject } from "@/lib/server/projects"
 import { CommentCta } from "@/components/features/projects/comment-cta"
 import { UpvoteButton } from "@/components/features/projects/upvote-button"
+import { CreatedToastOnce } from "@/app/projects/[id]/created-toast"
 
 interface ProjectDetailPageProps {
   params: { id: string }
@@ -42,6 +43,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <CreatedToastOnce />
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         {/* Header */}
         <div className="px-6 py-8 border-b border-gray-200">
