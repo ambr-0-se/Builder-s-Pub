@@ -2,9 +2,10 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { listProjects } from "@/lib/api/mockProjects"
+import { listProjects } from "@/lib/server/projects"
 import { listCollabs } from "@/lib/api/mockCollabs"
 import { getAllTagsServer } from "@/lib/server/tags"
+import type { Tag } from "@/lib/types"
 
 export const metadata: Metadata = {
   title: "Builder's Pub - Showcase Your AI Projects",
@@ -12,9 +13,21 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-  // Fetch featured content
-  const { items: recentProjects } = await listProjects({ limit: 3, sort: "recent" })
-  const { items: popularProjects } = await listProjects({ limit: 3, sort: "popular" })
+  // Fetch featured content (robust: safe fallbacks)
+  let recentProjects: any[] = []
+  let popularProjects: any[] = []
+  try {
+    const { items } = await listProjects({ limit: 3, sort: "recent" })
+    recentProjects = items
+  } catch (_) {
+    recentProjects = []
+  }
+  try {
+    const { items } = await listProjects({ limit: 3, sort: "popular" })
+    popularProjects = items
+  } catch (_) {
+    popularProjects = []
+  }
   const { items: collaborations } = await listCollabs({ limit: 3 })
   // Load tags from DB with fallback for errors
   let popularTags: Array<{ id: number; name: string; type: string }> = []
@@ -69,7 +82,7 @@ export default async function HomePage() {
                 <p className="text-gray-600 text-sm mb-2">{project.project.tagline}</p>
                 <div className="flex items-center justify-between">
                   <div className="flex gap-2">
-                    {project.tags.technology.slice(0, 2).map((tag) => (
+                    {project.tags.technology.slice(0, 2).map((tag: Tag) => (
                       <Badge key={tag.id} variant="default" className="text-xs">
                         {tag.name}
                       </Badge>
