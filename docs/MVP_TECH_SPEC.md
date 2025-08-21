@@ -116,7 +116,7 @@ Development Plan (MVP)
 
 - Stage 0 — Stabilize UI scaffold (web/) -- Done
   - Tasks: add Node version (`engines` or `.nvmrc`), `web/.env.local.example`, run instructions in `web/README.md`.
-  - Done when: fresh clone runs `npm i --legacy-peer-deps && npm run dev -p 3002` successfully.
+  - Done when: fresh clone runs `pnpm install --frozen-lockfile && pnpm dev -p 3002` successfully.
   - Completed locally: `.env.local` created and app runs on `http://localhost:3002`.
 
 - Stage 1 — Supabase project + schema -- Done

@@ -7,6 +7,11 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+- Development: Standardized package manager to pnpm and added Corepack setup
+  - Enforced via `web/package.json` preinstall guard
+  - Docs updated: `ops/ENVIRONMENT.md`, `web/README.md`, `docs/MVP_TECH_SPEC.md`, `web/SPECIFICATION.md`
+
 ### Fixed
 - Toast System: Fixed duplicate success toasts after project creation
   - Implemented sessionStorage-based deduplication with per-project unique keys

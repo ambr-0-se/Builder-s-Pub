@@ -145,7 +145,7 @@ Project structure (suggestion)
 - README with run instructions
 
 Deliverables
-- Complete Next.js App Router project, runnable with `pnpm dev` or `npm run dev`
+- Complete Next.js App Router project, runnable with `pnpm dev`
 - All routes and components above implemented with mock data layer
 - Strong TypeScript types; no any
 - Linting and formatting configured

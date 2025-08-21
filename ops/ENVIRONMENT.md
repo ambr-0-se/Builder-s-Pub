@@ -13,18 +13,23 @@ Required Environment Variables
 
 Node & Tooling
 - Node.js 18.18–23.x (per `web/package.json` engines)
-- Package manager: npm or pnpm
+- Package manager: pnpm (via Corepack)
 
 Local Setup
 1) Copy `web/.env.local.example` to `web/.env.local` and fill values.
-2) Install deps: `cd web && npm install --legacy-peer-deps`
+2) Enable Corepack and prepare pnpm:
+   ```bash
+   corepack enable
+   corepack prepare pnpm@10 --activate
+   ```
+3) Install deps: `cd web && pnpm install --frozen-lockfile`
 3) Supabase schema: in Supabase SQL editor, run `supabase/schema.sql`, then `supabase/rls_policies.sql`.
 4) Seed data (optional): run `supabase/seed/seed_mvp.sql` in SQL editor to add baseline tags.
 5) Auth: enable Email (magic link) in Auth → Providers. Set redirect URLs:
    - Local: `http://localhost:3002/auth/callback`
    - Prod: `https://<your-domain>/auth/callback`
    - Note: The app shows a confirmation screen at `/auth/check-email` after requesting a link; the callback must still point to `/auth/callback`.
-6) Start app: `npm run dev -- -p 3002` (from `web/`)
+6) Start app: `pnpm dev -- -p 3002` (from `web/`)
 
 Status (local machine)
 - Completed: `.env.local` configured with Supabase URL/keys; app runs on `http://localhost:3002`.
