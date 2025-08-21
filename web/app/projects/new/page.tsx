@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useActionState } from "react"
 import { useFormStatus } from "react-dom"
@@ -35,6 +35,31 @@ export default function NewProjectPage() {
 
   const errors = state?.fieldErrors || {}
 
+  // Client-side validation for UX (server validation is the source of truth)
+  const canSubmit = useMemo(() => {
+    const title = formData.title.trim()
+    const tagline = formData.tagline.trim()
+    const description = formData.description.trim()
+    const demoUrl = formData.demoUrl.trim()
+
+    return (
+      title.length > 0 && title.length <= 80 &&
+      tagline.length > 0 && tagline.length <= 140 &&
+      description.length > 0 && description.length <= 4000 &&
+      demoUrl.length > 0 && /^https?:\/\//.test(demoUrl) &&
+      selectedTechTags.length > 0 &&
+      selectedCategoryTags.length > 0
+    )
+  }, [formData, selectedTechTags, selectedCategoryTags])
+
+  // Show error toast when server action returns with formError
+  useEffect(() => {
+    if (state?.formError) {
+      showToast(`Error: project fails to be created. ${state.formError}`, "error")
+    }
+    // Note: Success toast is handled by redirect to detail page with ?created=1
+  }, [state])
+
   // Redirect if not authenticated
   if (!isAuthenticated) {
     return (
@@ -49,7 +74,7 @@ export default function NewProjectPage() {
   const SubmitButton = () => {
     const { pending } = useFormStatus()
     return (
-      <Button type="submit" disabled={pending} className="flex-1">
+      <Button type="submit" disabled={pending || !canSubmit} className="flex-1">
         {pending ? "Creating Project..." : "Create Project"}
       </Button>
     )
@@ -70,34 +95,7 @@ export default function NewProjectPage() {
         <p className="text-gray-600 mt-2">Share your amazing project with the community</p>
       </div>
 
-      <form action={async (fd) => {
-        // Append selected tag ids as multi-value fields
-        selectedTechTags.forEach((id) => fd.append("techTagIds", String(id)))
-        selectedCategoryTags.forEach((id) => fd.append("categoryTagIds", String(id)))
-
-        const prevTitle = formData.title
-        const prevTagline = formData.tagline
-        const prevDesc = formData.description
-        const prevDemo = formData.demoUrl
-        const prevSource = formData.sourceUrl
-
-        const res = await formAction(fd)
-
-        if (!res || ("id" in (res as any))) {
-          track("project_created", {
-            // projectId not available here due to redirect, keep event minimal
-            techTags: selectedTechTags,
-            categoryTags: selectedCategoryTags,
-          })
-          showToast("Project created successfully!", "success")
-          return
-        }
-
-        // If errors returned, state will carry them; optionally toast
-        if ((res as any)?.formError) {
-          showToast("Failed to create project. Please try again.", "error")
-        }
-      }} className="space-y-6">
+      <form action={formAction} className="space-y-6">
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
             Project Title *
@@ -220,6 +218,13 @@ export default function NewProjectPage() {
             ))}
           </div>
         </div>
+
+        {selectedTechTags.map((id) => (
+          <input key={`tech-${id}`} type="hidden" name="techTagIds" value={id} />
+        ))}
+        {selectedCategoryTags.map((id) => (
+          <input key={`cat-${id}`} type="hidden" name="categoryTagIds" value={id} />
+        ))}
 
         <div className="flex gap-4 pt-6">
           <SubmitButton />

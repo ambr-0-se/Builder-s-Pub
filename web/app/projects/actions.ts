@@ -32,7 +32,7 @@ export async function createProjectAction(_: CreateProjectState, formData: FormD
 
 	const result = await createProject(parsed.data)
 	if ("id" in result) {
-		redirect(`/projects/${result.id}`)
+		redirect(`/projects/${result.id}?created=1`)
 	}
 	return result
 }
