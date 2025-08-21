@@ -3,7 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { getProject } from "@/lib/api/mockProjects"
+import { getProject } from "@/lib/server/projects"
 import { CommentCta } from "@/components/features/projects/comment-cta"
 import { UpvoteButton } from "@/components/features/projects/upvote-button"
 
