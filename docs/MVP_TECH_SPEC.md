@@ -142,9 +142,19 @@ Development Plan (MVP)
   - Implementation: added `tags` RLS (public select), `web/lib/api/tags.ts`, `web/hooks/useTags.ts`; refactored `FilterBar`, `Projects/New`, `Search` to use DB tags; removed `web/constants/tags.ts`; updated mocks; added admin UI at `/admin/tags` with service-role client and email-based access control; fixed server-side tag loading to use anonymous client for public pages; fixed service client to be a utility function (not server action).
   - Done when: filters and forms use DB tags end-to-end; admins can create new tags via UI. (Met)
 
-- Stage 5 — Projects core
+- Stage 5 — Projects core -- Done
   - Tasks: server actions `createProject`, `listProjects`, `getProject`; enforce field limits and valid demo URL; persist `techTagIds[]` and `categoryTagIds[]` via `project_tags`.
-  - Done when: create redirects to detail; list supports Recent/Popular and tag filters (AND across types, OR within type).
+  - Implementation:
+    - Validation with Zod at `web/app/projects/schema.ts` (Title ≤80, Tagline ≤140, Description ≤4000; URLs must be http/https; ≥1 tag per type).
+    - Server functions at `web/lib/server/projects.ts`:
+      - `createProject(input)` inserts into `projects` under the authenticated user (RLS), then inserts `project_tags`; returns `{ id }` or typed errors.
+      - `listProjects(params)` returns `ProjectWithRelations[]`, supports `sort=recent|popular`, default `limit=20`, and tag filters (AND across types, OR within a type). Uses public anon client for reads.
+      - `getProject(id)` returns project, tags, owner profile display name, and upvote count.
+    - Create flow uses a server action at `web/app/projects/actions.ts` and redirects to `/projects/[id]` on success.
+    - Listing page (`/projects`) uses a thin client wrapper `web/lib/api/projects.ts` that calls `/api/projects/list` and converts `createdAt` back to `Date`.
+    - Landing page (`/`) calls server module `web/lib/server/projects.ts` directly (server runtime) and falls back to empty lists if fetch fails.
+    - Note: keyword search (`q`) is deferred to Stage 9; current `listProjects` ignores `q`.
+  - Done when: create redirects to detail; list supports Recent/Popular and tag filters (AND across types, OR within type). (Met)
 
 - Stage 6 — Comments
   - Tasks: `addComment`, `deleteComment` (author-only), render list on detail; 1–1000 char validation.

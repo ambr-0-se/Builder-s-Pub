@@ -15,6 +15,15 @@ Projects
 - updateProject(id, fields): owner-only `-> { ok: true }`
 - deleteProject(id): owner-only `-> { ok: true }`
 
+Implemented (Stage 5)
+- createProject: Implemented. Validates inputs; inserts into `projects` with `owner_id=auth.user.id`; persists tags via `project_tags`; returns `{ id }` or `{ fieldErrors?, formError? }`.
+- listProjects: Implemented (subset). Supports `limit` (default 20), `sort=recent|popular`, and tag filters (AND across types, OR within a type). Keyword `q` is deferred to Stage 9. Returns `{ items[], nextCursor? }`.
+- getProject: Implemented. Returns project, tags grouped by type, owner display name, and `upvoteCount`. `comments[]` remains empty until Stage 6.
+
+Locations
+- Server: `web/lib/server/projects.ts`
+- Server action (create): `web/app/projects/actions.ts`
+
 Comments
 - addComment(projectId, body 1–1000): `-> { id }`
 - deleteComment(commentId): author-only `-> { ok: true }`
