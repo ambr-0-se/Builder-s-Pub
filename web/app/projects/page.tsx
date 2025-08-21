@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { ProjectGrid } from "@/components/features/projects/project-grid"
 import { FilterBar } from "@/components/features/projects/filter-bar"
 import { SortTabs } from "@/components/features/projects/sort-tabs"
-import { listProjects } from "@/lib/api/mockProjects"
+import { listProjects } from "@/lib/api/projects"
 import type { ProjectWithRelations } from "@/lib/types"
 import { useAnalyticsMock } from "@/lib/analytics"
 

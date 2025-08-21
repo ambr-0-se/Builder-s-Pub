@@ -16,7 +16,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl || "", supabaseAnonKey || "", {
   auth: {
     persistSession: true,
-    autoRefreshToken: true,
+    // Disable auto refresh to avoid console noise when stale refresh tokens exist;
+    // we'll rely on explicit flows via the callback route instead.
+    autoRefreshToken: false,
     detectSessionInUrl: false,
     multiTab: false,
   },

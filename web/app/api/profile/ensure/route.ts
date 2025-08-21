@@ -14,7 +14,8 @@ export async function POST(req: Request) {
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name: string) {
-        return cookieStore.get(name)?.value
+        const value = cookieStore.get(name)?.value
+        return typeof value === "string" && value.trim().length === 0 ? undefined as unknown as string : value
       },
       set(name: string, value: string, options: any) {
         res.cookies.set({ name, value, ...options, secure: isHttps, sameSite: "lax", path: "/" })
@@ -48,15 +49,21 @@ export async function POST(req: Request) {
 
   const defaultDisplay = user.email || "User"
 
-  const { error } = await supabase
+  // If a profile already exists, do NOT overwrite user's chosen display_name
+  const existing = await supabase
     .from("profiles")
-    .upsert(
-      { user_id: user.id, display_name: defaultDisplay },
-      { onConflict: "user_id" }
-    )
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle()
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!existing.data) {
+    const { error } = await supabase
+      .from("profiles")
+      .insert({ user_id: user.id, display_name: defaultDisplay })
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
   }
 
   return res

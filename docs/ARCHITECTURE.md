@@ -14,8 +14,20 @@ Auth Flow (Stage 2)
 - Navbar uses `useAuth()` to render session state and sign-out.
 
 Data Flow (MVP)
-- Mock data layer in `web/lib/api/*` for projects/collabs; will be replaced by server actions in later stages.
-- Server actions contracts are defined in `docs/SERVER_ACTIONS.md` and `docs/MVP_TECH_SPEC.md`.
+- Server actions and server modules back all authenticated writes; reads are split by runtime:
+  - Server components/pages import from `web/lib/server/**` directly (no fetch to own API).
+  - Client components use thin wrappers in `web/lib/api/**` that call `/api/**` routes.
+- Contracts live in `docs/SERVER_ACTIONS.md` and `docs/MVP_TECH_SPEC.md`.
+
+Projects (Stage 5)
+- Implemented: `createProject`, `listProjects`, `getProject` in `web/lib/server/projects.ts` with Zod validation in `web/app/projects/schema.ts` and a server action `web/app/projects/actions.ts` for creation.
+- Listing:
+  - `/projects` (client component) calls `/api/projects/list` via `web/lib/api/projects.ts`.
+  - Landing page `/` (server component) calls `listProjects` from `web/lib/server/projects` directly and uses safe fallbacks on errors/empty data.
+- Sorting & Filters:
+  - Recent: `created_at desc`.
+  - Popular: in-memory order by upvote count (from `project_upvotes`) then `created_at desc`.
+  - Tag filters: AND across types (technology/category), OR within a type.
 
 Admin Routes
 - `/admin` — dashboard for admin-only actions (email allowlist via `ADMIN_EMAILS`)

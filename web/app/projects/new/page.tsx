@@ -2,16 +2,18 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useActionState } from "react"
+import { useFormStatus } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { createProject } from "@/lib/api/mockProjects"
 import { useAuth } from "@/lib/api/auth"
 import { useAnalyticsMock } from "@/lib/analytics"
 import { showToast } from "@/components/ui/toast"
 import { useTags } from "@/hooks/useTags"
+import { createProjectAction, type CreateProjectState } from "@/app/projects/actions"
 
 export default function NewProjectPage() {
   const router = useRouter()
@@ -29,8 +31,34 @@ export default function NewProjectPage() {
 
   const [selectedTechTags, setSelectedTechTags] = useState<number[]>([])
   const [selectedCategoryTags, setSelectedCategoryTags] = useState<number[]>([])
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [state, formAction] = useActionState<CreateProjectState, FormData>(createProjectAction, null)
+
+  const errors = state?.fieldErrors || {}
+
+  // Client-side validation for UX (server validation is the source of truth)
+  const canSubmit = useMemo(() => {
+    const title = formData.title.trim()
+    const tagline = formData.tagline.trim()
+    const description = formData.description.trim()
+    const demoUrl = formData.demoUrl.trim()
+
+    return (
+      title.length > 0 && title.length <= 80 &&
+      tagline.length > 0 && tagline.length <= 140 &&
+      description.length > 0 && description.length <= 4000 &&
+      demoUrl.length > 0 && /^https?:\/\//.test(demoUrl) &&
+      selectedTechTags.length > 0 &&
+      selectedCategoryTags.length > 0
+    )
+  }, [formData, selectedTechTags, selectedCategoryTags])
+
+  // Show error toast when server action returns with formError
+  useEffect(() => {
+    if (state?.formError) {
+      showToast(`Error: project fails to be created. ${state.formError}`, "error")
+    }
+    // Note: Success toast is handled by redirect to detail page with ?created=1
+  }, [state])
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
@@ -43,94 +71,21 @@ export default function NewProjectPage() {
     )
   }
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {}
-
-    if (!formData.title.trim()) {
-      newErrors.title = "Title is required"
-    } else if (formData.title.length > 80) {
-      newErrors.title = "Title must be 80 characters or less"
-    }
-
-    if (!formData.tagline.trim()) {
-      newErrors.tagline = "Tagline is required"
-    } else if (formData.tagline.length > 140) {
-      newErrors.tagline = "Tagline must be 140 characters or less"
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = "Description is required"
-    } else if (formData.description.length > 4000) {
-      newErrors.description = "Description must be 4000 characters or less"
-    }
-
-    if (!formData.demoUrl.trim()) {
-      newErrors.demoUrl = "Demo URL is required"
-    } else if (!/^https?:\/\/.+/.test(formData.demoUrl)) {
-      newErrors.demoUrl = "Demo URL must be a valid HTTP/HTTPS URL"
-    }
-
-    if (formData.sourceUrl && !/^https?:\/\/.+/.test(formData.sourceUrl)) {
-      newErrors.sourceUrl = "Source URL must be a valid HTTP/HTTPS URL"
-    }
-
-    if (selectedTechTags.length === 0) {
-      newErrors.techTags = "At least one technology tag is required"
-    }
-
-    if (selectedCategoryTags.length === 0) {
-      newErrors.categoryTags = "At least one category tag is required"
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!validateForm()) {
-      return
-    }
-
-    setIsSubmitting(true)
-
-    try {
-      const { id } = await createProject({
-        title: formData.title.trim(),
-        tagline: formData.tagline.trim(),
-        description: formData.description.trim(),
-        demoUrl: formData.demoUrl.trim(),
-        sourceUrl: formData.sourceUrl.trim() || undefined,
-      })
-
-      track("project_created", {
-        projectId: id,
-        techTags: selectedTechTags,
-        categoryTags: selectedCategoryTags,
-      })
-
-      showToast("Project created successfully!", "success")
-      router.push(`/projects/${id}`)
-    } catch (error) {
-      showToast("Failed to create project. Please try again.", "error")
-    } finally {
-      setIsSubmitting(false)
-    }
+  const SubmitButton = () => {
+    const { pending } = useFormStatus()
+    return (
+      <Button type="submit" disabled={pending || !canSubmit} className="flex-1">
+        {pending ? "Creating Project..." : "Create Project"}
+      </Button>
+    )
   }
 
   const toggleTechTag = (tagId: number) => {
     setSelectedTechTags((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]))
-    if (errors.techTags) {
-      setErrors((prev) => ({ ...prev, techTags: "" }))
-    }
   }
 
   const toggleCategoryTag = (tagId: number) => {
     setSelectedCategoryTags((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]))
-    if (errors.categoryTags) {
-      setErrors((prev) => ({ ...prev, categoryTags: "" }))
-    }
   }
 
   return (
@@ -140,13 +95,14 @@ export default function NewProjectPage() {
         <p className="text-gray-600 mt-2">Share your amazing project with the community</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form action={formAction} className="space-y-6">
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
             Project Title *
           </label>
           <Input
             id="title"
+            name="title"
             value={formData.title}
             onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
             placeholder="Enter your project title"
@@ -162,6 +118,7 @@ export default function NewProjectPage() {
           </label>
           <Input
             id="tagline"
+            name="tagline"
             value={formData.tagline}
             onChange={(e) => setFormData((prev) => ({ ...prev, tagline: e.target.value }))}
             placeholder="A brief description of what your project does"
@@ -177,6 +134,7 @@ export default function NewProjectPage() {
           </label>
           <Textarea
             id="description"
+            name="description"
             value={formData.description}
             onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
             placeholder="Provide a detailed description of your project, including features, technologies used, and any other relevant information"
@@ -194,6 +152,7 @@ export default function NewProjectPage() {
           <Input
             id="demoUrl"
             type="url"
+            name="demoUrl"
             value={formData.demoUrl}
             onChange={(e) => setFormData((prev) => ({ ...prev, demoUrl: e.target.value }))}
             placeholder="https://your-project-demo.com"
@@ -208,6 +167,7 @@ export default function NewProjectPage() {
           <Input
             id="sourceUrl"
             type="url"
+            name="sourceUrl"
             value={formData.sourceUrl}
             onChange={(e) => setFormData((prev) => ({ ...prev, sourceUrl: e.target.value }))}
             placeholder="https://github.com/username/project"
@@ -259,11 +219,16 @@ export default function NewProjectPage() {
           </div>
         </div>
 
+        {selectedTechTags.map((id) => (
+          <input key={`tech-${id}`} type="hidden" name="techTagIds" value={id} />
+        ))}
+        {selectedCategoryTags.map((id) => (
+          <input key={`cat-${id}`} type="hidden" name="categoryTagIds" value={id} />
+        ))}
+
         <div className="flex gap-4 pt-6">
-          <Button type="submit" disabled={isSubmitting} className="flex-1">
-            {isSubmitting ? "Creating Project..." : "Create Project"}
-          </Button>
-          <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
+          <SubmitButton />
+          <Button type="button" variant="outline" onClick={() => router.back()}>
             Cancel
           </Button>
         </div>
