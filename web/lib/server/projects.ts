@@ -170,7 +170,7 @@ export async function getProject(id: string): Promise<ProjectWithRelations | nul
 		fetchTagsByProjectIds([p.id], anon),
 		fetchOwnersByUserIds([p.owner_id], anon),
 		fetchUpvoteCounts([p.id], anon),
-		fetchCommentsByProjectId(p.id, anon),
+		fetchThreadedComments(p.id, anon),
 	])
 
 	const tagMap = tags.get(p.id) || { technology: [], category: [] }
@@ -266,29 +266,42 @@ async function fetchUpvoteCounts(projectIds: string[], anon: ReturnType<typeof g
 }
 
 
-async function fetchCommentsByProjectId(projectId: string, anon: ReturnType<typeof getAnonServerClient>): Promise<Comment[]> {
-	// Fetch comments for a project (newest first)
-	const { data: rows, error } = await anon
+async function fetchThreadedComments(projectId: string, anon: ReturnType<typeof getAnonServerClient>): Promise<Comment[]> {
+	const { data: topRows, error: topErr } = await anon
 		.from("comments")
 		.select("id, project_id, author_id, body, created_at, soft_deleted")
 		.eq("project_id", projectId)
+		.is("parent_comment_id", null)
 		.eq("soft_deleted", false)
 		.order("created_at", { ascending: false })
+	if (topErr) throw topErr
+	const parentIds = (topRows || []).map((r: any) => r.id as string)
 
-	if (error) throw error
-	const commentRows = (rows || []) as any[]
-	if (commentRows.length === 0) return []
+	let replyMap = new Map<string, any[]>()
+	if (parentIds.length > 0) {
+		const { data: replyRows, error: repErr } = await anon
+			.from("comments")
+			.select("id, project_id, author_id, body, created_at, soft_deleted, parent_comment_id")
+			.in("parent_comment_id", parentIds)
+			.eq("soft_deleted", false)
+			.order("created_at", { ascending: true })
+		if (repErr) throw repErr
+		for (const r of (replyRows || []) as any[]) {
+			const pid = r.parent_comment_id as string
+			if (!replyMap.has(pid)) replyMap.set(pid, [])
+			replyMap.get(pid)!.push(r)
+		}
+	}
 
-	// Load author profiles
-	const authorIds = Array.from(new Set(commentRows.map((r) => r.author_id as string)))
+	const authorIds = Array.from(new Set([...(topRows || []), ...Array.from(replyMap.values()).flat()].map((r: any) => r.author_id as string)))
 	const authors = await fetchOwnersByUserIds(authorIds, anon)
 
-	const items: Comment[] = commentRows.map((r) => {
+	const allCommentIds = [...parentIds, ...Array.from(replyMap.values()).flat().map((r: any) => r.id as string)]
+	const upvoteCounts = await fetchCommentUpvoteCounts(allCommentIds, anon)
+
+	const toComment = (r: any): Comment => {
 		const profile = authors.get(r.author_id as string)
-		const author: Profile = {
-			userId: profile?.userId || (r.author_id as string),
-			displayName: profile?.displayName || "User",
-		}
+		const author: Profile = { userId: profile?.userId || (r.author_id as string), displayName: profile?.displayName || "User" }
 		return {
 			id: r.id as string,
 			projectId: r.project_id as string,
@@ -297,10 +310,32 @@ async function fetchCommentsByProjectId(projectId: string, anon: ReturnType<type
 			body: r.body as string,
 			createdAt: new Date(r.created_at as string),
 			softDeleted: undefined,
+			parentCommentId: (r.parent_comment_id as string) || null,
+			upvoteCount: upvoteCounts.get(r.id as string) || 0,
+			hasUserUpvoted: false,
 		}
-	})
+	}
 
-	return items
+	const parents = (topRows || []).map((p: any) => {
+		const parent = toComment(p)
+		const replies = (replyMap.get(p.id as string) || []).map(toComment)
+		parent.children = replies
+		return parent
+	})
+	return parents
+}
+
+async function fetchCommentUpvoteCounts(commentIds: string[], anon: ReturnType<typeof getAnonServerClient>) {
+	const map = new Map<string, number>()
+	if (commentIds.length === 0) return map
+	const { data, error } = await anon.from("comment_upvotes").select("comment_id").in("comment_id", commentIds)
+	if (error) throw error
+	for (const id of commentIds) map.set(id, 0)
+	for (const r of (data || []) as any[]) {
+		const id = r.comment_id as string
+		map.set(id, (map.get(id) || 0) + 1)
+	}
+	return map
 }
 
 export async function addComment(projectId: string, body: string): Promise<{ id: string } | { error: string }> {
