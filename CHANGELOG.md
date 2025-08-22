@@ -7,12 +7,22 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+- Comments (Stage 6) groundwork: validation schema and server functions
+  - Added `commentSchema` (1–1000 chars) and types
+  - Implemented server functions: `addComment`, `deleteComment`, and included `comments[]` in `getProject`
+  - Files: `web/app/projects/schema.ts`, `web/lib/server/projects.ts`, `docs/MVP_TECH_SPEC.md`
+
 ### Changed
 - Development: Standardized package manager to pnpm and added Corepack setup
   - Enforced via `web/package.json` preinstall guard
   - Docs updated: `ops/ENVIRONMENT.md`, `web/README.md`, `docs/MVP_TECH_SPEC.md`, `web/SPECIFICATION.md`
 
 ### Fixed
+- Auth/session: Prevent unauthorized server actions after dev restart by syncing server cookies
+  - Added `ensureServerSession()` and invoked on `/projects/new`
+  - Files: `web/lib/api/auth.ts`, `web/app/projects/new/page.tsx`
+
 - Toast System: Fixed duplicate success toasts after project creation
   - Implemented sessionStorage-based deduplication with per-project unique keys
   - Added useRef guard in CreatedToastOnce component to prevent multiple executions

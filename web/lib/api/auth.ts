@@ -109,3 +109,25 @@ export function useAuth(): AuthState {
 }
 
 
+// Ensures the server has the Supabase session cookies set (idempotent).
+// Useful on pages that perform server actions immediately after client login,
+// or when the browser restored a session but the server cookie hasn't been set yet.
+export async function ensureServerSession(): Promise<void> {
+  try {
+    const { data } = await supabase.auth.getSession()
+    const tokens = data.session
+      ? { access_token: data.session.access_token, refresh_token: data.session.refresh_token }
+      : undefined
+    await fetch("/api/profile/ensure", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      cache: "no-store",
+      body: tokens ? JSON.stringify(tokens) : undefined,
+    })
+  } catch (_) {
+    // non-blocking
+  }
+}
+
+

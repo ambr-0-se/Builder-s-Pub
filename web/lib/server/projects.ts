@@ -1,9 +1,10 @@
 "use server"
 
 import { createClient } from "@supabase/supabase-js"
-import type { ProjectWithRelations, Tag } from "@/lib/types"
+import type { ProjectWithRelations, Tag, Comment, Profile } from "@/lib/types"
 import { getServerSupabase } from "@/lib/supabaseServer"
 import { createProjectSchema, type CreateProjectInput } from "@/app/projects/schema"
+import { commentSchema } from "@/app/projects/schema"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
@@ -165,24 +166,26 @@ export async function getProject(id: string): Promise<ProjectWithRelations | nul
 	if (error) throw error
 	if (!p || p.soft_deleted) return null
 
-	const [tags, owner, voteCount] = await Promise.all([
+	const [tags, owner, voteCount, comments] = await Promise.all([
 		fetchTagsByProjectIds([p.id], anon),
 		fetchOwnersByUserIds([p.owner_id], anon),
 		fetchUpvoteCounts([p.id], anon),
+		fetchCommentsByProjectId(p.id, anon),
 	])
 
 	const tagMap = tags.get(p.id) || { technology: [], category: [] }
 	const ownerProfile = owner.get(p.owner_id)
 	const upvotes = voteCount.get(p.id) || 0
 
-	return toProjectWithRelations(p as any, tagMap, ownerProfile, upvotes)
+	return toProjectWithRelations(p as any, tagMap, ownerProfile, upvotes, comments)
 }
 
 function toProjectWithRelations(
 	row: any,
 	tags: { technology: Tag[]; category: Tag[] },
-	owner: { userId: string; displayName: string } | undefined,
-	upvoteCount: number
+ 	owner: { userId: string; displayName: string } | undefined,
+ 	upvoteCount: number,
+ 	comments: Comment[] = []
 ): ProjectWithRelations {
 	return {
 		project: {
@@ -198,7 +201,7 @@ function toProjectWithRelations(
 		},
 		tags,
 		upvoteCount,
-		comments: [],
+		comments,
 		owner: {
 			userId: owner?.userId || row.owner_id,
 			displayName: owner?.displayName || "User",
@@ -260,6 +263,75 @@ async function fetchUpvoteCounts(projectIds: string[], anon: ReturnType<typeof g
 		map.set(pid, (map.get(pid) || 0) + 1)
 	}
 	return map
+}
+
+
+async function fetchCommentsByProjectId(projectId: string, anon: ReturnType<typeof getAnonServerClient>): Promise<Comment[]> {
+	// Fetch comments for a project (newest first)
+	const { data: rows, error } = await anon
+		.from("comments")
+		.select("id, project_id, author_id, body, created_at, soft_deleted")
+		.eq("project_id", projectId)
+		.eq("soft_deleted", false)
+		.order("created_at", { ascending: false })
+
+	if (error) throw error
+	const commentRows = (rows || []) as any[]
+	if (commentRows.length === 0) return []
+
+	// Load author profiles
+	const authorIds = Array.from(new Set(commentRows.map((r) => r.author_id as string)))
+	const authors = await fetchOwnersByUserIds(authorIds, anon)
+
+	const items: Comment[] = commentRows.map((r) => {
+		const profile = authors.get(r.author_id as string)
+		const author: Profile = {
+			userId: profile?.userId || (r.author_id as string),
+			displayName: profile?.displayName || "User",
+		}
+		return {
+			id: r.id as string,
+			projectId: r.project_id as string,
+			authorId: r.author_id as string,
+			author,
+			body: r.body as string,
+			createdAt: new Date(r.created_at as string),
+			softDeleted: undefined,
+		}
+	})
+
+	return items
+}
+
+export async function addComment(projectId: string, body: string): Promise<{ id: string } | { error: string }> {
+	const supabase = await getServerSupabase()
+	const { data: auth } = await supabase.auth.getUser()
+	if (!auth.user) return { error: "unauthorized" }
+
+	const parsed = commentSchema.safeParse({ body })
+	if (!parsed.success) {
+		const first = parsed.error.issues[0]
+		return { error: first?.message || "invalid_input" }
+	}
+
+	const { data, error } = await supabase
+		.from("comments")
+		.insert({ project_id: projectId, author_id: auth.user.id, body: parsed.data.body })
+		.select("id")
+		.single()
+
+	if (error || !data) return { error: error?.message || "failed_to_add_comment" }
+	return { id: data.id as string }
+}
+
+export async function deleteComment(commentId: string): Promise<{ ok: true } | { error: string }> {
+	const supabase = await getServerSupabase()
+	const { data: auth } = await supabase.auth.getUser()
+	if (!auth.user) return { error: "unauthorized" }
+
+	const { error } = await supabase.from("comments").delete().eq("id", commentId)
+	if (error) return { error: error.message }
+	return { ok: true }
 }
 
 

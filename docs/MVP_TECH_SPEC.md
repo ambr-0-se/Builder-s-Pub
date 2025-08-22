@@ -158,8 +158,16 @@ Development Plan (MVP)
   - Done when: create redirects to detail; list supports Recent/Popular and tag filters (AND across types, OR within type). (Met)
 
 - Stage 6 — Comments
-  - Tasks: `addComment`, `deleteComment` (author-only), render list on detail; 1–1000 char validation.
-  - Done when: authenticated user can add/delete own comments; UI shows errors cleanly.
+  - Tasks: implement `addComment` and `deleteComment` (author-only); render comment list on project detail; add 1–1000 char validation; wire server actions and UI; add tests and docs.
+  - Implementation:
+    - Validation: add `commentSchema` (1–1000) in `web/app/projects/schema.ts`; export types for reuse.
+    - Server: in `web/lib/server/projects.ts` add `addComment(projectId, body)` and `deleteComment(commentId)` using authenticated server client (RLS enforced); update `getProject(id)` to include `comments[]` with author display name and `createdAt`, sorted newest-first; add helper `fetchCommentsByProjectId`.
+    - Server actions: in `web/app/projects/actions.ts` add `addCommentAction` and `deleteCommentAction` to process `FormData`, perform validation, and return typed errors; integrate with server action forms.
+    - UI: create `web/components/features/projects/comment-form.tsx`, `web/components/features/projects/comment-list.tsx`, and `web/components/features/projects/comment-item.tsx`; update `web/components/features/projects/comment-cta.tsx` to show sign-in CTA for anonymous users and the actual form + list for authenticated users.
+    - UX: disable submit while pending; inline validation errors; character counter; success toast; confirm before delete; friendly errors for 401/403/500.
+    - Analytics: instrument comment add/delete events per `docs/ANALYTICS.md`.
+    - Tests: unit tests for schema; integration tests for server add/delete under RLS and `getProject` including comments; optional UI smoke test.
+  - Done when: authenticated user can add and delete own comments; non-authors cannot delete (RLS enforced); comments render with author name and timestamp; errors display clearly; tests pass; this spec and `docs/SERVER_ACTIONS.md` are updated.
 
 - Stage 7 — Upvotes
   - Tasks: `upvoteProject` enforcing single upvote (PK); optimistic UI with rollback; disable after upvote.
