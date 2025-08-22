@@ -4,6 +4,7 @@ import { useMemo } from "react"
 import { useAuth } from "@/lib/api/auth"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
+import { CommentForm } from "@/components/features/projects/comment-form"
 
 interface CommentCtaProps {
   projectId: string
@@ -27,8 +28,8 @@ export function CommentCta({ projectId }: CommentCtaProps) {
   }
 
   return (
-    <div className="text-center py-6 border border-dashed border-gray-200 rounded-lg">
-      <p className="text-gray-600">Comments UI coming soon.</p>
+    <div className="py-6 border border-dashed border-gray-200 rounded-lg">
+      <CommentForm projectId={projectId} />
     </div>
   )
 }
