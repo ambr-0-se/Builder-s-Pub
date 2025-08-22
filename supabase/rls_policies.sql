@@ -40,6 +40,18 @@ create policy comments_insert_auth on comments for insert with check (auth.uid()
 drop policy if exists comments_delete_own on comments;
 create policy comments_delete_own on comments for delete using (auth.uid() = author_id);
 
+-- Comment Upvotes
+alter table if exists comment_upvotes enable row level security;
+
+drop policy if exists comment_upvotes_select_all on comment_upvotes;
+create policy comment_upvotes_select_all on comment_upvotes for select using (true);
+
+drop policy if exists comment_upvotes_insert_auth on comment_upvotes;
+create policy comment_upvotes_insert_auth on comment_upvotes for insert with check (auth.uid() = user_id);
+
+drop policy if exists comment_upvotes_delete_own on comment_upvotes;
+create policy comment_upvotes_delete_own on comment_upvotes for delete using (auth.uid() = user_id);
+
 -- Tags (read-only for public; writes remain admin-only via service role or dashboard)
 alter table tags enable row level security;
 
