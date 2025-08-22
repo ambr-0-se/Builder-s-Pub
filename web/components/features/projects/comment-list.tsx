@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useOptimistic, useState } from "react"
 import type { Comment } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { deleteCommentAction, type DeleteCommentState } from "@/app/projects/actions"
@@ -18,18 +18,26 @@ export function CommentList({ comments }: CommentListProps) {
   const { user } = useAuth()
   const [state, formAction] = useActionState<DeleteCommentState, FormData>(deleteCommentAction, null)
   const [items, setItems] = useState<Comment[]>(comments || [])
+  const [optimisticItems, setOptimisticItems] = useOptimistic<Comment[], { type: "delete"; id: string }>(
+    items,
+    (current, action) => {
+      if (action.type === "delete") return current.filter((x) => x.id !== action.id)
+      return current
+    }
+  )
+  const [lastDeletedId, setLastDeletedId] = useState<string | null>(null)
 
   useEffect(() => {
     setItems(comments || [])
   }, [comments])
 
-  if (!items || items.length === 0) {
+  if (!optimisticItems || optimisticItems.length === 0) {
     return <p className="text-gray-500">No comments yet. Be the first to share your thoughts.</p>
   }
 
   return (
     <ul className="space-y-4">
-      {items.map((c) => (
+      {optimisticItems.map((c) => (
         <li key={c.id} className="border border-gray-200 rounded-md p-4">
           <div className="flex items-center justify-between mb-2">
             <div className="text-sm text-gray-600">
@@ -39,16 +47,14 @@ export function CommentList({ comments }: CommentListProps) {
             </div>
             {user?.userId === c.authorId && (
               <form
-                action={async (fd: FormData) => {
-                  const res = await formAction(fd)
-                  if (res?.ok) {
-                    showToast("Comment deleted", "success")
-                    const id = String(fd.get("commentId") || "")
-                    setItems((prev) => prev.filter((x) => x.id !== id))
-                    router.refresh()
-                  } else if (res?.formError) {
-                    showToast(res.formError, "error")
-                  }
+                action={(fd: FormData) => {
+                  const id = String(fd.get("commentId") || "")
+                  setLastDeletedId(id)
+                  // Optimistic update first
+                  setOptimisticItems({ type: "delete", id })
+                  setItems((prev) => prev.filter((x) => x.id !== id))
+                  // Trigger server action (state will update via hook)
+                  formAction(fd)
                 }}
               >
                 <input type="hidden" name="commentId" value={c.id} />
