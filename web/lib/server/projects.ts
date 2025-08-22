@@ -166,12 +166,23 @@ export async function getProject(id: string): Promise<ProjectWithRelations | nul
 	if (error) throw error
 	if (!p || p.soft_deleted) return null
 
-	const [tags, owner, voteCount, comments] = await Promise.all([
+	const [tags, owner, voteCount] = await Promise.all([
 		fetchTagsByProjectIds([p.id], anon),
 		fetchOwnersByUserIds([p.owner_id], anon),
 		fetchUpvoteCounts([p.id], anon),
-		fetchThreadedComments(p.id, anon),
 	])
+
+	let comments: Comment[] = []
+	try {
+		comments = await fetchThreadedComments(p.id, anon)
+	} catch (e: any) {
+		// Fallback for environments where migration hasn't run yet (missing columns/tables)
+		if (e && (e.code === "42703" || /column .* does not exist/i.test(String(e.message || "")))) {
+			comments = await fetchFlatComments(p.id, anon)
+		} else {
+			throw e
+		}
+	}
 
 	const tagMap = tags.get(p.id) || { technology: [], category: [] }
 	const ownerProfile = owner.get(p.owner_id)
@@ -336,6 +347,37 @@ async function fetchCommentUpvoteCounts(commentIds: string[], anon: ReturnType<t
 		map.set(id, (map.get(id) || 0) + 1)
 	}
 	return map
+}
+
+// Backwards-compatible flat fetch (no replies, no counts)
+async function fetchFlatComments(projectId: string, anon: ReturnType<typeof getAnonServerClient>): Promise<Comment[]> {
+	const { data: rows, error } = await anon
+		.from("comments")
+		.select("id, project_id, author_id, body, created_at, soft_deleted")
+		.eq("project_id", projectId)
+		.eq("soft_deleted", false)
+		.order("created_at", { ascending: false })
+	if (error) throw error
+	const commentRows = (rows || []) as any[]
+	if (commentRows.length === 0) return []
+	const authorIds = Array.from(new Set(commentRows.map((r) => r.author_id as string)))
+	const authors = await fetchOwnersByUserIds(authorIds, anon)
+	return commentRows.map((r) => {
+		const profile = authors.get(r.author_id as string)
+		const author: Profile = { userId: profile?.userId || (r.author_id as string), displayName: profile?.displayName || "User" }
+		return {
+			id: r.id as string,
+			projectId: r.project_id as string,
+			authorId: r.author_id as string,
+			author,
+			body: r.body as string,
+			createdAt: new Date(r.created_at as string),
+			softDeleted: undefined,
+			parentCommentId: null,
+			upvoteCount: 0,
+			hasUserUpvoted: false,
+		}
+	})
 }
 
 export async function addComment(projectId: string, body: string): Promise<{ id: string } | { error: string }> {
