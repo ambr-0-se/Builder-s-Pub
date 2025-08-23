@@ -16,6 +16,7 @@ Key Files
 - Client: `web/lib/supabaseClient.ts` — Supabase browser client
 - Hook: `web/lib/api/auth.ts` — `useAuth()` with `signIn(email, { redirectTo })` and `signOut()`
 - Pages: `web/app/auth/sign-in/page.tsx`, `web/app/auth/callback/page.tsx`
+ - Admin guard: `web/lib/server/admin.ts` — uses `getServerSupabase().auth.getUser()` to read the server session and compares the email against `ADMIN_EMAILS` (no cookie/JWT parsing required)
 
 Environment & Provider Setup
 - Required env vars (client): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -47,4 +48,5 @@ Server action forms
 - Profile edits use a server action form (`<form action={updateMyProfile}>`) instead of a client `fetch` to an API route.
 - Benefits: built-in CSRF protection, fewer moving parts, direct access to auth cookies on the server, simpler redirects (`redirect('/profile')`).
 - The callback posts session tokens to `/api/profile/ensure` once to set server cookies immediately (covers both PKCE and magic-link hash flows).
+ - Admin routes rely on the same server cookies; the server reads the authenticated user via `auth.getUser()`.
 

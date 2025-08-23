@@ -26,6 +26,8 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
   - Files: `web/lib/server/projects.ts`, `docs/SERVER_ACTIONS.md`, `docs/MVP_TECH_SPEC.md`
 
 ### Changed
+- Admin access: server now validates admin email via Supabase server session instead of parsing cookies/JWTs. Adds `/debug-admin` diagnostics page.
+  - Files: `web/lib/server/admin.ts`, `web/app/debug-admin/page.tsx`, docs updated (`docs/ARCHITECTURE.md`, `docs/AUTH.md`).
 - Rate limits added for comments and upvotes
   - Comments/replies: 5/min per user; Upvote toggles: 10/min per user
   - Friendly UI messages include cooldown seconds when available

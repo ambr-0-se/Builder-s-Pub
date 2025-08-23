@@ -34,6 +34,7 @@ Admin Routes
 - `/admin/tags` — tag governance: list existing tags and create new ones
   - Reads use anonymous/public client (RLS select)
   - Writes use service role client on the server; never exposed to the client
+  - Admin auth is validated on the server using `getServerSupabase().auth.getUser()` and an email allowlist from `ADMIN_EMAILS` (no client token parsing).
 
 Security & RLS
 - All writes happen under authenticated sessions; RLS policies enforce owner-only writes and soft delete. See `supabase/rls_policies.sql` and summary in `supabase/schema.md`.

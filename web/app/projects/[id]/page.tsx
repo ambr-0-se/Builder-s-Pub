@@ -89,7 +89,8 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
                 </Button>
               )}
               <UpvoteButton
-                projectId={project.project.id}
+                target="project"
+                targetId={project.project.id}
                 initialCount={project.upvoteCount}
                 hasUserUpvoted={project.hasUserUpvoted}
                 interactive
@@ -110,7 +111,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Comments</h3>
             <CommentCta projectId={project.project.id} />
             <div className="mt-6">
-              <CommentList comments={project.comments} />
+              <CommentList comments={project.comments} projectId={project.project.id} />
             </div>
           </div>
         </div>
