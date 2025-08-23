@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useActionState } from "react"
 import { Textarea } from "@/components/ui/textarea"
@@ -11,12 +11,15 @@ import { showToast } from "@/components/ui/toast"
 
 interface CommentFormProps {
   projectId: string
+  parentCommentId?: string
+  onSuccess?: (body: string) => void
 }
 
-export function CommentForm({ projectId }: CommentFormProps) {
+export function CommentForm({ projectId, parentCommentId, onSuccess }: CommentFormProps) {
   const router = useRouter()
   const [body, setBody] = useState("")
   const [state, formAction] = useActionState<AddCommentState, FormData>(addCommentAction, null)
+  const lastSubmittedBodyRef = useRef("")
 
   const remaining = useMemo(() => 1000 - body.trim().length, [body])
 
@@ -24,11 +27,13 @@ export function CommentForm({ projectId }: CommentFormProps) {
     if (state?.ok) {
       showToast("Comment added", "success")
       setBody("")
+      onSuccess?.(lastSubmittedBodyRef.current)
+      // Use soft-refresh to avoid full tree flicker; server will revalidate list at next navigation
       router.refresh()
     } else if (state?.formError) {
       showToast(state.formError, "error")
     }
-  }, [state, router])
+  }, [state, router, onSuccess])
 
   const Submit = () => {
     const { pending } = useFormStatus()
@@ -40,8 +45,28 @@ export function CommentForm({ projectId }: CommentFormProps) {
   }
 
   return (
-    <form action={formAction} className="space-y-3 text-left">
+    <form
+      action={async (fd: FormData) => {
+        fd.set("projectId", projectId)
+        // Capture body for optimistic callbacks
+        const content = String(fd.get("body") || body)
+        lastSubmittedBodyRef.current = content
+        if (parentCommentId) {
+          const reply = (await import("@/app/projects/actions")).addReplyAction
+          const res = await reply(null, fd as any)
+          if (res && (res as any).ok) {
+            onSuccess?.(content)
+            setBody("")
+            router.refresh()
+          }
+          return
+        }
+        await formAction(fd)
+      }}
+      className="space-y-3 text-left"
+    >
       <input type="hidden" name="projectId" value={projectId} />
+      {parentCommentId && <input type="hidden" name="parentCommentId" value={parentCommentId} />}
       <div>
         <Textarea
           name="body"
