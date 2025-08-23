@@ -174,7 +174,7 @@ Development Plan (MVP)
     - ✅ Analytics: instrument comment add/delete, reply added, upvote toggled events.
   - Done when: authenticated user can add and delete own comments; non-authors cannot delete (RLS enforced); comments render with author name and timestamp; errors display clearly; tests pass; rate limits enforced; this spec and `docs/SERVER_ACTIONS.md` are updated. (Met)
 
-- Stage 7 — Upvotes — Done
+- Stage 7 — Upvotes — Mostly Complete
   - Tasks: `upvoteProject` enforcing single upvote (PK); optimistic UI with rollback; disable after upvote.
   - Implementation notes:
     - ✅ Most upvote functionality implemented in Stage 6: `toggleProjectUpvote`, `toggleCommentUpvote`, optimistic UI with rollback, upvote state persistence.

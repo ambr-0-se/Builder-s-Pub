@@ -5,6 +5,7 @@ import { createProjectSchema } from "@/app/projects/schema"
 import { createProject } from "@/lib/server/projects"
 import { addComment, deleteComment, addReply, toggleCommentUpvote, toggleProjectUpvote } from "@/lib/server/projects"
 import { commentSchema } from "@/app/projects/schema"
+import { useAnalyticsMock } from "@/lib/analytics"
 
 export type CreateProjectState = { fieldErrors?: Record<string, string>; formError?: string } | null
 
@@ -39,7 +40,6 @@ export async function createProjectAction(_: CreateProjectState, formData: FormD
 	return result
 }
 
-
 export type AddCommentState = { fieldErrors?: Record<string, string>; formError?: string; ok?: true; retryAfterSec?: number } | null
 
 export async function addCommentAction(_: AddCommentState, formData: FormData): Promise<AddCommentState> {
@@ -59,9 +59,14 @@ export async function addCommentAction(_: AddCommentState, formData: FormData): 
 		return { fieldErrors }
 	}
 
+	const { track } = useAnalyticsMock()
 	const result = await addComment(projectId, parsed.data.body)
-	if ("id" in result) return { ok: true }
+	if ("id" in result) {
+		track("comment_added", { ok: true, projectId })
+		return { ok: true }
+	}
 	if ((result as any).error === "rate_limited") return { formError: "You’re commenting too fast. Please wait a bit.", retryAfterSec: (result as any).retryAfterSec }
+	track("comment_added", { ok: false, projectId, error: (result as any).error })
 	return { formError: (result as any).error || "failed_to_add_comment" }
 }
 
@@ -71,8 +76,12 @@ export async function deleteCommentAction(_: DeleteCommentState, formData: FormD
 	const commentId = String(formData.get("commentId") || "").trim()
 	if (!commentId) return { formError: "Missing comment id" }
 
+	const { track } = useAnalyticsMock()
 	const result = await deleteComment(commentId)
-	if ("ok" in result) return { ok: true }
+	if ("ok" in result) {
+		track("comment_deleted", { ok: true, commentId })
+		return { ok: true }
+	}
 	return { formError: (result as any).error || "failed_to_delete_comment" }
 }
 
@@ -86,8 +95,12 @@ export async function addReplyAction(_: AddReplyState, formData: FormData): Prom
 	if (!projectId) fieldErrors.projectId = "Missing project id"
 	if (!parentCommentId) fieldErrors.parentCommentId = "Missing parent comment id"
 	if (Object.keys(fieldErrors).length > 0) return { fieldErrors }
+	const { track } = useAnalyticsMock()
 	const result = await addReply(projectId, parentCommentId, body)
-	if ("id" in result) return { ok: true }
+	if ("id" in result) {
+		track("reply_added", { ok: true, projectId, parentCommentId })
+		return { ok: true }
+	}
 	if ((result as any).error === "rate_limited") return { formError: "You’re replying too fast. Please wait a bit.", retryAfterSec: (result as any).retryAfterSec }
 	return { formError: (result as any).error || "failed_to_add_reply" }
 }
@@ -97,18 +110,32 @@ export type ToggleUpvoteState = { formError?: string; ok?: true; upvoted?: boole
 export async function toggleCommentUpvoteAction(_: ToggleUpvoteState, formData: FormData): Promise<ToggleUpvoteState> {
 	const commentId = String(formData.get("commentId") || "").trim()
 	if (!commentId) return { formError: "Missing comment id" }
+	const { track } = useAnalyticsMock()
 	const result = await toggleCommentUpvote(commentId)
-	if ("ok" in result) return { ok: true, upvoted: result.upvoted }
-	if ((result as any).error === "rate_limited") return { formError: "Too many upvotes. Please slow down.", retryAfterSec: (result as any).retryAfterSec }
+	if ("ok" in result) {
+		track("upvote_toggled", { target: "comment", targetId: commentId, upvoted: result.upvoted })
+		return { ok: true, upvoted: result.upvoted }
+	}
+	if ((result as any).error === "rate_limited") {
+		track("upvote_toggled", { target: "comment", targetId: commentId, limited: true, retryAfterSec: (result as any).retryAfterSec })
+		return { formError: "Too many upvotes. Please slow down.", retryAfterSec: (result as any).retryAfterSec }
+	}
 	return { formError: (result as any).error || "failed_to_toggle_upvote" }
 }
 
 export async function toggleProjectUpvoteAction(_: ToggleUpvoteState, formData: FormData): Promise<ToggleUpvoteState> {
 	const projectId = String(formData.get("projectId") || "").trim()
 	if (!projectId) return { formError: "Missing project id" }
+	const { track } = useAnalyticsMock()
 	const result = await toggleProjectUpvote(projectId)
-	if ("ok" in result) return { ok: true, upvoted: result.upvoted }
-	if ((result as any).error === "rate_limited") return { formError: "Too many upvotes. Please slow down.", retryAfterSec: (result as any).retryAfterSec }
+	if ("ok" in result) {
+		track("upvote_toggled", { target: "project", targetId: projectId, upvoted: result.upvoted })
+		return { ok: true, upvoted: result.upvoted }
+	}
+	if ((result as any).error === "rate_limited") {
+		track("upvote_toggled", { target: "project", targetId: projectId, limited: true, retryAfterSec: (result as any).retryAfterSec })
+		return { formError: "Too many upvotes. Please slow down.", retryAfterSec: (result as any).retryAfterSec }
+	}
 	return { formError: (result as any).error || "failed_to_toggle_upvote" }
 }
 
