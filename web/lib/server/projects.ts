@@ -412,3 +412,93 @@ export async function deleteComment(commentId: string): Promise<{ ok: true } | {
 }
 
 
+// --- Replies (1-level) ---
+export async function addReply(projectId: string, parentCommentId: string, body: string): Promise<{ id: string } | { error: string }> {
+	const supabase = await getServerSupabase()
+	const { data: auth } = await supabase.auth.getUser()
+	if (!auth.user) return { error: "unauthorized" }
+
+	const parsed = commentSchema.safeParse({ body })
+	if (!parsed.success) {
+		const first = parsed.error.issues[0]
+		return { error: first?.message || "invalid_input" }
+	}
+
+	// Validate parent: must exist, belong to the same project, and be top-level (no parent of its own)
+	const { data: parent, error: parentErr } = await supabase
+		.from("comments")
+		.select("project_id, parent_comment_id, soft_deleted")
+		.eq("id", parentCommentId)
+		.maybeSingle()
+	if (parentErr) return { error: parentErr.message }
+	if (!parent || parent.soft_deleted) return { error: "not_found" }
+	if (parent.project_id !== projectId) return { error: "invalid_parent_project" }
+	if (parent.parent_comment_id) return { error: "invalid_parent_depth" }
+
+	const { data, error } = await supabase
+		.from("comments")
+		.insert({ project_id: projectId, author_id: auth.user.id, body: parsed.data.body, parent_comment_id: parentCommentId })
+		.select("id")
+		.single()
+	if (error || !data) return { error: error?.message || "failed_to_add_reply" }
+	return { id: data.id as string }
+}
+
+// --- Upvotes (toggle) ---
+export async function toggleProjectUpvote(projectId: string): Promise<{ ok: true; upvoted: boolean } | { error: string }> {
+	const supabase = await getServerSupabase()
+	const { data: auth } = await supabase.auth.getUser()
+	if (!auth.user) return { error: "unauthorized" }
+
+	// Check if already upvoted
+	const { data: existing, error: checkErr } = await supabase
+		.from("project_upvotes")
+		.select("project_id")
+		.eq("project_id", projectId)
+		.eq("user_id", auth.user.id)
+		.maybeSingle()
+	if (checkErr) return { error: checkErr.message }
+
+	if (existing) {
+		const { error: delErr } = await supabase
+			.from("project_upvotes")
+			.delete()
+			.eq("project_id", projectId)
+			.eq("user_id", auth.user.id)
+		if (delErr) return { error: delErr.message }
+		return { ok: true, upvoted: false }
+	}
+
+	const { error: insErr } = await supabase.from("project_upvotes").insert({ project_id: projectId, user_id: auth.user.id })
+	if (insErr) return { error: insErr.message }
+	return { ok: true, upvoted: true }
+}
+
+export async function toggleCommentUpvote(commentId: string): Promise<{ ok: true; upvoted: boolean } | { error: string }> {
+	const supabase = await getServerSupabase()
+	const { data: auth } = await supabase.auth.getUser()
+	if (!auth.user) return { error: "unauthorized" }
+
+	const { data: existing, error: checkErr } = await supabase
+		.from("comment_upvotes")
+		.select("comment_id")
+		.eq("comment_id", commentId)
+		.eq("user_id", auth.user.id)
+		.maybeSingle()
+	if (checkErr) return { error: checkErr.message }
+
+	if (existing) {
+		const { error: delErr } = await supabase
+			.from("comment_upvotes")
+			.delete()
+			.eq("comment_id", commentId)
+			.eq("user_id", auth.user.id)
+		if (delErr) return { error: delErr.message }
+		return { ok: true, upvoted: false }
+	}
+
+	const { error: insErr } = await supabase.from("comment_upvotes").insert({ comment_id: commentId, user_id: auth.user.id })
+	if (insErr) return { error: insErr.message }
+	return { ok: true, upvoted: true }
+}
+
