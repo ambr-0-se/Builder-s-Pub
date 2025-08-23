@@ -157,21 +157,31 @@ Development Plan (MVP)
     - Note: keyword search (`q`) is deferred to Stage 9; current `listProjects` ignores `q`.
   - Done when: create redirects to detail; list supports Recent/Popular and tag filters (AND across types, OR within type). (Met)
 
-- Stage 6 — Comments
+- Stage 6 — Comments (In Progress)
   - Tasks: implement `addComment` and `deleteComment` (author-only); render comment list on project detail; add 1–1000 char validation; wire server actions and UI; add tests and docs.
   - Implementation:
-    - Validation: add `commentSchema` (1–1000) in `web/app/projects/schema.ts`; export types for reuse.
-    - Server: in `web/lib/server/projects.ts` add `addComment(projectId, body)` and `deleteComment(commentId)` using authenticated server client (RLS enforced); update `getProject(id)` to include `comments[]` with author display name and `createdAt`, sorted newest-first; add helper `fetchCommentsByProjectId`.
-    - Server actions: in `web/app/projects/actions.ts` add `addCommentAction` and `deleteCommentAction` to process `FormData`, perform validation, and return typed errors; integrate with server action forms.
-    - UI: create `web/components/features/projects/comment-form.tsx`, `web/components/features/projects/comment-list.tsx`, and `web/components/features/projects/comment-item.tsx`; update `web/components/features/projects/comment-cta.tsx` to show sign-in CTA for anonymous users and the actual form + list for authenticated users.
-    - UX: disable submit while pending; inline validation errors; character counter; success toast; confirm before delete; friendly errors for 401/403/500.
-    - Analytics: instrument comment add/delete events per `docs/ANALYTICS.md`.
-    - Tests: unit tests for schema; integration tests for server add/delete under RLS and `getProject` including comments; optional UI smoke test.
-  - Done when: authenticated user can add and delete own comments; non-authors cannot delete (RLS enforced); comments render with author name and timestamp; errors display clearly; tests pass; this spec and `docs/SERVER_ACTIONS.md` are updated.
+    - ✅ Validation: add `commentSchema` (1–1000) in `web/app/projects/schema.ts`; export types for reuse.
+    - ✅ Server: in `web/lib/server/projects.ts` add `addComment(projectId, body)` and `deleteComment(commentId)` using authenticated server client (RLS enforced); update `getProject(id)` to include `comments[]` with author display name and `createdAt`, sorted newest-first; add helper `fetchCommentsByProjectId`.
+    - ✅ Server actions: in `web/app/projects/actions.ts` add `addCommentAction` and `deleteCommentAction` to process `FormData`, perform validation, and return typed errors; integrate with server action forms.
+    - ✅ UI: create `web/components/features/projects/comment-form.tsx`, `web/components/features/projects/comment-list.tsx`, and `web/components/features/projects/comment-item.tsx`; update `web/components/features/projects/comment-cta.tsx` to show sign-in CTA for anonymous users and the actual form + list for authenticated users.
+    - ✅ UX: disable submit while pending; inline validation errors; character counter; success toast; confirm before delete; friendly errors for 401/403/500.
+    - ✅ Extended features: implemented 1-level comment replies with inline forms, comment upvotes with toggle functionality, and upvote state persistence for both projects and comments.
+    - ✅ Database: added `parent_comment_id` to comments, `comment_upvotes` table, and related indexes/RLS policies.
+    - ✅ Server functions: implemented `addReply`, `toggleCommentUpvote`, `toggleProjectUpvote` with proper validation.
+    - ✅ UI components: generic `UpvoteButton` for both projects and comments with optimistic updates.
+    - ❌ Tests: unit tests for schema; integration tests for server add/delete under RLS and `getProject` including comments; optional UI smoke test.
+    - ❌ Rate limits: per-user throttling (5 comments/min/user and upvote limits).
+    - ❌ Analytics: instrument comment add/delete events per `docs/ANALYTICS.md`.
+  - Done when: authenticated user can add and delete own comments; non-authors cannot delete (RLS enforced); comments render with author name and timestamp; errors display clearly; tests pass; rate limits enforced; this spec and `docs/SERVER_ACTIONS.md` are updated.
 
-- Stage 7 — Upvotes
+- Stage 7 — Upvotes (Mostly Complete)
   - Tasks: `upvoteProject` enforcing single upvote (PK); optimistic UI with rollback; disable after upvote.
-  - Done when: count updates instantly; duplicate upvotes are blocked with a friendly message.
+  - Implementation notes:
+    - ✅ Most upvote functionality implemented in Stage 6: `toggleProjectUpvote`, `toggleCommentUpvote`, optimistic UI with rollback, upvote state persistence.
+    - ✅ Single upvote enforcement via database PK constraints.
+    - ✅ Upvote buttons disable after upvote and show correct visual state.
+    - ❌ Rate limiting: per-user upvote throttling not yet implemented.
+  - Done when: count updates instantly; duplicate upvotes are blocked with a friendly message; rate limits are enforced.
 
 - Stage 8 — Collaboration board
   - Tasks: `create/list/get/update/delete` with owner-only writes; kind and skills substring filters wired to DB.

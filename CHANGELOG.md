@@ -19,6 +19,12 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
   - UI: generic `UpvoteButton` for project/comment; fixed transition warning
   - Files: `supabase/migrations/20250822180000_add_comment_replies_upvotes.sql`, `supabase/rls_policies.sql`, `supabase/schema.md`, `web/lib/server/projects.ts`, `web/app/projects/actions.ts`, `web/components/features/projects/upvote-button.tsx`, `docs/SERVER_ACTIONS.md`
 
+- Upvote state persistence for projects and comments
+  - Server-side `hasUserUpvoted` flag now correctly reflects user's upvote state after page reload
+  - Implemented `fetchUserProjectUpvotes()` and `fetchUserCommentUpvotes()` helper functions
+  - Upvote buttons maintain visual state (filled/outline) across page refreshes
+  - Files: `web/lib/server/projects.ts`, `docs/SERVER_ACTIONS.md`, `docs/MVP_TECH_SPEC.md`
+
 ### Changed
 - Development: Standardized package manager to pnpm and added Corepack setup
   - Enforced via `web/package.json` preinstall guard

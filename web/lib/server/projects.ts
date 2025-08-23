@@ -126,7 +126,7 @@ export async function listProjects(params: ListProjectsParams = {}): Promise<{ i
 		])
 
 		const items = projects
-			.map((p: any) => toProjectWithRelations(p, tagsByProject.get(p.id) || { technology: [], category: [] }, ownersByUser.get(p.owner_id), countMap.get(p.id) || 0))
+			.map((p: any) => toProjectWithRelations(p, tagsByProject.get(p.id) || { technology: [], category: [] }, ownersByUser.get(p.owner_id), countMap.get(p.id) || 0, [], false))
 			.sort((a, b) => {
 				if (b.upvoteCount !== a.upvoteCount) return b.upvoteCount - a.upvoteCount
 				return b.project.createdAt.getTime() - a.project.createdAt.getTime()
@@ -149,7 +149,7 @@ export async function listProjects(params: ListProjectsParams = {}): Promise<{ i
 	])
 
 	const items = (projects as any[]).map((p) =>
-		toProjectWithRelations(p, tagsByProject.get(p.id) || { technology: [], category: [] }, ownersByUser.get(p.owner_id), voteCounts.get(p.id) || 0)
+		toProjectWithRelations(p, tagsByProject.get(p.id) || { technology: [], category: [] }, ownersByUser.get(p.owner_id), voteCounts.get(p.id) || 0, [], false)
 	)
 
 	return { items }
@@ -166,19 +166,25 @@ export async function getProject(id: string): Promise<ProjectWithRelations | nul
 	if (error) throw error
 	if (!p || p.soft_deleted) return null
 
-	const [tags, owner, voteCount] = await Promise.all([
+	// Get current user for upvote state
+	const supabase = await getServerSupabase()
+	const { data: auth } = await supabase.auth.getUser()
+	const currentUserId = auth.user?.id || null
+
+	const [tags, owner, voteCount, userProjectUpvotes] = await Promise.all([
 		fetchTagsByProjectIds([p.id], anon),
 		fetchOwnersByUserIds([p.owner_id], anon),
 		fetchUpvoteCounts([p.id], anon),
+		fetchUserProjectUpvotes([p.id], currentUserId, anon),
 	])
 
 	let comments: Comment[] = []
 	try {
-		comments = await fetchThreadedComments(p.id, anon)
+		comments = await fetchThreadedComments(p.id, anon, currentUserId)
 	} catch (e: any) {
 		// Fallback for environments where migration hasn't run yet (missing columns/tables)
 		if (e && (e.code === "42703" || /column .* does not exist/i.test(String(e.message || "")))) {
-			comments = await fetchFlatComments(p.id, anon)
+			comments = await fetchFlatComments(p.id, anon, currentUserId)
 		} else {
 			throw e
 		}
@@ -187,8 +193,9 @@ export async function getProject(id: string): Promise<ProjectWithRelations | nul
 	const tagMap = tags.get(p.id) || { technology: [], category: [] }
 	const ownerProfile = owner.get(p.owner_id)
 	const upvotes = voteCount.get(p.id) || 0
+	const hasUserUpvoted = userProjectUpvotes.get(p.id) || false
 
-	return toProjectWithRelations(p as any, tagMap, ownerProfile, upvotes, comments)
+	return toProjectWithRelations(p as any, tagMap, ownerProfile, upvotes, comments, hasUserUpvoted)
 }
 
 function toProjectWithRelations(
@@ -196,7 +203,8 @@ function toProjectWithRelations(
 	tags: { technology: Tag[]; category: Tag[] },
  	owner: { userId: string; displayName: string } | undefined,
  	upvoteCount: number,
- 	comments: Comment[] = []
+ 	comments: Comment[] = [],
+ 	hasUserUpvoted: boolean
 ): ProjectWithRelations {
 	return {
 		project: {
@@ -217,7 +225,7 @@ function toProjectWithRelations(
 			userId: owner?.userId || row.owner_id,
 			displayName: owner?.displayName || "User",
 		},
-		hasUserUpvoted: false,
+		hasUserUpvoted,
 	}
 }
 
@@ -276,8 +284,39 @@ async function fetchUpvoteCounts(projectIds: string[], anon: ReturnType<typeof g
 	return map
 }
 
+async function fetchUserProjectUpvotes(projectIds: string[], userId: string | null, anon: ReturnType<typeof getAnonServerClient>) {
+	const map = new Map<string, boolean>()
+	if (projectIds.length === 0 || !userId) return map
+	const { data, error } = await anon
+		.from("project_upvotes")
+		.select("project_id")
+		.in("project_id", projectIds)
+		.eq("user_id", userId)
+	if (error) throw error
+	for (const r of (data || []) as any[]) {
+		const pid = r.project_id as string
+		map.set(pid, true)
+	}
+	return map
+}
 
-async function fetchThreadedComments(projectId: string, anon: ReturnType<typeof getAnonServerClient>): Promise<Comment[]> {
+async function fetchUserCommentUpvotes(commentIds: string[], userId: string | null, anon: ReturnType<typeof getAnonServerClient>) {
+	const map = new Map<string, boolean>()
+	if (commentIds.length === 0 || !userId) return map
+	const { data, error } = await anon
+		.from("comment_upvotes")
+		.select("comment_id")
+		.in("comment_id", commentIds)
+		.eq("user_id", userId)
+	if (error) throw error
+	for (const r of (data || []) as any[]) {
+		const cid = r.comment_id as string
+		map.set(cid, true)
+	}
+	return map
+}
+
+async function fetchThreadedComments(projectId: string, anon: ReturnType<typeof getAnonServerClient>, currentUserId: string | null): Promise<Comment[]> {
 	const { data: topRows, error: topErr } = await anon
 		.from("comments")
 		.select("id, project_id, author_id, body, created_at, soft_deleted")
@@ -323,7 +362,7 @@ async function fetchThreadedComments(projectId: string, anon: ReturnType<typeof 
 			softDeleted: undefined,
 			parentCommentId: (r.parent_comment_id as string) || null,
 			upvoteCount: upvoteCounts.get(r.id as string) || 0,
-			hasUserUpvoted: false,
+			hasUserUpvoted: false, // Will be set after fetching user upvotes
 		}
 	}
 
@@ -333,6 +372,20 @@ async function fetchThreadedComments(projectId: string, anon: ReturnType<typeof 
 		parent.children = replies
 		return parent
 	})
+
+	// Fetch user upvote states for all comments
+	if (currentUserId) {
+		const userUpvotes = await fetchUserCommentUpvotes(allCommentIds, currentUserId, anon)
+		// Update hasUserUpvoted for all comments and replies
+		const updateUpvoteState = (comment: Comment) => {
+			comment.hasUserUpvoted = userUpvotes.get(comment.id) || false
+			if (comment.children) {
+				comment.children.forEach(updateUpvoteState)
+			}
+		}
+		parents.forEach(updateUpvoteState)
+	}
+
 	return parents
 }
 
@@ -350,7 +403,7 @@ async function fetchCommentUpvoteCounts(commentIds: string[], anon: ReturnType<t
 }
 
 // Backwards-compatible flat fetch (no replies, no counts)
-async function fetchFlatComments(projectId: string, anon: ReturnType<typeof getAnonServerClient>): Promise<Comment[]> {
+async function fetchFlatComments(projectId: string, anon: ReturnType<typeof getAnonServerClient>, currentUserId: string | null): Promise<Comment[]> {
 	const { data: rows, error } = await anon
 		.from("comments")
 		.select("id, project_id, author_id, body, created_at, soft_deleted")
@@ -362,9 +415,11 @@ async function fetchFlatComments(projectId: string, anon: ReturnType<typeof getA
 	if (commentRows.length === 0) return []
 	const authorIds = Array.from(new Set(commentRows.map((r) => r.author_id as string)))
 	const authors = await fetchOwnersByUserIds(authorIds, anon)
+	const hasUserUpvotedMap = currentUserId ? await fetchUserCommentUpvotes(commentRows.map((r) => r.id), currentUserId, anon) : new Map<string, boolean>()
 	return commentRows.map((r) => {
 		const profile = authors.get(r.author_id as string)
 		const author: Profile = { userId: profile?.userId || (r.author_id as string), displayName: profile?.displayName || "User" }
+		const hasUserUpvoted = hasUserUpvotedMap.get(r.id) || false
 		return {
 			id: r.id as string,
 			projectId: r.project_id as string,
@@ -375,7 +430,7 @@ async function fetchFlatComments(projectId: string, anon: ReturnType<typeof getA
 			softDeleted: undefined,
 			parentCommentId: null,
 			upvoteCount: 0,
-			hasUserUpvoted: false,
+			hasUserUpvoted,
 		}
 	})
 }
