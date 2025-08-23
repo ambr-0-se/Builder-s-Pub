@@ -13,6 +13,12 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
   - Implemented server functions: `addComment`, `deleteComment`, and included `comments[]` in `getProject`
   - Files: `web/app/projects/schema.ts`, `web/lib/server/projects.ts`, `docs/MVP_TECH_SPEC.md`
 
+- Comment threads and upvotes (partial)
+  - DB: `parent_comment_id` on `comments`, `comment_upvotes`, related indexes and RLS; simple `rate_limits` table
+  - Server: threaded fetch (1-level replies), `addReply`, `toggleCommentUpvote`, `toggleProjectUpvote`
+  - UI: generic `UpvoteButton` for project/comment; fixed transition warning
+  - Files: `supabase/migrations/20250822180000_add_comment_replies_upvotes.sql`, `supabase/rls_policies.sql`, `supabase/schema.md`, `web/lib/server/projects.ts`, `web/app/projects/actions.ts`, `web/components/features/projects/upvote-button.tsx`, `docs/SERVER_ACTIONS.md`
+
 ### Changed
 - Development: Standardized package manager to pnpm and added Corepack setup
   - Enforced via `web/package.json` preinstall guard
@@ -22,6 +28,10 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - Auth/session: Prevent unauthorized server actions after dev restart by syncing server cookies
   - Added `ensureServerSession()` and invoked on `/projects/new`
   - Files: `web/lib/api/auth.ts`, `web/app/projects/new/page.tsx`
+
+- Comments: prevent server error before migration applied
+  - `getProject()` falls back to flat comments when threaded columns are missing
+  - Files: `web/lib/server/projects.ts`
 
 - Toast System: Fixed duplicate success toasts after project creation
   - Implemented sessionStorage-based deduplication with per-project unique keys
