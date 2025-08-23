@@ -70,6 +70,18 @@ create policy upvotes_insert_auth on project_upvotes for insert with check (auth
 drop policy if exists upvotes_delete_own on project_upvotes;
 create policy upvotes_delete_own on project_upvotes for delete using (auth.uid() = user_id);
 
+-- Rate limits (per-user counters for throttling)
+alter table if exists rate_limits enable row level security;
+
+drop policy if exists rate_limits_select_own on rate_limits;
+create policy rate_limits_select_own on rate_limits for select using (auth.uid() = user_id);
+
+drop policy if exists rate_limits_insert_own on rate_limits;
+create policy rate_limits_insert_own on rate_limits for insert with check (auth.uid() = user_id);
+
+drop policy if exists rate_limits_update_own on rate_limits;
+create policy rate_limits_update_own on rate_limits for update using (auth.uid() = user_id);
+
 -- Collaborations
 alter table collaborations enable row level security;
 
