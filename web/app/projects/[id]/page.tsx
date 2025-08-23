@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { getProject } from "@/lib/server/projects"
 import { CommentCta } from "@/components/features/projects/comment-cta"
+import { CommentList } from "@/components/features/projects/comment-list"
 import { UpvoteButton } from "@/components/features/projects/upvote-button"
 import { CreatedToastOnce } from "@/app/projects/[id]/created-toast"
 
@@ -88,7 +89,8 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
                 </Button>
               )}
               <UpvoteButton
-                projectId={project.project.id}
+                target="project"
+                targetId={project.project.id}
                 initialCount={project.upvoteCount}
                 hasUserUpvoted={project.hasUserUpvoted}
                 interactive
@@ -108,6 +110,9 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
           <div className="mt-12 border-t border-gray-200 pt-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Comments</h3>
             <CommentCta projectId={project.project.id} />
+            <div className="mt-6">
+              <CommentList comments={project.comments} projectId={project.project.id} />
+            </div>
           </div>
         </div>
       </div>

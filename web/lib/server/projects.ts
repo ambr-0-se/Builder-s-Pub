@@ -1,9 +1,10 @@
 "use server"
 
 import { createClient } from "@supabase/supabase-js"
-import type { ProjectWithRelations, Tag } from "@/lib/types"
+import type { ProjectWithRelations, Tag, Comment, Profile } from "@/lib/types"
 import { getServerSupabase } from "@/lib/supabaseServer"
 import { createProjectSchema, type CreateProjectInput } from "@/app/projects/schema"
+import { commentSchema } from "@/app/projects/schema"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
@@ -125,7 +126,7 @@ export async function listProjects(params: ListProjectsParams = {}): Promise<{ i
 		])
 
 		const items = projects
-			.map((p: any) => toProjectWithRelations(p, tagsByProject.get(p.id) || { technology: [], category: [] }, ownersByUser.get(p.owner_id), countMap.get(p.id) || 0))
+			.map((p: any) => toProjectWithRelations(p, tagsByProject.get(p.id) || { technology: [], category: [] }, ownersByUser.get(p.owner_id), countMap.get(p.id) || 0, [], false))
 			.sort((a, b) => {
 				if (b.upvoteCount !== a.upvoteCount) return b.upvoteCount - a.upvoteCount
 				return b.project.createdAt.getTime() - a.project.createdAt.getTime()
@@ -148,7 +149,7 @@ export async function listProjects(params: ListProjectsParams = {}): Promise<{ i
 	])
 
 	const items = (projects as any[]).map((p) =>
-		toProjectWithRelations(p, tagsByProject.get(p.id) || { technology: [], category: [] }, ownersByUser.get(p.owner_id), voteCounts.get(p.id) || 0)
+		toProjectWithRelations(p, tagsByProject.get(p.id) || { technology: [], category: [] }, ownersByUser.get(p.owner_id), voteCounts.get(p.id) || 0, [], false)
 	)
 
 	return { items }
@@ -165,24 +166,45 @@ export async function getProject(id: string): Promise<ProjectWithRelations | nul
 	if (error) throw error
 	if (!p || p.soft_deleted) return null
 
-	const [tags, owner, voteCount] = await Promise.all([
+	// Get current user for upvote state
+	const supabase = await getServerSupabase()
+	const { data: auth } = await supabase.auth.getUser()
+	const currentUserId = auth.user?.id || null
+
+	const [tags, owner, voteCount, userProjectUpvotes] = await Promise.all([
 		fetchTagsByProjectIds([p.id], anon),
 		fetchOwnersByUserIds([p.owner_id], anon),
 		fetchUpvoteCounts([p.id], anon),
+		fetchUserProjectUpvotes([p.id], currentUserId, anon),
 	])
+
+	let comments: Comment[] = []
+	try {
+		comments = await fetchThreadedComments(p.id, anon, currentUserId)
+	} catch (e: any) {
+		// Fallback for environments where migration hasn't run yet (missing columns/tables)
+		if (e && (e.code === "42703" || /column .* does not exist/i.test(String(e.message || "")))) {
+			comments = await fetchFlatComments(p.id, anon, currentUserId)
+		} else {
+			throw e
+		}
+	}
 
 	const tagMap = tags.get(p.id) || { technology: [], category: [] }
 	const ownerProfile = owner.get(p.owner_id)
 	const upvotes = voteCount.get(p.id) || 0
+	const hasUserUpvoted = userProjectUpvotes.get(p.id) || false
 
-	return toProjectWithRelations(p as any, tagMap, ownerProfile, upvotes)
+	return toProjectWithRelations(p as any, tagMap, ownerProfile, upvotes, comments, hasUserUpvoted)
 }
 
 function toProjectWithRelations(
 	row: any,
 	tags: { technology: Tag[]; category: Tag[] },
-	owner: { userId: string; displayName: string } | undefined,
-	upvoteCount: number
+ 	owner: { userId: string; displayName: string } | undefined,
+ 	upvoteCount: number,
+ 	comments: Comment[] = [],
+ 	hasUserUpvoted: boolean
 ): ProjectWithRelations {
 	return {
 		project: {
@@ -198,12 +220,12 @@ function toProjectWithRelations(
 		},
 		tags,
 		upvoteCount,
-		comments: [],
+		comments,
 		owner: {
 			userId: owner?.userId || row.owner_id,
 			displayName: owner?.displayName || "User",
 		},
-		hasUserUpvoted: false,
+		hasUserUpvoted,
 	}
 }
 
@@ -262,4 +284,336 @@ async function fetchUpvoteCounts(projectIds: string[], anon: ReturnType<typeof g
 	return map
 }
 
+async function fetchUserProjectUpvotes(projectIds: string[], userId: string | null, anon: ReturnType<typeof getAnonServerClient>) {
+	const map = new Map<string, boolean>()
+	if (projectIds.length === 0 || !userId) return map
+	const { data, error } = await anon
+		.from("project_upvotes")
+		.select("project_id")
+		.in("project_id", projectIds)
+		.eq("user_id", userId)
+	if (error) throw error
+	for (const r of (data || []) as any[]) {
+		const pid = r.project_id as string
+		map.set(pid, true)
+	}
+	return map
+}
+
+async function fetchUserCommentUpvotes(commentIds: string[], userId: string | null, anon: ReturnType<typeof getAnonServerClient>) {
+	const map = new Map<string, boolean>()
+	if (commentIds.length === 0 || !userId) return map
+	const { data, error } = await anon
+		.from("comment_upvotes")
+		.select("comment_id")
+		.in("comment_id", commentIds)
+		.eq("user_id", userId)
+	if (error) throw error
+	for (const r of (data || []) as any[]) {
+		const cid = r.comment_id as string
+		map.set(cid, true)
+	}
+	return map
+}
+
+async function fetchThreadedComments(projectId: string, anon: ReturnType<typeof getAnonServerClient>, currentUserId: string | null): Promise<Comment[]> {
+	const { data: topRows, error: topErr } = await anon
+		.from("comments")
+		.select("id, project_id, author_id, body, created_at, soft_deleted")
+		.eq("project_id", projectId)
+		.is("parent_comment_id", null)
+		.eq("soft_deleted", false)
+		.order("created_at", { ascending: false })
+	if (topErr) throw topErr
+	const parentIds = (topRows || []).map((r: any) => r.id as string)
+
+	let replyMap = new Map<string, any[]>()
+	if (parentIds.length > 0) {
+		const { data: replyRows, error: repErr } = await anon
+			.from("comments")
+			.select("id, project_id, author_id, body, created_at, soft_deleted, parent_comment_id")
+			.in("parent_comment_id", parentIds)
+			.eq("soft_deleted", false)
+			.order("created_at", { ascending: true })
+		if (repErr) throw repErr
+		for (const r of (replyRows || []) as any[]) {
+			const pid = r.parent_comment_id as string
+			if (!replyMap.has(pid)) replyMap.set(pid, [])
+			replyMap.get(pid)!.push(r)
+		}
+	}
+
+	const authorIds = Array.from(new Set([...(topRows || []), ...Array.from(replyMap.values()).flat()].map((r: any) => r.author_id as string)))
+	const authors = await fetchOwnersByUserIds(authorIds, anon)
+
+	const allCommentIds = [...parentIds, ...Array.from(replyMap.values()).flat().map((r: any) => r.id as string)]
+	const upvoteCounts = await fetchCommentUpvoteCounts(allCommentIds, anon)
+
+	const toComment = (r: any): Comment => {
+		const profile = authors.get(r.author_id as string)
+		const author: Profile = { userId: profile?.userId || (r.author_id as string), displayName: profile?.displayName || "User" }
+		return {
+			id: r.id as string,
+			projectId: r.project_id as string,
+			authorId: r.author_id as string,
+			author,
+			body: r.body as string,
+			createdAt: new Date(r.created_at as string),
+			softDeleted: undefined,
+			parentCommentId: (r.parent_comment_id as string) || null,
+			upvoteCount: upvoteCounts.get(r.id as string) || 0,
+			hasUserUpvoted: false, // Will be set after fetching user upvotes
+		}
+	}
+
+	const parents = (topRows || []).map((p: any) => {
+		const parent = toComment(p)
+		const replies = (replyMap.get(p.id as string) || []).map(toComment)
+		parent.children = replies
+		return parent
+	})
+
+	// Fetch user upvote states for all comments
+	if (currentUserId) {
+		const userUpvotes = await fetchUserCommentUpvotes(allCommentIds, currentUserId, anon)
+		// Update hasUserUpvoted for all comments and replies
+		const updateUpvoteState = (comment: Comment) => {
+			comment.hasUserUpvoted = userUpvotes.get(comment.id) || false
+			if (comment.children) {
+				comment.children.forEach(updateUpvoteState)
+			}
+		}
+		parents.forEach(updateUpvoteState)
+	}
+
+	return parents
+}
+
+async function fetchCommentUpvoteCounts(commentIds: string[], anon: ReturnType<typeof getAnonServerClient>) {
+	const map = new Map<string, number>()
+	if (commentIds.length === 0) return map
+	const { data, error } = await anon.from("comment_upvotes").select("comment_id").in("comment_id", commentIds)
+	if (error) throw error
+	for (const id of commentIds) map.set(id, 0)
+	for (const r of (data || []) as any[]) {
+		const id = r.comment_id as string
+		map.set(id, (map.get(id) || 0) + 1)
+	}
+	return map
+}
+
+// Backwards-compatible flat fetch (no replies, no counts)
+async function fetchFlatComments(projectId: string, anon: ReturnType<typeof getAnonServerClient>, currentUserId: string | null): Promise<Comment[]> {
+	const { data: rows, error } = await anon
+		.from("comments")
+		.select("id, project_id, author_id, body, created_at, soft_deleted")
+		.eq("project_id", projectId)
+		.eq("soft_deleted", false)
+		.order("created_at", { ascending: false })
+	if (error) throw error
+	const commentRows = (rows || []) as any[]
+	if (commentRows.length === 0) return []
+	const authorIds = Array.from(new Set(commentRows.map((r) => r.author_id as string)))
+	const authors = await fetchOwnersByUserIds(authorIds, anon)
+	const hasUserUpvotedMap = currentUserId ? await fetchUserCommentUpvotes(commentRows.map((r) => r.id), currentUserId, anon) : new Map<string, boolean>()
+	return commentRows.map((r) => {
+		const profile = authors.get(r.author_id as string)
+		const author: Profile = { userId: profile?.userId || (r.author_id as string), displayName: profile?.displayName || "User" }
+		const hasUserUpvoted = hasUserUpvotedMap.get(r.id) || false
+		return {
+			id: r.id as string,
+			projectId: r.project_id as string,
+			authorId: r.author_id as string,
+			author,
+			body: r.body as string,
+			createdAt: new Date(r.created_at as string),
+			softDeleted: undefined,
+			parentCommentId: null,
+			upvoteCount: 0,
+			hasUserUpvoted,
+		}
+	})
+}
+
+export async function addComment(projectId: string, body: string): Promise<{ id: string } | { error: string; retryAfterSec?: number }> {
+	const supabase = await getServerSupabase()
+	const { data: auth } = await supabase.auth.getUser()
+	if (!auth.user) return { error: "unauthorized" }
+
+	const parsed = commentSchema.safeParse({ body })
+	if (!parsed.success) {
+		const first = parsed.error.issues[0]
+		return { error: first?.message || "invalid_input" }
+	}
+
+	// Rate limit: 5 comments per minute
+	const rl = await checkRateLimit(supabase, { action: "comment_add", userId: auth.user.id, limit: 5, windowSec: 60 })
+	if (rl.limited) return { error: "rate_limited", retryAfterSec: rl.retryAfterSec }
+
+	const { data, error } = await supabase
+		.from("comments")
+		.insert({ project_id: projectId, author_id: auth.user.id, body: parsed.data.body })
+		.select("id")
+		.single()
+
+	if (error || !data) return { error: error?.message || "failed_to_add_comment" }
+	return { id: data.id as string }
+}
+
+export async function deleteComment(commentId: string): Promise<{ ok: true } | { error: string }> {
+	const supabase = await getServerSupabase()
+	const { data: auth } = await supabase.auth.getUser()
+	if (!auth.user) return { error: "unauthorized" }
+
+	const { error } = await supabase.from("comments").delete().eq("id", commentId)
+	if (error) return { error: error.message }
+	return { ok: true }
+}
+
+
+// --- Replies (1-level) ---
+export async function addReply(projectId: string, parentCommentId: string, body: string): Promise<{ id: string } | { error: string; retryAfterSec?: number }> {
+	const supabase = await getServerSupabase()
+	const { data: auth } = await supabase.auth.getUser()
+	if (!auth.user) return { error: "unauthorized" }
+
+	const parsed = commentSchema.safeParse({ body })
+	if (!parsed.success) {
+		const first = parsed.error.issues[0]
+		return { error: first?.message || "invalid_input" }
+	}
+
+	// Validate parent: must exist, belong to the same project, and be top-level (no parent of its own)
+	const { data: parent, error: parentErr } = await supabase
+		.from("comments")
+		.select("project_id, parent_comment_id, soft_deleted")
+		.eq("id", parentCommentId)
+		.maybeSingle()
+	if (parentErr) return { error: parentErr.message }
+	if (!parent || parent.soft_deleted) return { error: "not_found" }
+	if (parent.project_id !== projectId) return { error: "invalid_parent_project" }
+	if (parent.parent_comment_id) return { error: "invalid_parent_depth" }
+
+
+	// Rate limit: 5 replies per minute (same bucket as comments)
+	const rl = await checkRateLimit(supabase, { action: "reply_add", userId: auth.user.id, limit: 5, windowSec: 60 })
+	if (rl.limited) return { error: "rate_limited", retryAfterSec: rl.retryAfterSec }
+
+	const { data, error } = await supabase
+		.from("comments")
+		.insert({ project_id: projectId, author_id: auth.user.id, body: parsed.data.body, parent_comment_id: parentCommentId })
+		.select("id")
+		.single()
+	if (error || !data) return { error: error?.message || "failed_to_add_reply" }
+	return { id: data.id as string }
+}
+
+// --- Upvotes (toggle) ---
+export async function toggleProjectUpvote(projectId: string): Promise<{ ok: true; upvoted: boolean } | { error: string; retryAfterSec?: number }> {
+	const supabase = await getServerSupabase()
+	const { data: auth } = await supabase.auth.getUser()
+	if (!auth.user) return { error: "unauthorized" }
+
+	// Lightweight toggle throttle to prevent abuse
+	const rl = await checkRateLimit(supabase, { action: "upvote_toggle", userId: auth.user.id, limit: 10, windowSec: 60 })
+	if (rl.limited) return { error: "rate_limited", retryAfterSec: rl.retryAfterSec }
+
+	// Check if already upvoted
+	const { data: existing, error: checkErr } = await supabase
+		.from("project_upvotes")
+		.select("project_id")
+		.eq("project_id", projectId)
+		.eq("user_id", auth.user.id)
+		.maybeSingle()
+	if (checkErr) return { error: checkErr.message }
+
+	if (existing) {
+		const { error: delErr } = await supabase
+			.from("project_upvotes")
+			.delete()
+			.eq("project_id", projectId)
+			.eq("user_id", auth.user.id)
+		if (delErr) return { error: delErr.message }
+		return { ok: true, upvoted: false }
+	}
+
+	const { error: insErr } = await supabase.from("project_upvotes").insert({ project_id: projectId, user_id: auth.user.id })
+	if (insErr) return { error: insErr.message }
+	return { ok: true, upvoted: true }
+}
+
+export async function toggleCommentUpvote(commentId: string): Promise<{ ok: true; upvoted: boolean } | { error: string; retryAfterSec?: number }> {
+	const supabase = await getServerSupabase()
+	const { data: auth } = await supabase.auth.getUser()
+	if (!auth.user) return { error: "unauthorized" }
+
+	// Lightweight toggle throttle
+	const rl = await checkRateLimit(supabase, { action: "upvote_toggle", userId: auth.user.id, limit: 10, windowSec: 60 })
+	if (rl.limited) return { error: "rate_limited", retryAfterSec: rl.retryAfterSec }
+
+	const { data: existing, error: checkErr } = await supabase
+		.from("comment_upvotes")
+		.select("comment_id")
+		.eq("comment_id", commentId)
+		.eq("user_id", auth.user.id)
+		.maybeSingle()
+	if (checkErr) return { error: checkErr.message }
+
+	if (existing) {
+		const { error: delErr } = await supabase
+			.from("comment_upvotes")
+			.delete()
+			.eq("comment_id", commentId)
+			.eq("user_id", auth.user.id)
+		if (delErr) return { error: delErr.message }
+		return { ok: true, upvoted: false }
+	}
+
+	const { error: insErr } = await supabase.from("comment_upvotes").insert({ comment_id: commentId, user_id: auth.user.id })
+	if (insErr) return { error: insErr.message }
+	return { ok: true, upvoted: true }
+}
+
+// --- Rate limiting helper ---
+async function checkRateLimit(
+	supabase: Awaited<ReturnType<typeof getServerSupabase>>,
+	{
+		action,
+		userId,
+		limit,
+		windowSec,
+	}: { action: string; userId: string; limit: number; windowSec: number }
+): Promise<{ limited: boolean; retryAfterSec?: number }> {
+	const nowMs = Date.now()
+	const windowMs = windowSec * 1000
+	const windowStartMs = Math.floor(nowMs / windowMs) * windowMs
+	const windowStartIso = new Date(windowStartMs).toISOString()
+
+	// Read current count for this window
+	const { data: existing, error: selErr } = await (supabase as any)
+		.from("rate_limits")
+		.select("count")
+		.eq("action", action)
+		.eq("user_id", userId)
+		.eq("window_start", windowStartIso)
+		.maybeSingle()
+	if (selErr) {
+		// Fail open to avoid blocking if rate limit storage has issues
+		return { limited: false }
+	}
+
+	const current = existing?.count ? Number(existing.count) : 0
+	if (current >= limit) {
+		const retryAfterSec = Math.ceil((windowStartMs + windowMs - nowMs) / 1000)
+		return { limited: true, retryAfterSec }
+	}
+
+	// Increment count via upsert
+	const nextCount = current + 1
+	await (supabase as any)
+		.from("rate_limits")
+		.upsert({ action, user_id: userId, window_start: windowStartIso, count: nextCount }, { onConflict: "action,user_id,window_start" })
+
+	return { limited: false }
+}
 

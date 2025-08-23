@@ -52,6 +52,10 @@ export interface Comment {
   body: string
   createdAt: Date
   softDeleted?: boolean
+  parentCommentId?: string | null
+  upvoteCount?: number
+  hasUserUpvoted?: boolean
+  children?: Comment[]
 }
 
 export interface Collaboration {

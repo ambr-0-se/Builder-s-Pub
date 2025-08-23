@@ -10,23 +10,32 @@ Conventions
 Projects
 - createProject(input): `{ title, tagline, description, demoUrl, sourceUrl?, techTagIds[], categoryTagIds[] } -> { id } | validation_error`
 - listProjects(params): `{ cursor?, limit=20, sort='recent'|'popular', q?, techTagIds?, categoryTagIds? } -> { items[], nextCursor? }`
-- getProject(id): `-> { project, tags: {technology[], category[]}, upvoteCount, comments[] }`
-- upvoteProject(projectId): `-> { ok: true } | { error: 'conflict'|'unauthorized' }` (PK: `project_id,user_id`)
+- getProject(id): `-> { project, tags: {technology[], category[]}, upvoteCount, comments[], hasUserUpvoted }`
+  - comments: top-level newest→oldest; replies oldest→latest; `children[]`, `upvoteCount`, `parentCommentId`, `hasUserUpvoted` (fully implemented)
+- toggleProjectUpvote(projectId): `-> { ok: true, upvoted: boolean } | { error: 'unauthorized' }`
 - updateProject(id, fields): owner-only `-> { ok: true }`
 - deleteProject(id): owner-only `-> { ok: true }`
 
 Implemented (Stage 5)
 - createProject: Implemented. Validates inputs; inserts into `projects` with `owner_id=auth.user.id`; persists tags via `project_tags`; returns `{ id }` or `{ fieldErrors?, formError? }`.
 - listProjects: Implemented (subset). Supports `limit` (default 20), `sort=recent|popular`, and tag filters (AND across types, OR within a type). Keyword `q` is deferred to Stage 9. Returns `{ items[], nextCursor? }`.
-- getProject: Implemented. Returns project, tags grouped by type, owner display name, and `upvoteCount`. `comments[]` remains empty until Stage 6.
+- getProject: Implemented. Returns project, tags grouped by type, owner display name, and `upvoteCount`. Comments updated in Stage 6.
 
 Locations
 - Server: `web/lib/server/projects.ts`
-- Server action (create): `web/app/projects/actions.ts`
+- Server actions: `web/app/projects/actions.ts` (`createProjectAction`, `addCommentAction`, `deleteCommentAction`, `addReplyAction`, `toggleProjectUpvoteAction`, `toggleCommentUpvoteAction`)
 
 Comments
 - addComment(projectId, body 1–1000): `-> { id }`
 - deleteComment(commentId): author-only `-> { ok: true }`
+- addReply(projectId, parentCommentId, body 1–1000): `-> { id }` (parent must be top-level and same project)
+- toggleCommentUpvote(commentId): `-> { ok: true, upvoted: boolean } | { error: 'unauthorized' }`
+
+Rate limits (server-enforced)
+- Comments: max 5 per minute per user (add/reply share separate buckets: `comment_add`, `reply_add`).
+- Upvote toggles (project/comment): max 10 per minute per user (`upvote_toggle`).
+- On limit: server functions return `{ error: 'rate_limited', retryAfterSec }`.
+- Server actions surface a friendly `formError` and include `retryAfterSec` for UI cooldown messaging.
 
 Collaborations
 - createCollab(input): `{ kind, title, description, skills[], region?, commitment? } -> { id }`
@@ -36,12 +45,15 @@ Collaborations
 Validation (UX)
 - Respect limits: Title ≤80, Tagline ≤140, Description ≤4000; URLs must be `http/https`.
 - Tag rules: at least one technology and one category.
+- Comments/Replies: 1–1000 chars; reply allowed only 1 level.
 - Friendly errors: 401/403/409 with actionable messages; retry for 500.
+ - Rate-limited actions include a friendly message plus optional cooldown seconds.
 
 Implementation Pointers
-- Actions should live under `web/app/**/actions.ts` or `web/lib/server/**` (to be added in later stages).
+- Actions should live under `web/app/**/actions.ts` or `web/lib/server/**`.
 - Use Supabase client on the server for DB operations; never expose service role key to client.
 - Index usage: leverage schema indexes for sort/search (see `supabase/schema.md`).
+- Degrade gracefully if migrations aren’t applied (e.g., fallback to flat comments when threaded columns are missing).
 
 Conventions (Search)
 - Case-insensitive substring matching for `q`.

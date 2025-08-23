@@ -9,7 +9,10 @@ Tables
 - tags(id PK, name, type[technology|category])
 - project_tags(project_id FK, tag_id FK) — PK(project_id, tag_id)
 - comments(id PK, project_id FK, author_id FK, body, soft_deleted, created_at)
+ - comments(id PK, project_id FK, author_id FK, parent_comment_id FK, body, soft_deleted, created_at)
 - project_upvotes(project_id FK, user_id FK, created_at) — PK(project_id, user_id)
+ - comment_upvotes(comment_id FK, user_id FK, created_at) — PK(comment_id, user_id)
+ - rate_limits(action, user_id, window_start, count) — simple per-user windowed counter
 - collaborations(id PK, owner_id FK, kind, title, description, skills[], region, commitment, soft_deleted, created_at)
 
 Relationships
@@ -17,6 +20,7 @@ Relationships
 - projects M:1 profiles/auth.users (owner)
 - projects M:N tags via project_tags
 - comments M:1 projects and M:1 profiles/auth.users
+ - comments self-reference via parent_comment_id (single level supported in MVP+)
 - project_upvotes M:1 projects and M:1 profiles/auth.users
 - collaborations M:1 profiles/auth.users
 
@@ -24,6 +28,8 @@ Indexes (key)
 - projects(created_at desc), lower(title), lower(description)
 - project_upvotes(project_id)
 - comments(project_id, created_at desc)
+ - comments(parent_comment_id, created_at asc)
+ - comment_upvotes(comment_id)
 - tags(type, name)
 - project_tags(tag_id, project_id)
 

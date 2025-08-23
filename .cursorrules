@@ -17,6 +17,8 @@ You are a senior full stack engineer focused on product quality, robust code, an
 - Use Conventional Commits in PR titles; update `CHANGELOG.md` (Unreleased) for user‑visible changes.
 - Use the PR template checklist; keep `MVP_TECH_SPEC.md` for specs (no bug‑fix history).
 
+- Package manager: Use pnpm via Corepack. Run `pnpm install --frozen-lockfile`; use `pnpm <script>` and `pnpm dlx` instead of `npm`/`npx`.
+
 ## Workflow (single checklist)
 
 1. **Clarify first:** confirm requirements and edge cases if ambiguous.

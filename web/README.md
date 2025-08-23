@@ -24,14 +24,16 @@ A global hub to showcase AI/vibe-coded student projects. Discover, collaborate, 
 ### Prerequisites
 
 - Node.js 18 LTS (see `.nvmrc`), Node 20 also works
-- npm (recommended). If using npm, pass `--legacy-peer-deps` during install for now
+- pnpm (managed via Corepack)
 
 ### Installation
 
 1. Clone the repository
-2. Install dependencies:
+2. Enable Corepack and install dependencies:
    ```bash
-   npm install --legacy-peer-deps
+   corepack enable
+   corepack prepare pnpm@10 --activate
+   pnpm install --frozen-lockfile
    ```
 
 3. Environment variables:
@@ -42,7 +44,7 @@ A global hub to showcase AI/vibe-coded student projects. Discover, collaborate, 
 
 4. Run the development server on port 3002 (avoids conflicts):
    ```bash
-   npm run dev -- -p 3002
+   pnpm dev -- -p 3002
    ```
 
 5. Open [http://localhost:3002](http://localhost:3002) in your browser

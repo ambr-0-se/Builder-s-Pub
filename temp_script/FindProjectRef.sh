@@ -1,0 +1,2 @@
+# Replace with your actual NEXT_PUBLIC_SUPABASE_URL if not loaded in env
+node -e "const u=process.env.NEXT_PUBLIC_SUPABASE_URL||'https://twpauictnlxgvbjmhzmr.supabase.co'; console.log(new URL(u).host.split('.')[0])"

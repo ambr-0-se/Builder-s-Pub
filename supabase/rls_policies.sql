@@ -40,6 +40,18 @@ create policy comments_insert_auth on comments for insert with check (auth.uid()
 drop policy if exists comments_delete_own on comments;
 create policy comments_delete_own on comments for delete using (auth.uid() = author_id);
 
+-- Comment Upvotes
+alter table if exists comment_upvotes enable row level security;
+
+drop policy if exists comment_upvotes_select_all on comment_upvotes;
+create policy comment_upvotes_select_all on comment_upvotes for select using (true);
+
+drop policy if exists comment_upvotes_insert_auth on comment_upvotes;
+create policy comment_upvotes_insert_auth on comment_upvotes for insert with check (auth.uid() = user_id);
+
+drop policy if exists comment_upvotes_delete_own on comment_upvotes;
+create policy comment_upvotes_delete_own on comment_upvotes for delete using (auth.uid() = user_id);
+
 -- Tags (read-only for public; writes remain admin-only via service role or dashboard)
 alter table tags enable row level security;
 
@@ -57,6 +69,18 @@ create policy upvotes_insert_auth on project_upvotes for insert with check (auth
 
 drop policy if exists upvotes_delete_own on project_upvotes;
 create policy upvotes_delete_own on project_upvotes for delete using (auth.uid() = user_id);
+
+-- Rate limits (per-user counters for throttling)
+alter table if exists rate_limits enable row level security;
+
+drop policy if exists rate_limits_select_own on rate_limits;
+create policy rate_limits_select_own on rate_limits for select using (auth.uid() = user_id);
+
+drop policy if exists rate_limits_insert_own on rate_limits;
+create policy rate_limits_insert_own on rate_limits for insert with check (auth.uid() = user_id);
+
+drop policy if exists rate_limits_update_own on rate_limits;
+create policy rate_limits_update_own on rate_limits for update using (auth.uid() = user_id);
 
 -- Collaborations
 alter table collaborations enable row level security;

@@ -9,7 +9,7 @@ import { useFormStatus } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { useAuth } from "@/lib/api/auth"
+import { useAuth, ensureServerSession } from "@/lib/api/auth"
 import { useAnalyticsMock } from "@/lib/analytics"
 import { showToast } from "@/components/ui/toast"
 import { useTags } from "@/hooks/useTags"
@@ -34,6 +34,13 @@ export default function NewProjectPage() {
   const [state, formAction] = useActionState<CreateProjectState, FormData>(createProjectAction, null)
 
   const errors = state?.fieldErrors || {}
+
+  // Ensure server has session cookies when user is authenticated, so server actions see auth
+  useEffect(() => {
+    if (isAuthenticated) {
+      ensureServerSession()
+    }
+  }, [isAuthenticated])
 
   // Client-side validation for UX (server validation is the source of truth)
   const canSubmit = useMemo(() => {

@@ -1,8 +1,10 @@
 type AnalyticsEvent =
   | "project_created"
   | "project_viewed"
-  | "project_upvoted"
+  | "upvote_toggled"
   | "comment_added"
+  | "comment_deleted"
+  | "reply_added"
   | "collaboration_created"
   | "collaboration_viewed"
   | "search_performed"

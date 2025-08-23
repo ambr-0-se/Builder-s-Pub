@@ -35,3 +35,13 @@ export const createProjectSchema = z.object({
 export type CreateProjectInput = z.infer<typeof createProjectSchema>
 
 
+export const commentSchema = z.object({
+	body: z
+		.string()
+		.trim()
+		.min(1, "Comment cannot be empty")
+		.max(1000, "Comment must be 1000 characters or less"),
+})
+
+export type CreateCommentInput = z.infer<typeof commentSchema>
+

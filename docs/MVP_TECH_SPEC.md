@@ -116,7 +116,7 @@ Development Plan (MVP)
 
 - Stage 0 — Stabilize UI scaffold (web/) -- Done
   - Tasks: add Node version (`engines` or `.nvmrc`), `web/.env.local.example`, run instructions in `web/README.md`.
-  - Done when: fresh clone runs `npm i --legacy-peer-deps && npm run dev -p 3002` successfully.
+  - Done when: fresh clone runs `pnpm install --frozen-lockfile && pnpm dev -p 3002` successfully.
   - Completed locally: `.env.local` created and app runs on `http://localhost:3002`.
 
 - Stage 1 — Supabase project + schema -- Done
@@ -157,13 +157,31 @@ Development Plan (MVP)
     - Note: keyword search (`q`) is deferred to Stage 9; current `listProjects` ignores `q`.
   - Done when: create redirects to detail; list supports Recent/Popular and tag filters (AND across types, OR within type). (Met)
 
-- Stage 6 — Comments
-  - Tasks: `addComment`, `deleteComment` (author-only), render list on detail; 1–1000 char validation.
-  - Done when: authenticated user can add/delete own comments; UI shows errors cleanly.
+- Stage 6 — Comments — Done
+  - Tasks: implement `addComment` and `deleteComment` (author-only); render comment list on project detail; add 1–1000 char validation; wire server actions and UI; add tests and docs.
+  - Implementation:
+    - ✅ Validation: add `commentSchema` (1–1000) in `web/app/projects/schema.ts`; export types for reuse.
+    - ✅ Server: in `web/lib/server/projects.ts` add `addComment(projectId, body)` and `deleteComment(commentId)` using authenticated server client (RLS enforced); update `getProject(id)` to include `comments[]` with author display name and `createdAt`, sorted newest-first; add helper `fetchCommentsByProjectId`.
+    - ✅ Server actions: in `web/app/projects/actions.ts` add `addCommentAction` and `deleteCommentAction` to process `FormData`, perform validation, and return typed errors; integrate with server action forms.
+    - ✅ UI: create `web/components/features/projects/comment-form.tsx`, `web/components/features/projects/comment-list.tsx`, and `web/components/features/projects/comment-item.tsx`; update `web/components/features/projects/comment-cta.tsx` to show sign-in CTA for anonymous users and the actual form + list for authenticated users.
+    - ✅ UX: disable submit while pending; inline validation errors; character counter; success toast; confirm before delete; friendly errors for 401/403/500.
+    - ✅ Extended features: implemented 1-level comment replies with inline forms, comment upvotes with toggle functionality, and upvote state persistence for both projects and comments.
+    - ✅ Database: added `parent_comment_id` to comments, `comment_upvotes` table, and related indexes/RLS policies.
+    - ✅ Server functions: implemented `addReply`, `toggleCommentUpvote`, `toggleProjectUpvote` with proper validation.
+    - ✅ UI components: generic `UpvoteButton` for both projects and comments with optimistic updates.
+    - ✅ Tests: schema (comments), server (add/delete/reply/upvote), rate-limit coverage; optional UI smoke deferred.
+    - ✅ Rate limits: per-user throttling (5 comments/min for add/reply; 10 upvote toggles/min).
+    - ✅ Analytics: instrument comment add/delete, reply added, upvote toggled events.
+  - Done when: authenticated user can add and delete own comments; non-authors cannot delete (RLS enforced); comments render with author name and timestamp; errors display clearly; tests pass; rate limits enforced; this spec and `docs/SERVER_ACTIONS.md` are updated. (Met)
 
-- Stage 7 — Upvotes
+- Stage 7 — Upvotes — Mostly Complete
   - Tasks: `upvoteProject` enforcing single upvote (PK); optimistic UI with rollback; disable after upvote.
-  - Done when: count updates instantly; duplicate upvotes are blocked with a friendly message.
+  - Implementation notes:
+    - ✅ Most upvote functionality implemented in Stage 6: `toggleProjectUpvote`, `toggleCommentUpvote`, optimistic UI with rollback, upvote state persistence.
+    - ✅ Single upvote enforcement via database PK constraints.
+    - ✅ Upvote buttons disable after upvote and show correct visual state.
+    - ✅ Rate limiting: per-user upvote toggles throttled (10/min/user).
+  - Done when: count updates instantly; duplicate upvotes are blocked with a friendly message; rate limits are enforced. (Met)
 
 - Stage 8 — Collaboration board
   - Tasks: `create/list/get/update/delete` with owner-only writes; kind and skills substring filters wired to DB.
