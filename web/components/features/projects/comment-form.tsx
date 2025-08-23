@@ -31,7 +31,8 @@ export function CommentForm({ projectId, parentCommentId, onSuccess }: CommentFo
       // Use soft-refresh to avoid full tree flicker; server will revalidate list at next navigation
       router.refresh()
     } else if (state?.formError) {
-      showToast(state.formError, "error")
+      const suffix = state.retryAfterSec ? ` Try again in ~${state.retryAfterSec}s.` : ""
+      showToast(state.formError + suffix, "error")
     }
   }, [state, router, onSuccess])
 

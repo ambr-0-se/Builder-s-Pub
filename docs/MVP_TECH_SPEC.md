@@ -170,7 +170,7 @@ Development Plan (MVP)
     - ✅ Server functions: implemented `addReply`, `toggleCommentUpvote`, `toggleProjectUpvote` with proper validation.
     - ✅ UI components: generic `UpvoteButton` for both projects and comments with optimistic updates.
     - ❌ Tests: unit tests for schema; integration tests for server add/delete under RLS and `getProject` including comments; optional UI smoke test.
-    - ❌ Rate limits: per-user throttling (5 comments/min/user and upvote limits).
+    - ✅ Rate limits: per-user throttling (5 comments/min for add/reply; 10 upvote toggles/min).
     - ❌ Analytics: instrument comment add/delete events per `docs/ANALYTICS.md`.
   - Done when: authenticated user can add and delete own comments; non-authors cannot delete (RLS enforced); comments render with author name and timestamp; errors display clearly; tests pass; rate limits enforced; this spec and `docs/SERVER_ACTIONS.md` are updated.
 

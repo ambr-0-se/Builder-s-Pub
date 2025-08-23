@@ -40,7 +40,7 @@ export async function createProjectAction(_: CreateProjectState, formData: FormD
 }
 
 
-export type AddCommentState = { fieldErrors?: Record<string, string>; formError?: string; ok?: true } | null
+export type AddCommentState = { fieldErrors?: Record<string, string>; formError?: string; ok?: true; retryAfterSec?: number } | null
 
 export async function addCommentAction(_: AddCommentState, formData: FormData): Promise<AddCommentState> {
 	// Validate inputs from form
@@ -61,6 +61,7 @@ export async function addCommentAction(_: AddCommentState, formData: FormData): 
 
 	const result = await addComment(projectId, parsed.data.body)
 	if ("id" in result) return { ok: true }
+	if ((result as any).error === "rate_limited") return { formError: "You’re commenting too fast. Please wait a bit.", retryAfterSec: (result as any).retryAfterSec }
 	return { formError: (result as any).error || "failed_to_add_comment" }
 }
 
@@ -76,7 +77,7 @@ export async function deleteCommentAction(_: DeleteCommentState, formData: FormD
 }
 
 // Replies
-export type AddReplyState = { fieldErrors?: Record<string, string>; formError?: string; ok?: true } | null
+export type AddReplyState = { fieldErrors?: Record<string, string>; formError?: string; ok?: true; retryAfterSec?: number } | null
 export async function addReplyAction(_: AddReplyState, formData: FormData): Promise<AddReplyState> {
 	const projectId = String(formData.get("projectId") || "").trim()
 	const parentCommentId = String(formData.get("parentCommentId") || "").trim()
@@ -87,16 +88,18 @@ export async function addReplyAction(_: AddReplyState, formData: FormData): Prom
 	if (Object.keys(fieldErrors).length > 0) return { fieldErrors }
 	const result = await addReply(projectId, parentCommentId, body)
 	if ("id" in result) return { ok: true }
+	if ((result as any).error === "rate_limited") return { formError: "You’re replying too fast. Please wait a bit.", retryAfterSec: (result as any).retryAfterSec }
 	return { formError: (result as any).error || "failed_to_add_reply" }
 }
 
 // Upvotes toggle
-export type ToggleUpvoteState = { formError?: string; ok?: true; upvoted?: boolean } | null
+export type ToggleUpvoteState = { formError?: string; ok?: true; upvoted?: boolean; retryAfterSec?: number } | null
 export async function toggleCommentUpvoteAction(_: ToggleUpvoteState, formData: FormData): Promise<ToggleUpvoteState> {
 	const commentId = String(formData.get("commentId") || "").trim()
 	if (!commentId) return { formError: "Missing comment id" }
 	const result = await toggleCommentUpvote(commentId)
 	if ("ok" in result) return { ok: true, upvoted: result.upvoted }
+	if ((result as any).error === "rate_limited") return { formError: "Too many upvotes. Please slow down.", retryAfterSec: (result as any).retryAfterSec }
 	return { formError: (result as any).error || "failed_to_toggle_upvote" }
 }
 
@@ -105,6 +108,7 @@ export async function toggleProjectUpvoteAction(_: ToggleUpvoteState, formData: 
 	if (!projectId) return { formError: "Missing project id" }
 	const result = await toggleProjectUpvote(projectId)
 	if ("ok" in result) return { ok: true, upvoted: result.upvoted }
+	if ((result as any).error === "rate_limited") return { formError: "Too many upvotes. Please slow down.", retryAfterSec: (result as any).retryAfterSec }
 	return { formError: (result as any).error || "failed_to_toggle_upvote" }
 }
 

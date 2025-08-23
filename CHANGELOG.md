@@ -26,6 +26,12 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
   - Files: `web/lib/server/projects.ts`, `docs/SERVER_ACTIONS.md`, `docs/MVP_TECH_SPEC.md`
 
 ### Changed
+- Rate limits added for comments and upvotes
+  - Comments/replies: 5/min per user; Upvote toggles: 10/min per user
+  - Friendly UI messages include cooldown seconds when available
+  - Files: `web/lib/server/projects.ts`, `web/app/projects/actions.ts`, `web/components/features/projects/comment-form.tsx`, `web/components/features/projects/upvote-button.tsx`, `docs/SERVER_ACTIONS.md`, `docs/MVP_TECH_SPEC.md`
+
+### Changed
 - Development: Standardized package manager to pnpm and added Corepack setup
   - Enforced via `web/package.json` preinstall guard
   - Docs updated: `ops/ENVIRONMENT.md`, `web/README.md`, `docs/MVP_TECH_SPEC.md`, `web/SPECIFICATION.md`

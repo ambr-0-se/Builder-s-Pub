@@ -435,7 +435,7 @@ async function fetchFlatComments(projectId: string, anon: ReturnType<typeof getA
 	})
 }
 
-export async function addComment(projectId: string, body: string): Promise<{ id: string } | { error: string }> {
+export async function addComment(projectId: string, body: string): Promise<{ id: string } | { error: string; retryAfterSec?: number }> {
 	const supabase = await getServerSupabase()
 	const { data: auth } = await supabase.auth.getUser()
 	if (!auth.user) return { error: "unauthorized" }
@@ -445,6 +445,10 @@ export async function addComment(projectId: string, body: string): Promise<{ id:
 		const first = parsed.error.issues[0]
 		return { error: first?.message || "invalid_input" }
 	}
+
+	// Rate limit: 5 comments per minute
+	const rl = await checkRateLimit(supabase, { action: "comment_add", userId: auth.user.id, limit: 5, windowSec: 60 })
+	if (rl.limited) return { error: "rate_limited", retryAfterSec: rl.retryAfterSec }
 
 	const { data, error } = await supabase
 		.from("comments")
@@ -468,7 +472,7 @@ export async function deleteComment(commentId: string): Promise<{ ok: true } | {
 
 
 // --- Replies (1-level) ---
-export async function addReply(projectId: string, parentCommentId: string, body: string): Promise<{ id: string } | { error: string }> {
+export async function addReply(projectId: string, parentCommentId: string, body: string): Promise<{ id: string } | { error: string; retryAfterSec?: number }> {
 	const supabase = await getServerSupabase()
 	const { data: auth } = await supabase.auth.getUser()
 	if (!auth.user) return { error: "unauthorized" }
@@ -490,6 +494,11 @@ export async function addReply(projectId: string, parentCommentId: string, body:
 	if (parent.project_id !== projectId) return { error: "invalid_parent_project" }
 	if (parent.parent_comment_id) return { error: "invalid_parent_depth" }
 
+
+	// Rate limit: 5 replies per minute (same bucket as comments)
+	const rl = await checkRateLimit(supabase, { action: "reply_add", userId: auth.user.id, limit: 5, windowSec: 60 })
+	if (rl.limited) return { error: "rate_limited", retryAfterSec: rl.retryAfterSec }
+
 	const { data, error } = await supabase
 		.from("comments")
 		.insert({ project_id: projectId, author_id: auth.user.id, body: parsed.data.body, parent_comment_id: parentCommentId })
@@ -500,10 +509,14 @@ export async function addReply(projectId: string, parentCommentId: string, body:
 }
 
 // --- Upvotes (toggle) ---
-export async function toggleProjectUpvote(projectId: string): Promise<{ ok: true; upvoted: boolean } | { error: string }> {
+export async function toggleProjectUpvote(projectId: string): Promise<{ ok: true; upvoted: boolean } | { error: string; retryAfterSec?: number }> {
 	const supabase = await getServerSupabase()
 	const { data: auth } = await supabase.auth.getUser()
 	if (!auth.user) return { error: "unauthorized" }
+
+	// Lightweight toggle throttle to prevent abuse
+	const rl = await checkRateLimit(supabase, { action: "upvote_toggle", userId: auth.user.id, limit: 10, windowSec: 60 })
+	if (rl.limited) return { error: "rate_limited", retryAfterSec: rl.retryAfterSec }
 
 	// Check if already upvoted
 	const { data: existing, error: checkErr } = await supabase
@@ -529,10 +542,14 @@ export async function toggleProjectUpvote(projectId: string): Promise<{ ok: true
 	return { ok: true, upvoted: true }
 }
 
-export async function toggleCommentUpvote(commentId: string): Promise<{ ok: true; upvoted: boolean } | { error: string }> {
+export async function toggleCommentUpvote(commentId: string): Promise<{ ok: true; upvoted: boolean } | { error: string; retryAfterSec?: number }> {
 	const supabase = await getServerSupabase()
 	const { data: auth } = await supabase.auth.getUser()
 	if (!auth.user) return { error: "unauthorized" }
+
+	// Lightweight toggle throttle
+	const rl = await checkRateLimit(supabase, { action: "upvote_toggle", userId: auth.user.id, limit: 10, windowSec: 60 })
+	if (rl.limited) return { error: "rate_limited", retryAfterSec: rl.retryAfterSec }
 
 	const { data: existing, error: checkErr } = await supabase
 		.from("comment_upvotes")
@@ -555,5 +572,48 @@ export async function toggleCommentUpvote(commentId: string): Promise<{ ok: true
 	const { error: insErr } = await supabase.from("comment_upvotes").insert({ comment_id: commentId, user_id: auth.user.id })
 	if (insErr) return { error: insErr.message }
 	return { ok: true, upvoted: true }
+}
+
+// --- Rate limiting helper ---
+async function checkRateLimit(
+	supabase: Awaited<ReturnType<typeof getServerSupabase>>,
+	{
+		action,
+		userId,
+		limit,
+		windowSec,
+	}: { action: string; userId: string; limit: number; windowSec: number }
+): Promise<{ limited: boolean; retryAfterSec?: number }> {
+	const nowMs = Date.now()
+	const windowMs = windowSec * 1000
+	const windowStartMs = Math.floor(nowMs / windowMs) * windowMs
+	const windowStartIso = new Date(windowStartMs).toISOString()
+
+	// Read current count for this window
+	const { data: existing, error: selErr } = await (supabase as any)
+		.from("rate_limits")
+		.select("count")
+		.eq("action", action)
+		.eq("user_id", userId)
+		.eq("window_start", windowStartIso)
+		.maybeSingle()
+	if (selErr) {
+		// Fail open to avoid blocking if rate limit storage has issues
+		return { limited: false }
+	}
+
+	const current = existing?.count ? Number(existing.count) : 0
+	if (current >= limit) {
+		const retryAfterSec = Math.ceil((windowStartMs + windowMs - nowMs) / 1000)
+		return { limited: true, retryAfterSec }
+	}
+
+	// Increment count via upsert
+	const nextCount = current + 1
+	await (supabase as any)
+		.from("rate_limits")
+		.upsert({ action, user_id: userId, window_start: windowStartIso, count: nextCount }, { onConflict: "action,user_id,window_start" })
+
+	return { limited: false }
 }
 

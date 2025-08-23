@@ -31,6 +31,12 @@ Comments
 - addReply(projectId, parentCommentId, body 1–1000): `-> { id }` (parent must be top-level and same project)
 - toggleCommentUpvote(commentId): `-> { ok: true, upvoted: boolean } | { error: 'unauthorized' }`
 
+Rate limits (server-enforced)
+- Comments: max 5 per minute per user (add/reply share separate buckets: `comment_add`, `reply_add`).
+- Upvote toggles (project/comment): max 10 per minute per user (`upvote_toggle`).
+- On limit: server functions return `{ error: 'rate_limited', retryAfterSec }`.
+- Server actions surface a friendly `formError` and include `retryAfterSec` for UI cooldown messaging.
+
 Collaborations
 - createCollab(input): `{ kind, title, description, skills[], region?, commitment? } -> { id }`
 - listCollabs(params): `{ cursor?, limit=20, q?, kind?, skills? } -> { items[], nextCursor? }`
@@ -41,6 +47,7 @@ Validation (UX)
 - Tag rules: at least one technology and one category.
 - Comments/Replies: 1–1000 chars; reply allowed only 1 level.
 - Friendly errors: 401/403/409 with actionable messages; retry for 500.
+ - Rate-limited actions include a friendly message plus optional cooldown seconds.
 
 Implementation Pointers
 - Actions should live under `web/app/**/actions.ts` or `web/lib/server/**`.
