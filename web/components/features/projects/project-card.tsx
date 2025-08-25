@@ -7,6 +7,7 @@ import type { ProjectWithRelations } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useAnalyticsMock } from "@/lib/analytics"
+import { UpvoteButton } from "@/components/features/projects/upvote-button"
 
 interface ProjectCardProps {
   project: ProjectWithRelations
@@ -34,16 +35,13 @@ export function ProjectCard({ project }: ProjectCardProps) {
           </div>
         </div>
 
-        <Button variant={"outline"} size="sm" disabled className="flex flex-col items-center min-w-[60px] h-auto py-2 shrink-0">
-          <svg className="w-4 h-4 mb-1" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <span className="text-xs">{project.upvoteCount}</span>
-        </Button>
+        <UpvoteButton
+          target="project"
+          targetId={project.project.id}
+          initialCount={project.upvoteCount}
+          hasUserUpvoted={project.hasUserUpvoted}
+          interactive={false}
+        />
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4">

@@ -300,6 +300,15 @@ async function fetchUserProjectUpvotes(projectIds: string[], userId: string | nu
 	return map
 }
 
+// Exposed helper: returns a map of projectId -> true for projects upvoted by current user
+export async function getUserProjectUpvotesMap(projectIds: string[]): Promise<Map<string, boolean>> {
+    const supabase = await getServerSupabase()
+    const { data: auth } = await supabase.auth.getUser()
+    const currentUserId = auth.user?.id || null
+    const anon = getAnonServerClient()
+    return fetchUserProjectUpvotes(projectIds, currentUserId, anon)
+}
+
 async function fetchUserCommentUpvotes(commentIds: string[], userId: string | null, anon: ReturnType<typeof getAnonServerClient>) {
 	const map = new Map<string, boolean>()
 	if (commentIds.length === 0 || !userId) return map
