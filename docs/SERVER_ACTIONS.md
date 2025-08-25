@@ -10,9 +10,10 @@ Conventions
 Projects
 - createProject(input): `{ title, tagline, description, demoUrl, sourceUrl?, techTagIds[], categoryTagIds[] } -> { id } | validation_error`
 - listProjects(params): `{ cursor?, limit=20, sort='recent'|'popular', q?, techTagIds?, categoryTagIds? } -> { items[], nextCursor? }`
+  - Note: when invoked via the API route (`/api/projects/list`) with a valid session, each item may include `hasUserUpvoted` based on the current user's upvotes (personalized server augmentation).
 - getProject(id): `-> { project, tags: {technology[], category[]}, upvoteCount, comments[], hasUserUpvoted }`
   - comments: top-level newest→oldest; replies oldest→latest; `children[]`, `upvoteCount`, `parentCommentId`, `hasUserUpvoted` (fully implemented)
-- toggleProjectUpvote(projectId): `-> { ok: true, upvoted: boolean } | { error: 'unauthorized' }`
+- toggleProjectUpvote(projectId): `-> { ok: true, upvoted: boolean } | { error: 'unauthorized'|'rate_limited' }`
 - updateProject(id, fields): owner-only `-> { ok: true }`
 - deleteProject(id): owner-only `-> { ok: true }`
 

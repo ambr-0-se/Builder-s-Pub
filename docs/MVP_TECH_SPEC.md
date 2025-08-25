@@ -181,7 +181,9 @@ Development Plan (MVP)
     - ✅ Single upvote enforcement via database PK constraints.
     - ✅ Upvote buttons disable after upvote and show correct visual state.
     - ✅ Rate limiting: per-user upvote toggles throttled (10/min/user).
-  - Done when: count updates instantly; duplicate upvotes are blocked with a friendly message; rate limits are enforced. (Met)
+    - ✅ Lists consistency: landing (Featured + Trending) and `/projects` use non-interactive `UpvoteButton`; if user previously upvoted, the button appears darkened.
+    - ✅ Personalization: `/api/projects/list` attaches `hasUserUpvoted` for authenticated users; anonymous users omit this field.
+  - Done when: count updates instantly; duplicate upvotes are blocked with a friendly message; rate limits are enforced; list/landing show consistent non-interactive upvote UI with prior-upvote darkening. (Met)
 
 - Stage 8 — Collaboration board
   - Tasks: `create/list/get/update/delete` with owner-only writes; kind and skills substring filters wired to DB.
@@ -214,8 +216,9 @@ Development Plan (MVP)
   - Tasks: happy-path tests for server actions; doc updates in this file and `supabase/schema.md`; deploy `web/` to Vercel.
   - Done when: green build on main; smoke tests pass on preview.
 
-
 - Stage 14 — Collaboration visibility (auth-only)
   - Tasks: gate `/collaborations` and `/collaborations/[id]` behind authentication; anonymous users are redirected to sign-in or see a friendly login-required screen; update navbar/links to hide collaboration entry points for non-auth users; enforce RLS to deny `select` on collaboration tables for anon; update tests and docs accordingly.
   - Done when: non-logged-in users cannot view collaboration lists or details (server and client enforced); logged-in users retain normal access.
+
+- Stage 15 - About us (Goal, Vision, Team)
 

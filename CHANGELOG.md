@@ -29,6 +29,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
   - Files: `web/lib/server/projects.ts`, `docs/SERVER_ACTIONS.md`, `docs/MVP_TECH_SPEC.md`
 
 ### Changed
+- Upvotes UI consistency (Stage 7): Landing (Featured + Trending) and `/projects` now reuse the non-interactive `UpvoteButton`; if the signed-in user previously upvoted a project, the button appears darkened. API route `/api/projects/list` augments responses with `hasUserUpvoted` for authenticated users.
 - Admin access: server now validates admin email via Supabase server session instead of parsing cookies/JWTs. Adds `/debug-admin` diagnostics page.
   - Files: `web/lib/server/admin.ts`, `web/app/debug-admin/page.tsx`, docs updated (`docs/ARCHITECTURE.md`, `docs/AUTH.md`).
 - Rate limits added for comments and upvotes

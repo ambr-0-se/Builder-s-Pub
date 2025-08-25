@@ -126,7 +126,6 @@ export function UpvoteButton({ target, targetId, initialCount, hasUserUpvoted, i
       onBlur={onBlur}
       className="flex flex-col items-center min-w-[60px] h-auto py-2"
       aria-label={!isAuthenticated ? "Sign in to upvote" : label}
-      title={!isAuthenticated ? "Sign in to upvote" : undefined}
       title={lastError || (!isAuthenticated ? "Sign in to upvote" : undefined)}
     >
       <svg className="w-4 h-4 mb-1" fill="currentColor" viewBox="0 0 20 20">

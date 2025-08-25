@@ -3,6 +3,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { listProjects } from "@/lib/server/projects"
+import { UpvoteButton } from "@/components/features/projects/upvote-button"
 import { listCollabs } from "@/lib/api/mockCollabs"
 import { getAllTagsServer } from "@/lib/server/tags"
 import type { Tag } from "@/lib/types"
@@ -88,7 +89,13 @@ export default async function HomePage() {
                       </Badge>
                     ))}
                   </div>
-                  <span className="text-sm text-gray-500">{project.upvoteCount} upvotes</span>
+                  <UpvoteButton
+                    target="project"
+                    targetId={project.project.id}
+                    initialCount={project.upvoteCount}
+                    hasUserUpvoted={project.hasUserUpvoted}
+                    interactive={false}
+                  />
                 </div>
               </div>
             ))}
@@ -115,7 +122,13 @@ export default async function HomePage() {
                   </Link>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-500">by {project.owner.displayName}</span>
-                    <span className="text-xs text-gray-500">{project.upvoteCount} upvotes</span>
+                    <UpvoteButton
+                      target="project"
+                      targetId={project.project.id}
+                      initialCount={project.upvoteCount}
+                      hasUserUpvoted={project.hasUserUpvoted}
+                      interactive={false}
+                    />
                   </div>
                 </div>
               ))}
