@@ -5,7 +5,7 @@ export const createProjectSchema = z.object({
 		.string()
 		.trim()
 		.min(1, "Title is required")
-		.max(80, "Title must be 80 characters or less"),
+		.max(160, "Title must be 160 characters or less"),
 	tagline: z
 		.string()
 		.trim()
