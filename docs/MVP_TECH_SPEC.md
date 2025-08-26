@@ -186,8 +186,43 @@ Development Plan (MVP)
   - Done when: count updates instantly; duplicate upvotes are blocked with a friendly message; rate limits are enforced; list/landing show consistent non-interactive upvote UI with prior-upvote darkening. (Met)
 
 - Stage 8 — Collaboration board
-  - Tasks: `create/list/get/update/delete` with owner-only writes; kind and skills substring filters wired to DB.
-  - Done when: CRUD works under RLS; list filters return expected results.
+  - Scope: Replace mocks with real CRUD under RLS and expand fields per PRD. Provide form (`/collaborations/new`), list (`/collaborations`), and detail (`/collaborations/[id]`) with upvotes and comments.
+  - Data model (MVP, implemented):
+    - `collaborations` extended with:
+      - `affiliated_org text`
+      - `project_types text[]` (multi-select; replaces legacy `project_type`)
+      - `is_hiring boolean not null default true`
+      - `stage text` in one of: ideation, planning, requirements_analysis, design, mvp_development, testing_validation, implementation_deployment, monitoring_maintenance, evaluation_closure, scaling, adding_features
+      - `looking_for jsonb` array of items: `{ role text, amount int default 1, prerequisite text?, goodToHave text?, description text? }`
+      - `contact text`, `remarks text`
+      - `kind text` retained for board segmentation (UI hidden in form)
+    - `collaboration_tags(collaboration_id uuid, tag_id int)` — PK(collaboration_id, tag_id)
+    - `collaboration_upvotes(collaboration_id uuid, user_id uuid, created_at)` — PK(collaboration_id, user_id)
+    - `collab_comments(id uuid, collaboration_id uuid, author_id uuid, body text, parent_comment_id uuid null, soft_deleted bool, created_at)`
+    - Indexes: `collaborations(created_at desc)`, `collab_comments(parent_comment_id, created_at asc)`, `collaboration_tags(tag_id, collaboration_id)`, `collaboration_upvotes(collaboration_id)`
+  - RLS (implemented):
+    - collaborations: select `soft_deleted=false`; insert/update/delete only `owner_id=auth.uid()`
+    - collaboration_tags: select all; insert/delete only owner (via join to collaboration)
+    - collaboration_upvotes: select all; insert/delete only same `user_id`
+    - collab_comments: select `soft_deleted=false`; insert only author; delete only author
+  - Validation & contracts (implemented):
+    - CreateCollabInput: { title ≤160, affiliatedOrg?, projectTypes string[], description 1–4000, stage enum, lookingFor 1–5 items { role 1–80, amount 1–99 default 1, prerequisite ≤400, goodToHave ≤400, description ≤1200 }, contact ≤200, remarks ≤1000, techTagIds[], categoryTagIds[] }
+    - UpdateCollabInput: partial variant with same constraints plus `isHiring? boolean`
+    - List filters: default `is_hiring=true`; supports kind? (for board tab) and case-insensitive substring over role/prerequisite/goodToHave/description in `looking_for`
+  - Routes & server actions (implemented):
+    - Server module `web/lib/server/collabs.ts`: `createCollab`, `listCollabs`, `getCollab`, `updateCollab`, `deleteCollab`, `toggleCollabUpvote`, `addCollabComment`, `deleteCollabComment`
+    - Server actions `web/app/collaborations/actions.ts`: `createCollabAction`, `updateCollabAction`, `deleteCollabAction`, `toggleCollabUpvoteAction`, `addCollabCommentAction`, `deleteCollabCommentAction`
+  - UI/UX (implemented):
+    - Form `/collaborations/new`: Title (≤160) → Project Types (chips, multi-select) → Stage (default MVP Development) → Affiliated Organisation → Project Description → Roles Hiring (1–5 compact cards with Role + Amount + details/prereq/goodToHave/description with counters) → Contact → Remarks → Tech Tags → Category Tags. Kind removed from UI.
+    - List `/collaborations`: filters Kind + skills substring; shows owner/date, project type chips, top roles; hidden closed posts by default (`is_hiring=true`).
+    - Detail `/collaborations/[id]`: shows all fields, project type chips, upvote button, threaded comments, and an unverified-post warning.
+    - Hiring toggle: owner-only client button with optimistic update; non-owners see read-only badge.
+  - Analytics (implemented): `collaboration_created|updated|deleted`, `upvote_toggled` (target=collaboration), `collab_comment_added|deleted`.
+  - Done when (current status):
+    - Authenticated owners can create/update/delete own collaboration; others cannot (RLS enforced). ✅
+    - List returns filtered results (skills substring) and hides closed posts by default. ✅
+    - Detail supports upvote and comments; warning banner visible; tags load from DB; hiring toggle works. ✅
+    - Docs updated in this file, `supabase/schema.md`, and `docs/SERVER_ACTIONS.md`. ✅
 
 - Stage 9 — Search + pagination
   - Tasks:
@@ -220,5 +255,5 @@ Development Plan (MVP)
   - Tasks: gate `/collaborations` and `/collaborations/[id]` behind authentication; anonymous users are redirected to sign-in or see a friendly login-required screen; update navbar/links to hide collaboration entry points for non-auth users; enforce RLS to deny `select` on collaboration tables for anon; update tests and docs accordingly.
   - Done when: non-logged-in users cannot view collaboration lists or details (server and client enforced); logged-in users retain normal access.
 
-- Stage 15 - About us (Goal, Vision, Team)
+- Stage 15 - About us (Goal, Vision, Team), Error Page
 

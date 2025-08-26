@@ -50,7 +50,7 @@ export default function NewProjectPage() {
     const demoUrl = formData.demoUrl.trim()
 
     return (
-      title.length > 0 && title.length <= 80 &&
+      title.length > 0 && title.length <= 160 &&
       tagline.length > 0 && tagline.length <= 140 &&
       description.length > 0 && description.length <= 4000 &&
       demoUrl.length > 0 && /^https?:\/\//.test(demoUrl) &&
@@ -114,9 +114,9 @@ export default function NewProjectPage() {
             onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
             placeholder="Enter your project title"
             error={errors.title}
-            maxLength={80}
+            maxLength={160}
           />
-          <p className="text-xs text-gray-500 mt-1">{formData.title.length}/80 characters</p>
+          <p className="text-xs text-gray-500 mt-1">{formData.title.length}/160 characters</p>
         </div>
 
         <div>

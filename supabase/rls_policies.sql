@@ -97,3 +97,52 @@ create policy collab_update_own on collaborations for update using (auth.uid() =
 drop policy if exists collab_delete_own on collaborations;
 create policy collab_delete_own on collaborations for delete using (auth.uid() = owner_id);
 
+-- Collaboration Tags (join table)
+alter table if exists collaboration_tags enable row level security;
+
+drop policy if exists collaboration_tags_select_all on collaboration_tags;
+create policy collaboration_tags_select_all on collaboration_tags for select using (true);
+
+-- Only the owner of the collaboration can modify its tags
+drop policy if exists collaboration_tags_insert_owner on collaboration_tags;
+create policy collaboration_tags_insert_owner on collaboration_tags for insert with check (
+  exists (
+    select 1 from collaborations c
+    where c.id = collaboration_id and c.owner_id = auth.uid()
+  )
+);
+
+drop policy if exists collaboration_tags_delete_owner on collaboration_tags;
+create policy collaboration_tags_delete_owner on collaboration_tags for delete using (
+  exists (
+    select 1 from collaborations c
+    where c.id = collaboration_id and c.owner_id = auth.uid()
+  )
+);
+
+-- Collaboration Upvotes
+alter table if exists collaboration_upvotes enable row level security;
+
+drop policy if exists collab_upvotes_select_all on collaboration_upvotes;
+create policy collab_upvotes_select_all on collaboration_upvotes for select using (true);
+
+drop policy if exists collab_upvotes_insert_auth on collaboration_upvotes;
+create policy collab_upvotes_insert_auth on collaboration_upvotes for insert with check (auth.uid() = user_id);
+
+drop policy if exists collab_upvotes_delete_own on collaboration_upvotes;
+create policy collab_upvotes_delete_own on collaboration_upvotes for delete using (auth.uid() = user_id);
+
+-- Collaboration Comments (top-level only for MVP)
+alter table if exists collab_comments enable row level security;
+
+drop policy if exists collab_comments_select_all on collab_comments;
+create policy collab_comments_select_all on collab_comments for select using (soft_deleted = false);
+
+drop policy if exists collab_comments_insert_auth on collab_comments;
+create policy collab_comments_insert_auth on collab_comments for insert with check (auth.uid() = author_id);
+
+drop policy if exists collab_comments_delete_own on collab_comments;
+create policy collab_comments_delete_own on collab_comments for delete using (auth.uid() = author_id);
+
+-- Replies allowed only if parent belongs to same collaboration; enforced at app level. RLS already covers author-only inserts.
+

@@ -35,7 +35,7 @@ describe("createProjectSchema", () => {
 	it("enforces URL and length constraints", async () => {
 		const { createProjectSchema } = await import("@/app/projects/schema")
 		const { success, error } = createProjectSchema.safeParse({
-			title: "x".repeat(81),
+			title: "x".repeat(161),
 			tagline: "y".repeat(141),
 			description: "z".repeat(4001),
 			demoUrl: "ftp://nope",

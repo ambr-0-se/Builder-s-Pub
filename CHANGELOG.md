@@ -7,6 +7,14 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- Collaboration Board (Stage 8):
+  - Real CRUD with RLS; new fields (affiliated org, project types[], stage, looking_for with amount, contact, remarks, is_hiring).
+  - Pages: `/collaborations/new`, `/collaborations`, `/collaborations/[id]` with upvotes and threaded comments.
+  - Owner-only “Hiring/No longer hiring” toggle with optimistic UI; list hides closed by default.
+  - Project type chips; form re-ordered; Title ≤160.
+  - Docs updated: `docs/MVP_TECH_SPEC.md`, `docs/SERVER_ACTIONS.md`, `supabase/schema.md`.
+
+### Added
 - Stage 6 complete: comments with replies, upvotes (project/comment), optimistic UI, rate limits, and analytics events. Docs updated.
 
 

@@ -13,7 +13,7 @@ Tables
 - project_upvotes(project_id FK, user_id FK, created_at) — PK(project_id, user_id)
  - comment_upvotes(comment_id FK, user_id FK, created_at) — PK(comment_id, user_id)
  - rate_limits(action, user_id, window_start, count) — simple per-user windowed counter
-- collaborations(id PK, owner_id FK, kind, title, description, skills[], region, commitment, soft_deleted, created_at)
+- collaborations(id PK, owner_id FK, kind, title, description, affiliated_org, project_types text[], stage, looking_for jsonb, contact, remarks, is_hiring boolean, soft_deleted, created_at)
 
 Relationships
 - profiles 1:1 auth.users
@@ -43,5 +43,5 @@ Notes (Stage 3 Profiles)
 - projects: select soft_deleted=false; insert/update/delete only owner
 - comments: select soft_deleted=false; insert only author; delete only author
 - project_upvotes: select all; insert/delete only same user
-- collaborations: select soft_deleted=false; insert/update/delete only owner
+- collaborations: select soft_deleted=false; insert/update/delete only owner; `is_hiring` controls default list visibility
 

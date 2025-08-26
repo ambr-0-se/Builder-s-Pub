@@ -23,8 +23,8 @@ Implemented (Stage 5)
 - getProject: Implemented. Returns project, tags grouped by type, owner display name, and `upvoteCount`. Comments updated in Stage 6.
 
 Locations
-- Server: `web/lib/server/projects.ts`
-- Server actions: `web/app/projects/actions.ts` (`createProjectAction`, `addCommentAction`, `deleteCommentAction`, `addReplyAction`, `toggleProjectUpvoteAction`, `toggleCommentUpvoteAction`)
+- Projects server: `web/lib/server/projects.ts`; actions: `web/app/projects/actions.ts` (`createProjectAction`, `addCommentAction`, `deleteCommentAction`, `addReplyAction`, `toggleProjectUpvoteAction`, `toggleCommentUpvoteAction`)
+- Collaborations server: `web/lib/server/collabs.ts`; actions: `web/app/collaborations/actions.ts`
 
 Comments
 - addComment(projectId, body 1–1000): `-> { id }`
@@ -39,9 +39,14 @@ Rate limits (server-enforced)
 - Server actions surface a friendly `formError` and include `retryAfterSec` for UI cooldown messaging.
 
 Collaborations
-- createCollab(input): `{ kind, title, description, skills[], region?, commitment? } -> { id }`
-- listCollabs(params): `{ cursor?, limit=20, q?, kind?, skills? } -> { items[], nextCursor? }`
-- getCollab(id), updateCollab(id, fields), deleteCollab(id): owner-only modifies
+- createCollab(input): `{ title≤160, affiliatedOrg?, projectTypes[], description 1–4000, stage, lookingFor[1..5]{ role, amount(1..99), prerequisite≤400, goodToHave≤400, description≤1200 }, contact≤200, remarks≤1000, techTagIds[], categoryTagIds[] } -> { id } | validation_error`
+- listCollabs(params): `{ cursor?, limit=20, kind?, skills?, includeClosed? } -> { items[], nextCursor? }` (defaults to `is_hiring=true`)
+- getCollab(id): `-> { collaboration, tags, owner, upvoteCount, hasUserUpvoted, comments }`
+- updateCollab(id, fields): owner-only, fields optional: `{ title?, affiliatedOrg?, description?, stage?, lookingFor?, contact?, remarks?, isHiring? } -> { ok: true } | validation_error`
+- deleteCollab(id): owner-only `-> { ok: true }`
+- toggleCollabUpvote(collaborationId): `-> { ok: true, upvoted: boolean } | { error: 'unauthorized'|'rate_limited' }`
+- addCollabComment(collaborationId, body 1–1000, parentCommentId?): `-> { id } | { error }`
+- deleteCollabComment(commentId): `-> { ok: true } | { error }`
 
 Validation (UX)
 - Respect limits: Title ≤80, Tagline ≤140, Description ≤4000; URLs must be `http/https`.
