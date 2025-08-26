@@ -19,6 +19,16 @@ Data Flow (MVP)
   - Client components use thin wrappers in `web/lib/api/**` that call `/api/**` routes.
 - Contracts live in `docs/SERVER_ACTIONS.md` and `docs/MVP_TECH_SPEC.md`.
 
+Collaborations
+- Server module: `web/lib/server/collabs.ts` encapsulates DB access for collaborations (CRUD, tag joins, upvote toggle, threaded comments, hiring toggle).
+- Server actions: `web/app/collaborations/actions.ts` provides typed endpoints for client components (`createCollabAction`, `updateCollabAction`, `deleteCollabAction`, `toggleCollabUpvoteAction`, `addCollabCommentAction`, `deleteCollabCommentAction`).
+- Pages:
+  - `/collaborations` (server): calls `listCollabs` directly and renders project type chips; defaults to `is_hiring=true`.
+  - `/collaborations/new` (client): server action form for creation; DB tags via `useTags()`.
+  - `/collaborations/[id]` (server): calls `getCollab`; renders owner-only hiring toggle (client) and threaded comments.
+- Auth & RLS: all writes require authenticated Supabase session; RLS enforces owner-only writes and public reads for non-deleted rows. Hiring toggle updates `is_hiring` under owner session.
+- Optimistic UI: upvote button and hiring toggle perform optimistic updates with rollback on server error; comments add/delete also use optimistic flows.
+
 Projects (Stage 5)
 - Implemented: `createProject`, `listProjects`, `getProject` in `web/lib/server/projects.ts` with Zod validation in `web/app/projects/schema.ts` and a server action `web/app/projects/actions.ts` for creation.
 - Listing:
