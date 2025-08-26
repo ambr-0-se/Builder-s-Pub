@@ -6,6 +6,10 @@ type AnalyticsEvent =
   | "comment_deleted"
   | "reply_added"
   | "collaboration_created"
+  | "collaboration_updated"
+  | "collaboration_deleted"
+  | "collab_comment_added"
+  | "collab_comment_deleted"
   | "collaboration_viewed"
   | "search_performed"
   | "filters_applied"
@@ -17,4 +21,10 @@ export function useAnalyticsMock() {
   }
 
   return { track }
+}
+
+// Server-safe tracker to avoid hook naming in server actions
+export function trackServer(event: AnalyticsEvent, properties?: Record<string, any>) {
+  // TODO: Replace with real analytics service when available
+  console.log(`[Analytics] ${event}`, properties)
 }

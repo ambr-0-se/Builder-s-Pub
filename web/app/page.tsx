@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { listProjects } from "@/lib/server/projects"
 import { UpvoteButton } from "@/components/features/projects/upvote-button"
-import { listCollabs } from "@/lib/api/mockCollabs"
+import { listCollabs } from "@/lib/server/collabs"
 import { getAllTagsServer } from "@/lib/server/tags"
 import type { Tag } from "@/lib/types"
 
@@ -29,7 +29,18 @@ export default async function HomePage() {
   } catch (_) {
     popularProjects = []
   }
-  const { items: collaborations } = await listCollabs({ limit: 3 })
+  let collaborations: Array<{ id: string; title: string; kind: string; rolesCount: number }> = []
+  try {
+    const { items } = await listCollabs({ limit: 3 })
+    collaborations = items.map((it) => ({
+      id: it.collaboration.id,
+      title: it.collaboration.title,
+      kind: it.collaboration.kind,
+      rolesCount: (it.collaboration.lookingFor || []).length,
+    }))
+  } catch (_) {
+    collaborations = []
+  }
   // Load tags from DB with fallback for errors
   let popularTags: Array<{ id: number; name: string; type: string }> = []
   try {
@@ -153,7 +164,7 @@ export default async function HomePage() {
                     <Badge variant="outline" className="text-xs">
                       {collab.kind}
                     </Badge>
-                    <span className="text-xs text-gray-500">{collab.skills.length} skills</span>
+                    <span className="text-xs text-gray-500">{collab.rolesCount} roles</span>
                   </div>
                 </div>
               ))}
