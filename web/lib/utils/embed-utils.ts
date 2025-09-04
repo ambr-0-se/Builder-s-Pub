@@ -52,7 +52,10 @@ export function parseEmbedUrl(rawUrl: string): ParsedEmbed {
       videoId = url.pathname.split("/")[2] || ""
     }
     if (videoId) {
-      const embed = new URL(`https://www.youtube.com/embed/${videoId}`)
+      const embed = new URL(`https://www.youtube-nocookie.com/embed/${videoId}`)
+      // Improve UX and reduce suggested unrelated videos
+      embed.searchParams.set("modestbranding", "1")
+      embed.searchParams.set("rel", "0")
       const t = url.searchParams.get("t") || url.searchParams.get("start")
       if (t) embed.searchParams.set("start", t)
       return { kind: "youtube", embedUrl: embed.toString(), originalUrl: rawUrl }
@@ -68,8 +71,8 @@ export function parseEmbedUrl(rawUrl: string): ParsedEmbed {
 }
 
 export function getIframeSandbox(): string {
-  // allow presentation for full screen; block top-navigation etc.
-  return "allow-scripts allow-same-origin allow-popups allow-presentation"
+  // Allow presentation/fullscreen; permit popups to escape sandbox and user-initiated top navigation for YouTube's link
+  return "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation allow-presentation"
 }
 
 export function getIframeReferrerPolicy(): React.HTMLAttributeReferrerPolicy {
