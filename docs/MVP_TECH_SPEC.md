@@ -204,8 +204,10 @@ Development Plan (MVP)
     - Tag/type filters and q can be used independently or together.
 
 - Stage 10 — Demo embed + SEO
-  - Tasks: `DemoEmbed` (YouTube/Vercel inline; else external link); add `Metadata` to key routes and OG on project detail.
-  - Done when: supported demos embed; titles/descriptions render for core pages.
+  - Tasks: `DemoEmbed` (YouTube/Vercel inline; else external link); add `Metadata` to key routes and OG on project detail; dynamic sitemap.xml generation.
+  - Implementation: Create reusable `DemoEmbed` component with URL detection for YouTube/Vercel; enhance project detail SEO with OpenGraph/structured data; add metadata to core pages; implement dynamic sitemap.
+  - Security: Domain allowlisting, iframe sandboxing, URL validation for embed safety.
+  - Done when: supported demos embed inline; comprehensive metadata on all core pages; sitemap.xml generates dynamically; security measures prevent malicious embeds.
 
 - Stage 11 — Rate limits (MVP-light)
   - Tasks: simple per-user throttling (edge function or table) for create/comment/upvote to meet targets.
