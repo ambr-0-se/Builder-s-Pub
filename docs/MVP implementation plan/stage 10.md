@@ -73,7 +73,7 @@ Ensure robust testing coverage and update all relevant documentation.
 - **Error Handling:** Fallback to external link button when embedding fails
 - **Accessibility:** Proper ARIA labels and keyboard navigation
 
-**Status:** ⏳ Pending
+**Status:** ✅ Completed
 
 ---
 
@@ -125,7 +125,7 @@ Ensure robust testing coverage and update all relevant documentation.
 - `web/app/collaborations/page.tsx`  
 - `web/app/search/page.tsx`
 
-**Status:** ⏳ Pending
+**Status:** ✅ Completed
 
 ---
 
@@ -287,8 +287,8 @@ At each step in 'Actionable and specific steps':
 | 3. DemoEmbed Component UI | ⏳ Pending | - | - | |
 | 4. Integration into Project Page | ✅ Completed | 4/9/2025 | 4/9/2025 | Embed added between header and description |
 | 5. Project Detail SEO | ✅ Completed | 4/9/2025 | 4/9/2025 | Added OG + Twitter metadata |
-| 6. Core Pages Metadata | ⏳ Pending | - | - | |
-| 7. Dynamic Sitemap | ⏳ Pending | - | - | |
+| 6. Core Pages Metadata | ✅ Completed | 4/9/2025 | 4/9/2025 | Added layout metadata for /projects, /collaborations, /search |
+| 7. Dynamic Sitemap | ✅ Completed | 4/9/2025 | 4/9/2025 | Added /sitemap.xml route + tests |
 | 8. DemoEmbed Tests | ✅ Completed | 4/9/2025 | 4/9/2025 | Added embed-utils tests, all green |
 | 9. SEO Integration Tests | ✅ Completed | 4/9/2025 | 4/9/2025 | Added generateMetadata tests |
 | 10. Documentation Updates | ⏳ Pending | - | - | |
