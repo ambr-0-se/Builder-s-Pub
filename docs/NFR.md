@@ -24,7 +24,8 @@ Accessibility
 - Color contrast AA for text; alt text for images/media.
 
 SEO
-- Canonical URLs, sitemap.xml, robots.txt. OG tags for project pages.
+- Canonical URLs, sitemap.xml (implemented), robots.txt. OG tags for project pages.
+- Add `robots.txt` with a `Sitemap: https://<domain>/sitemap.xml` reference (recommended).
 - Descriptive titles/meta; friendly slugs where applicable.
 
 Privacy

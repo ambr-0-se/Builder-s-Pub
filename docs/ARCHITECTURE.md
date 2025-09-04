@@ -39,6 +39,12 @@ Projects (Stage 5)
   - Popular: in-memory order by upvote count (from `project_upvotes`) then `created_at desc`.
   - Tag filters: AND across types (technology/category), OR within a type.
 
+Demo Embeds (Stage 10)
+- Project detail pages render demos with `DemoEmbed`.
+- Domain allowlist supports YouTube (via `youtube-nocookie.com`) and Vercel apps.
+- Iframe sandbox is restrictive but allows user‑initiated navigation for YouTube’s in‑frame link.
+- Non‑embeddable demos gracefully fall back to an external “View Demo” link.
+
 Admin Routes
 - `/admin` — dashboard for admin-only actions (email allowlist via `ADMIN_EMAILS`)
 - `/admin/tags` — tag governance: list existing tags and create new ones

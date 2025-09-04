@@ -185,14 +185,14 @@ Development Plan (MVP)
     - ✅ Personalization: `/api/projects/list` attaches `hasUserUpvoted` for authenticated users; anonymous users omit this field.
   - Done when: count updates instantly; duplicate upvotes are blocked with a friendly message; rate limits are enforced; list/landing show consistent non-interactive upvote UI with prior-upvote darkening. (Met)
 
-- Stage 8 — Collaboration board
+- Stage 8 — Collaboration board — Done
   - Scope: Replace mocks with real CRUD under RLS and expand fields per PRD. Provide form (`/collaborations/new`), list (`/collaborations`), and detail (`/collaborations/[id]`) with upvotes and comments.
   - Data model (MVP, implemented):
     - `collaborations` extended with: affiliated org, project_types text[], is_hiring, stage enum-ish text, looking_for jsonb, contact, remarks.
     - Relations: `collaboration_tags`, `collaboration_upvotes`, `collab_comments`.
   - UX: creation form, list with chips and hiring toggle, detail with comments.
 
-- Stage 9 — Search + pagination
+- Stage 9 — Search + pagination — Done
   - Tasks:
     - Implement unified /search supporting type=projects|collabs (tabs or param).
     - Add q? keyword search and ranking per “Search & Trending”.
@@ -203,9 +203,11 @@ Development Plan (MVP)
     - /search returns expected results for both types with the ranking rules.
     - Tag/type filters and q can be used independently or together.
 
-- Stage 10 — Demo embed + SEO
-  - Tasks: `DemoEmbed` (YouTube/Vercel inline; else external link); add `Metadata` to key routes and OG on project detail.
-  - Done when: supported demos embed; titles/descriptions render for core pages.
+- Stage 10 — Demo embed + SEO — Done
+  - Tasks: `DemoEmbed` (YouTube/Vercel inline; else external link); add `Metadata` to key routes and OG on project detail; dynamic sitemap.xml generation.
+  - Implementation: Create reusable `DemoEmbed` component with URL detection for YouTube/Vercel; enhance project detail SEO with OpenGraph/structured data; add metadata to core pages; implement dynamic sitemap.
+  - Security: Domain allowlisting, iframe sandboxing, URL validation for embed safety.
+  - Done when: supported demos embed inline; comprehensive metadata on all core pages; sitemap.xml generates dynamically; security measures prevent malicious embeds.
 
 - Stage 11 — Rate limits (MVP-light)
   - Tasks: simple per-user throttling (edge function or table) for create/comment/upvote to meet targets.

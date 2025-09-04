@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { listCollabs } from "@/lib/server/collabs"
 import { Badge } from "@/components/ui/badge"

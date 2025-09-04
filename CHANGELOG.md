@@ -7,6 +7,12 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- Stage 10: Demo Embed + SEO
+  - Inline demo embedding (YouTube, Vercel) with sandbox + allowlist and graceful fallback.
+  - Project detail SEO metadata (OpenGraph + Twitter).
+  - Core page metadata for /projects, /collaborations, /search.
+  - Dynamic sitemap.xml with recent items.
+  - Tests for embed utils, metadata, and sitemap route.
 - Search (Stage 9):
   - Unified `/search` for Projects and Collaborations with keyword (`q`) and filter chips.
   - Projects: ranking title > tagline > description; cursor pagination; API accepts `q` and `cursor`.
