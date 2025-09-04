@@ -1,8 +1,9 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
 import { parseEmbedUrl, getIframeSandbox, getIframeReferrerPolicy } from "@/lib/utils/embed-utils"
+import { AspectRatio } from "@/components/ui/aspect-ratio"
 
 interface DemoEmbedProps {
   url: string
@@ -12,8 +13,10 @@ interface DemoEmbedProps {
 
 export function DemoEmbed({ url, title = "Project demo", className }: DemoEmbedProps) {
   const parsed = useMemo(() => parseEmbedUrl(url), [url])
+  const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
 
-  if (parsed.kind === "unsupported" || !parsed.embedUrl) {
+  if (parsed.kind === "unsupported" || !parsed.embedUrl || hasError) {
     return (
       <div className={cn("border border-gray-200 rounded-lg p-4 bg-white", className)}>
         <div className="flex items-center justify-between">
@@ -40,17 +43,43 @@ export function DemoEmbed({ url, title = "Project demo", className }: DemoEmbedP
 
   return (
     <div className={cn("w-full overflow-hidden rounded-lg border border-gray-200 bg-white", className)}>
-      <div className={cn("w-full", heightClass)}>
-        <iframe
-          title={title}
-          src={parsed.embedUrl}
-          className={cn(isVideo ? "w-full h-full" : "w-full h-[600px]")}
-          loading="lazy"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          referrerPolicy={getIframeReferrerPolicy()}
-          sandbox={getIframeSandbox()}
-        />
-      </div>
+      {isVideo ? (
+        <AspectRatio ratio={16 / 9}>
+          <div className="w-full h-full relative">
+            {isLoading && (
+              <div className="absolute inset-0 animate-pulse bg-gray-100" aria-hidden="true" />
+            )}
+            <iframe
+              title={title}
+              src={parsed.embedUrl}
+              className="w-full h-full"
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy={getIframeReferrerPolicy()}
+              sandbox={getIframeSandbox()}
+              onLoad={() => setIsLoading(false)}
+              onError={() => setHasError(true)}
+              allowFullScreen
+            />
+          </div>
+        </AspectRatio>
+      ) : (
+        <div className={cn("w-full", heightClass)}>
+          {isLoading && (
+            <div className="w-full h-[600px] animate-pulse bg-gray-100" aria-hidden="true" />
+          )}
+          <iframe
+            title={title}
+            src={parsed.embedUrl}
+            className="w-full h-[600px]"
+            loading="lazy"
+            referrerPolicy={getIframeReferrerPolicy()}
+            sandbox={getIframeSandbox()}
+            onLoad={() => setIsLoading(false)}
+            onError={() => setHasError(true)}
+          />
+        </div>
+      )}
     </div>
   )
 }
