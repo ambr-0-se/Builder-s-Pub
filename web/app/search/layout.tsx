@@ -1,11 +1,11 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Search - Builder's Pub",
-  description: "Search projects and collaborations by keyword, tags, stages, and types.",
+  title: "Search AI Projects & Opportunities | Builder’s Pub",
+  description: "Find the latest AI projects and teams seeking collaborators. Filter by LLMs, AI agents, Computer Vision, startups, productivity, and research.",
   openGraph: {
-    title: "Search - Builder's Pub",
-    description: "Search projects and collaborations by keyword, tags, stages, and types.",
+    title: "Search AI Projects & Opportunities | Builder’s Pub",
+    description: "Find the latest AI projects and teams seeking collaborators. Filter by LLMs, AI agents, Computer Vision, startups, productivity, and research.",
     type: "website",
   },
 }
