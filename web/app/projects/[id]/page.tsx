@@ -24,13 +24,24 @@ export async function generateMetadata({ params }: ProjectDetailPageProps): Prom
     }
   }
 
+  const title = `${project.project.title} - Builder's Pub`
+  const description = project.project.tagline
+  const url = `https://builders.pub/projects/${project.project.id}`
+
   return {
-    title: `${project.project.title} - Builder's Pub`,
-    description: project.project.tagline,
+    title,
+    description,
     openGraph: {
-      title: project.project.title,
-      description: project.project.tagline,
+      title,
+      description,
       type: "article",
+      url,
+      siteName: "Builder's Pub",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
     },
   }
 }

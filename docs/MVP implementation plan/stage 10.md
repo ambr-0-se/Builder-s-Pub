@@ -91,7 +91,7 @@ Ensure robust testing coverage and update all relevant documentation.
 **Files to modify:**
 - `web/app/projects/[id]/page.tsx`
 
-**Status:** ⏳ Pending
+**Status:** ✅ Completed
 
 ---
 
@@ -106,7 +106,7 @@ Ensure robust testing coverage and update all relevant documentation.
 - **JSON-LD Structured Data:** Machine-readable project information for search engines
 - **Twitter Cards:** Optimized Twitter sharing experience
 
-**Status:** ⏳ Pending
+**Status:** ✅ Completed
 
 ---
 
@@ -180,7 +180,7 @@ Ensure robust testing coverage and update all relevant documentation.
 **Files to create:**
 - `web/tests/seo-metadata.test.ts`
 
-**Status:** ⏳ Pending
+**Status:** ✅ Completed
 
 ---
 
@@ -285,12 +285,12 @@ At each step in 'Actionable and specific steps':
 | 1. DemoEmbed Foundation | ✅ Completed | 4/9/2025 | 4/9/2025 | Files scaffolded and created |
 | 2. URL Detection Logic | ✅ Completed | 4/9/2025 | 4/9/2025 | YouTube/Vercel parsing + safety |
 | 3. DemoEmbed Component UI | ⏳ Pending | - | - | |
-| 4. Integration into Project Page | ⏳ Pending | - | - | |
-| 5. Project Detail SEO | ⏳ Pending | - | - | |
+| 4. Integration into Project Page | ✅ Completed | 4/9/2025 | 4/9/2025 | Embed added between header and description |
+| 5. Project Detail SEO | ✅ Completed | 4/9/2025 | 4/9/2025 | Added OG + Twitter metadata |
 | 6. Core Pages Metadata | ⏳ Pending | - | - | |
 | 7. Dynamic Sitemap | ⏳ Pending | - | - | |
 | 8. DemoEmbed Tests | ✅ Completed | 4/9/2025 | 4/9/2025 | Added embed-utils tests, all green |
-| 9. SEO Integration Tests | ⏳ Pending | - | - | |
+| 9. SEO Integration Tests | ✅ Completed | 4/9/2025 | 4/9/2025 | Added generateMetadata tests |
 | 10. Documentation Updates | ⏳ Pending | - | - | |
 
 ## Risk Mitigation
