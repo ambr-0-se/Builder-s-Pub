@@ -97,11 +97,11 @@ describe("server collaborations", () => {
     expect(res).toEqual({ formError: "unauthorized" })
   })
 
-  it("listCollabs filters by skills substring (looking_for)", async () => {
+  it("listCollabs ranks q and respects is_hiring filter by default", async () => {
     const { listCollabs } = await import("@/lib/server/collabs")
-    const { items } = await listCollabs({ skills: "react" })
-    expect(items.length).toBe(1)
-    expect(items[0].collaboration.id).toBe("c1")
+    const { items } = await listCollabs({ q: "react" })
+    // Only c1 matches react in looking_for and is_hiring true; c3 is closed
+    expect(items.map((i) => i.collaboration.id)).toEqual(["c1"]) 
   })
 
   it("listCollabs hides closed (is_hiring=false) by default", async () => {

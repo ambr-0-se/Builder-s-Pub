@@ -8,23 +8,12 @@ import { Select } from "@/components/ui/select"
 import { EmptyState } from "@/components/ui/empty-state"
 
 interface PageProps {
-  searchParams: Promise<{ kind?: string; skills?: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
 export default async function CollaborationsPage({ searchParams }: PageProps) {
-  const sp = await searchParams
-  const kind = sp?.kind || ""
-  const skills = sp?.skills || ""
-  const allowedKinds = new Set([
-    "ongoing",
-    "planned",
-    "individual",
-    "organization",
-  ] as const)
-  const kindFilter = allowedKinds.has(kind as any)
-    ? (kind as "ongoing" | "planned" | "individual" | "organization")
-    : undefined
-  const { items } = await listCollabs({ kind: kindFilter, skills: skills || undefined })
+  // Legacy filters removed; render recent list for now
+  const { items } = await listCollabs({})
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -38,30 +27,7 @@ export default async function CollaborationsPage({ searchParams }: PageProps) {
         </Button>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-        <form method="get" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="kind" className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-              <Select id="kind" name="kind" defaultValue={kind}>
-                <option value="">All Types</option>
-                <option value="ongoing">Ongoing</option>
-                <option value="planned">Planned</option>
-                <option value="individual">Individual</option>
-                <option value="organization">Organization</option>
-              </Select>
-            </div>
-            <div>
-              <label htmlFor="skills" className="block text-sm font-medium text-gray-700 mb-2">Skills / Roles</label>
-              <Input id="skills" name="skills" type="text" placeholder="e.g., React, Designer" defaultValue={skills} />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button type="submit" variant="default">Apply</Button>
-            <Button asChild variant="outline"><Link href="/collaborations">Clear</Link></Button>
-          </div>
-        </form>
-      </div>
+      {/* Filters for kind/skills removed in Stage 9; unified search page will host filters */}
 
       <div className="mb-6">
         <p className="text-sm text-gray-600">{items.length} collaborations found</p>

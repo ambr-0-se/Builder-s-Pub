@@ -4,6 +4,8 @@ export async function listProjects(params: ListProjectsParams = {}): Promise<{ i
 	const sp = new URLSearchParams()
 	if (params.sort) sp.set("sort", params.sort)
 	if (params.limit) sp.set("limit", String(params.limit))
+	if (params.q) sp.set("q", params.q)
+    if (params.cursor) sp.set("cursor", params.cursor)
 	if (params.techTagIds && params.techTagIds.length) sp.append("techTagIds", params.techTagIds.join(","))
 	if (params.categoryTagIds && params.categoryTagIds.length) sp.append("categoryTagIds", params.categoryTagIds.join(","))
 

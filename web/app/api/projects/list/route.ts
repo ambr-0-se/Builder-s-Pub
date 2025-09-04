@@ -6,15 +6,19 @@ export async function GET(req: Request) {
 	const { searchParams } = new URL(req.url)
 	const sort = (searchParams.get("sort") as "recent" | "popular") || "recent"
 	const limit = Number(searchParams.get("limit") || "20")
+	const q = searchParams.get("q") || undefined
 	const tech = (searchParams.getAll("techTagIds") || []).flatMap((v) => v.split(",").filter(Boolean)).map((v) => Number(v))
 	const cat = (searchParams.getAll("categoryTagIds") || [])
 		.flatMap((v) => v.split(",").filter(Boolean))
 		.map((v) => Number(v))
+    const cursor = searchParams.get("cursor") || undefined
 
 	try {
 		const { items, nextCursor } = await listProjects({
 			sort,
 			limit: Number.isFinite(limit) ? limit : 20,
+			q,
+			cursor,
 			techTagIds: tech.length ? tech : undefined,
 			categoryTagIds: cat.length ? cat : undefined,
 		})

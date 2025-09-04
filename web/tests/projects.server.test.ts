@@ -54,6 +54,44 @@ describe("server projects", () => {
 		})
 		expect(res).toEqual({ formError: "unauthorized" })
 	})
+
+	it("listProjects ranks q matches: title > tagline > description", async () => {
+		const { listProjects } = await import("@/lib/server/projects")
+		const supa = await import("@supabase/supabase-js") as any
+		// Override createClient for this test to return predictable rows
+		;(supa.createClient as any).mockImplementationOnce(() => ({
+			from: (table: string) => {
+				if (table === "projects") {
+					return {
+						select: () => ({
+							eq: () => ({
+								order: () => ({
+									limit: async () => ({
+										data: [
+											{ id: "p1", owner_id: "u1", title: "React App", tagline: "t", description: "d", demo_url: "", source_url: null, created_at: new Date().toISOString() },
+											{ id: "p2", owner_id: "u1", title: "x", tagline: "React tagline", description: "d", demo_url: "", source_url: null, created_at: new Date().toISOString() },
+											{ id: "p3", owner_id: "u1", title: "x", tagline: "t", description: "React description", demo_url: "", source_url: null, created_at: new Date().toISOString() },
+										],
+										error: null,
+									}),
+								}),
+							}),
+						})
+					}
+				}
+				// default chains used by helpers
+				return {
+					select: () => ({
+						in: () => ({ data: [], error: null }),
+					}),
+					in: () => ({ select: () => ({ data: [], error: null }) }),
+				}
+			},
+		}))
+		const res = await listProjects({ q: "react", limit: 3 })
+		const ids = res.items.map((i) => i.project.id)
+		expect(ids).toEqual(["p1", "p2", "p3"])
+	})
 })
 
 
