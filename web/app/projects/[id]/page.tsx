@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { getProject } from "@/lib/server/projects"
+import { DemoEmbed } from "@/components/features/projects/demo-embed"
 import { CommentCta } from "@/components/features/projects/comment-cta"
 import { CommentList } from "@/components/features/projects/comment-list"
 import { UpvoteButton } from "@/components/features/projects/upvote-button"
@@ -101,6 +102,11 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
 
         {/* Content */}
         <div className="px-6 py-8">
+          {/* Demo Embed */}
+          <div className="mb-8">
+            <DemoEmbed url={project.project.demoUrl} title={`Demo — ${project.project.title}`} />
+          </div>
+
           <div className="prose max-w-none">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">About this project</h2>
             <div className="text-gray-700 whitespace-pre-wrap leading-relaxed">{project.project.description}</div>
