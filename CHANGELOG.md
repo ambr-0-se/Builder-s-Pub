@@ -7,6 +7,14 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- Search (Stage 9):
+  - Unified `/search` for Projects and Collaborations with keyword (`q`) and filter chips.
+  - Projects: ranking title > tagline > description; cursor pagination; API accepts `q` and `cursor`.
+  - Collaborations: filters `techTagIds`, `categoryTagIds`, `stages[]`, `projectTypes[]`; “All” chips equal no filter; cursor pagination.
+  - New API: `/api/collaborations/list` with `q`, `stages`, `projectTypes`, tags, `cursor`.
+  - Docs updated: `docs/SERVER_ACTIONS.md`, `docs/MVP_TECH_SPEC.md`.
+
+### Added
 - Collaboration Board (Stage 8):
   - Real CRUD with RLS; new fields (affiliated org, project types[], stage, looking_for with amount, contact, remarks, is_hiring).
   - Pages: `/collaborations/new`, `/collaborations`, `/collaborations/[id]` with upvotes and threaded comments.

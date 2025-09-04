@@ -69,6 +69,7 @@ export interface ListProjectsParams {
 	cursor?: string
 	limit?: number
 	sort?: "recent" | "popular"
+	q?: string
 	techTagIds?: number[]
 	categoryTagIds?: number[]
 }
@@ -76,6 +77,20 @@ export interface ListProjectsParams {
 export async function listProjects(params: ListProjectsParams = {}): Promise<{ items: ProjectWithRelations[]; nextCursor?: string }> {
 	const anon = getAnonServerClient()
 	const limit = params.limit && params.limit > 0 ? params.limit : 20
+
+	const hasQuery = typeof params.q === "string" && params.q.trim() !== ""
+	const q = hasQuery ? params.q!.trim() : ""
+
+	// Decode cursor if present
+	let cursor: any = null
+	if (params.cursor) {
+		try {
+			const json = Buffer.from(params.cursor, "base64").toString("utf8")
+			cursor = JSON.parse(json)
+		} catch (_e) {
+			cursor = null
+		}
+	}
 
 	// Determine candidate project ids matching filters first (safe approach)
 	let candidateIds: string[] | null = null
@@ -110,8 +125,17 @@ export async function listProjects(params: ListProjectsParams = {}): Promise<{ i
 		query = query.in("id", candidateIds)
 	}
 
+	// Apply keyword filter (case-insensitive) across title/tagline/description when supported
+	if (hasQuery) {
+		const pattern = `%${q}%`
+		const qOr = (query as any).or
+		if (typeof qOr === "function") {
+			query = qOr.call(query, `title.ilike.${pattern},tagline.ilike.${pattern},description.ilike.${pattern}`)
+		}
+	}
+
 	// Sorting
-	if (params.sort === "popular") {
+	if (!hasQuery && params.sort === "popular") {
 		// Fetch recent projects first, then compute upvote counts for those ids
 		const { data: projects, error: projectsError } = await query.order("created_at", { ascending: false }).limit(limit)
 		if (projectsError) throw projectsError
@@ -136,8 +160,14 @@ export async function listProjects(params: ListProjectsParams = {}): Promise<{ i
 		return { items }
 	}
 
-	// recent
-	const { data: projects, error } = await query.order("created_at", { ascending: false }).limit(limit)
+	// recent or keyword-ranked
+	// For recent with cursor, load a bit more to allow in-memory tie-break filtering
+	const fetchLimit = hasQuery ? Math.min(120, limit * 5) : (cursor && cursor.mode === "recent" ? limit * 2 : limit)
+	// Apply keyset hint for recent when cursor present (coarse filter, precise tie-break done in memory)
+	if (!hasQuery && cursor && cursor.mode === "recent" && cursor.createdAt) {
+		query = query.lte("created_at", cursor.createdAt)
+	}
+	const { data: projects, error } = await query.order("created_at", { ascending: false }).limit(fetchLimit)
 	if (error) throw error
 	if (!projects) return { items: [] }
 
@@ -148,11 +178,70 @@ export async function listProjects(params: ListProjectsParams = {}): Promise<{ i
 		fetchUpvoteCounts(projectIds, anon),
 	])
 
-	const items = (projects as any[]).map((p) =>
+	let items = (projects as any[]).map((p) =>
 		toProjectWithRelations(p, tagsByProject.get(p.id) || { technology: [], category: [] }, ownersByUser.get(p.owner_id), voteCounts.get(p.id) || 0, [], false)
 	)
 
-	return { items }
+	if (hasQuery) {
+		const needle = q.toLowerCase()
+		const scorePart = (text: string | undefined, weight: number) => (text && text.toLowerCase().includes(needle) ? weight : 0)
+		let ranked = items
+			.map((it) => {
+				const s = scorePart(it.project.title, 3) + scorePart(it.project.tagline, 2) + scorePart(it.project.description, 1)
+				return { it, s }
+			})
+			.filter(({ s }) => s > 0)
+			.sort((a, b) => {
+				if (b.s !== a.s) return b.s - a.s
+				const uvA = a.it.upvoteCount || 0
+				const uvB = b.it.upvoteCount || 0
+				if (uvB !== uvA) return uvB - uvA
+				return b.it.project.createdAt.getTime() - a.it.project.createdAt.getTime()
+			})
+
+		// Apply cursor for ranked results by skipping until after the cursor id
+		if (cursor && cursor.mode === "q" && cursor.q === q && cursor.lastId) {
+			const idx = ranked.findIndex(({ it }) => it.project.id === cursor.lastId)
+			if (idx >= 0) ranked = ranked.slice(idx + 1)
+		}
+
+		items = ranked.slice(0, limit).map(({ it }) => it)
+
+		// nextCursor for q-mode
+		if (ranked.length > limit) {
+			const last = items[items.length - 1]
+			const lastScoreObj = scorePart(last.project.title, 3) + scorePart(last.project.tagline, 2) + scorePart(last.project.description, 1)
+			const payload = { mode: "q", q, lastId: last.project.id, score: lastScoreObj, upvotes: last.upvoteCount, createdAt: last.project.createdAt.toISOString() }
+			return { items, nextCursor: Buffer.from(JSON.stringify(payload), "utf8").toString("base64") }
+		}
+
+		return { items }
+	}
+
+	// recent mode: apply precise tie-break with id and compute nextCursor
+	if (cursor && cursor.mode === "recent" && cursor.createdAt && cursor.id) {
+		const cutoff = new Date(cursor.createdAt).getTime()
+		items = items.filter((it) => {
+			const t = it.project.createdAt.getTime()
+			if (t < cutoff) return true
+			if (t > cutoff) return false
+			return it.project.id < cursor.id
+		})
+	}
+
+	let nextCursor: string | undefined = undefined
+	if (items.length > 0) {
+		// Heuristic: if we fetched as many or more than requested without cursor, or we had to filter by cursor, expose nextCursor
+		const hasMore = (projects as any[]).length === fetchLimit || (cursor && cursor.mode === "recent")
+		if (hasMore && items.length >= Math.min(limit, items.length)) {
+			const last = items[Math.min(items.length, limit) - 1]
+			const payload = { mode: "recent", createdAt: last.project.createdAt.toISOString(), id: last.project.id }
+			nextCursor = Buffer.from(JSON.stringify(payload), "utf8").toString("base64")
+			items = items.slice(0, limit)
+		}
+	}
+
+	return { items, nextCursor }
 }
 
 export async function getProject(id: string): Promise<ProjectWithRelations | null> {

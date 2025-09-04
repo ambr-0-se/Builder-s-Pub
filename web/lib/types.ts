@@ -76,13 +76,20 @@ export interface ListProjectsParams {
   cursor?: string
   limit?: number
   sort?: "recent" | "popular"
+  q?: string
   techTagIds?: number[]
   categoryTagIds?: number[]
 }
 
 export interface ListCollabsParams {
-  kind?: string
-  skills?: string
+  // Search keyword (case-insensitive substring over title/description; skills handled server-side if implemented)
+  q?: string
+  // Tag filters: OR within a type, AND across types. Ignore when empty/undefined
+  techTagIds?: number[]
+  categoryTagIds?: number[]
+  // Additional filters (ignore when empty/undefined)
+  stages?: string[]
+  projectTypes?: string[]
   cursor?: string
   limit?: number
 }

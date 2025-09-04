@@ -120,20 +120,79 @@ export async function createCollab(input: CreateCollabInput): Promise<{ id: stri
 export interface ListCollabsParams {
   cursor?: string
   limit?: number
-  kind?: "ongoing" | "planned" | "individual" | "organization"
-  skills?: string
+  q?: string
+  techTagIds?: number[]
+  categoryTagIds?: number[]
+  stages?: string[]
+  projectTypes?: string[]
   includeClosed?: boolean
 }
 
 export async function listCollabs(params: ListCollabsParams = {}): Promise<{ items: CollaborationWithRelations[]; nextCursor?: string }> {
   const anon = getAnonServerClient()
   const limit = params.limit && params.limit > 0 ? params.limit : 20
+  const hasQuery = typeof params.q === "string" && params.q.trim() !== ""
+  const q = hasQuery ? params.q!.trim() : ""
+
+  // Decode cursor if present
+  let cursor: any = null
+  if (params.cursor) {
+    try {
+      cursor = JSON.parse(Buffer.from(params.cursor, "base64").toString("utf8"))
+    } catch (_) {
+      cursor = null
+    }
+  }
 
   async function fetchRows(selectCols: string) {
     let query = anon.from("collaborations").select(selectCols).eq("soft_deleted", false)
-    if (params.kind) query = query.eq("kind", params.kind)
-    // Placeholder: skills filter to be implemented server-side post-fetch (todo tracked)
-    const { data, error } = await query.order("created_at", { ascending: false }).limit(limit)
+    // Optional filters
+    if (Array.isArray(params.stages) && params.stages.length > 0) query = (query as any).in("stage", params.stages)
+    if (Array.isArray(params.projectTypes) && params.projectTypes.length > 0) {
+      // project_types is text[]; overlap filter
+      query = (query as any).overlaps("project_types", params.projectTypes)
+    }
+    // Tag filters: AND across types, OR within type
+    // First collect candidate collaboration ids by tags
+    let candidateIds: string[] | null = null
+    if (params.techTagIds && params.techTagIds.length > 0) {
+      const { data, error } = await anon
+        .from("collaboration_tags")
+        .select("collaboration_id")
+        .in("tag_id", params.techTagIds)
+      if (error) throw error
+      candidateIds = (data || []).map((r: any) => r.collaboration_id as string)
+    }
+    if (params.categoryTagIds && params.categoryTagIds.length > 0) {
+      const { data, error } = await anon
+        .from("collaboration_tags")
+        .select("collaboration_id")
+        .in("tag_id", params.categoryTagIds)
+      if (error) throw error
+      const ids = (data || []).map((r: any) => r.collaboration_id as string)
+      candidateIds = candidateIds ? candidateIds.filter((id) => ids.includes(id)) : ids
+    }
+    if (candidateIds) {
+      if (candidateIds.length === 0) return []
+      query = query.in("id", candidateIds)
+    }
+
+    // Keyword filter over title/description
+    if (hasQuery) {
+      const pattern = `%${q}%`
+      const qOr = (query as any).or
+      if (typeof qOr === "function") {
+        query = qOr.call(query, `title.ilike.${pattern},description.ilike.${pattern}`)
+      }
+    }
+
+    // Apply recent keyset hint if cursor in recent mode
+    if (!hasQuery && cursor && cursor.mode === "recent" && cursor.createdAt) {
+      query = query.lte("created_at", cursor.createdAt)
+    }
+
+    const fetchLimit = hasQuery ? Math.min(100, limit * 3) : (cursor && cursor.mode === "recent" ? limit * 2 : limit)
+    const { data, error } = await query.order("created_at", { ascending: false }).limit(fetchLimit)
     if (error) throw error
     return data as any[]
   }
@@ -151,26 +210,41 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
   }
   if (!rows || rows.length === 0) return { items: [] }
 
-  // Server-side substring matching over looking_for role/prerequisite/goodToHave/description (case-insensitive)
+  // Start with DB-filtered rows
   let filtered = rows
-  if (params.skills && params.skills.trim() !== "") {
-    const needle = params.skills.trim().toLowerCase()
-    filtered = rows.filter((r: any) => {
-      const arr: any[] = Array.isArray(r.looking_for) ? r.looking_for : []
-      for (const it of arr) {
-        const role = String((it && it.role) || "").toLowerCase()
-        const pre = String((it && it.prerequisite) || "").toLowerCase()
-        const good = String((it && it.goodToHave) || "").toLowerCase()
-        const desc = String((it && it.description) || "").toLowerCase()
-        if (role.includes(needle) || pre.includes(needle) || good.includes(needle) || desc.includes(needle)) return true
-      }
-      return false
-    })
-  }
 
   // Default hide closed unless includeClosed is true; tolerate environments without is_hiring column
   if (!params.includeClosed) {
     filtered = filtered.filter((r: any) => r.is_hiring !== false)
+  }
+
+  // Ranking for q: title match > description match; boost if any looking_for text matches
+  let itemsRanked: { row: any; s: number }[] | null = null
+  if (hasQuery) {
+    const needle = q.toLowerCase()
+    const match = (t: string | null | undefined, w: number) => (t && String(t).toLowerCase().includes(needle) ? w : 0)
+    itemsRanked = filtered.map((r: any) => {
+      const sTitle = match(r.title, 2)
+      const sDesc = match(r.description, 1)
+      let sRole = 0
+      const arr: any[] = Array.isArray(r.looking_for) ? r.looking_for : []
+      for (const it of arr) {
+        if (match(it?.role, 1) || match(it?.prerequisite, 1) || match(it?.goodToHave, 1) || match(it?.description, 1)) {
+          sRole = 1
+          break
+        }
+      }
+      return { row: r, s: sTitle + sDesc + sRole }
+    }).filter(({ s }) => s > 0)
+    itemsRanked.sort((a, b) => {
+      if (b.s !== a.s) return b.s - a.s
+      return new Date(b.row.created_at).getTime() - new Date(a.row.created_at).getTime()
+    })
+    if (cursor && cursor.mode === "q" && cursor.q === q && cursor.lastId) {
+      const idx = itemsRanked.findIndex(({ row }) => row.id === cursor.lastId)
+      if (idx >= 0) itemsRanked = itemsRanked.slice(idx + 1)
+    }
+    filtered = itemsRanked.map(({ row }) => row)
   }
 
   const collabIds = (filtered as any[]).map((r) => r.id as string)
@@ -185,11 +259,27 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
   const currentUserId = auth.user?.id || null
   const userUpvotes = await fetchUserCollabUpvotes(collabIds, currentUserId, anon)
 
-  const items: CollaborationWithRelations[] = (filtered as any[]).map((r) => {
+  let items: CollaborationWithRelations[] = (filtered as any[]).slice(0, limit).map((r) => {
     return toCollabWithRelations(r as CollaborationRow, tagsByCollab.get(r.id) || { technology: [], category: [] }, ownersByUser.get(r.owner_id), upvoteCounts.get(r.id) || 0, userUpvotes.get(r.id) || false)
   })
 
-  return { items }
+  // Build nextCursor
+  if (hasQuery) {
+    if ((itemsRanked || []).length > limit) {
+      const last = items[items.length - 1]
+      const payload = { mode: "q", q, lastId: last.collaboration.id, createdAt: last.collaboration.createdAt.toISOString() }
+      return { items, nextCursor: Buffer.from(JSON.stringify(payload), "utf8").toString("base64") }
+    }
+    return { items }
+  }
+
+  // recent mode
+  let nextCursor: string | undefined
+  if (filtered.length > limit) {
+    const last = filtered[limit - 1]
+    nextCursor = Buffer.from(JSON.stringify({ mode: "recent", createdAt: last.created_at, id: last.id }), "utf8").toString("base64")
+  }
+  return { items, nextCursor }
 }
 
 export async function getCollab(id: string): Promise<CollaborationWithRelations | null> {

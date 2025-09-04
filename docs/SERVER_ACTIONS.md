@@ -17,9 +17,9 @@ Projects
 - updateProject(id, fields): owner-only `-> { ok: true }`
 - deleteProject(id): owner-only `-> { ok: true }`
 
-Implemented (Stage 5)
+Implemented (Stage 5 → updated in Stage 9)
 - createProject: Implemented. Validates inputs; inserts into `projects` with `owner_id=auth.user.id`; persists tags via `project_tags`; returns `{ id }` or `{ fieldErrors?, formError? }`.
-- listProjects: Implemented (subset). Supports `limit` (default 20), `sort=recent|popular`, and tag filters (AND across types, OR within a type). Keyword `q` is deferred to Stage 9. Returns `{ items[], nextCursor? }`.
+- listProjects: Implemented and updated in Stage 9. Supports `limit` (default 20), `sort=recent|popular`, keyword `q` (case-insensitive substring across title/tagline/description with simple ranking: title > tagline > description; tie-break by upvotes desc, then `created_at` desc), and tag filters (AND across technology/category; OR within a type). Returns `{ items[], nextCursor? }`.
 - getProject: Implemented. Returns project, tags grouped by type, owner display name, and `upvoteCount`. Comments updated in Stage 6.
 
 Locations
@@ -40,7 +40,8 @@ Rate limits (server-enforced)
 
 Collaborations
 - createCollab(input): `{ title≤160, affiliatedOrg?, projectTypes[], description 1–4000, stage, lookingFor[1..5]{ role, amount(1..99), prerequisite≤400, goodToHave≤400, description≤1200 }, contact≤200, remarks≤1000, techTagIds[], categoryTagIds[] } -> { id } | validation_error`
-- listCollabs(params): `{ cursor?, limit=20, kind?, skills?, includeClosed? } -> { items[], nextCursor? }` (defaults to `is_hiring=true`)
+- listCollabs(params): `{ cursor?, limit=20, q?, techTagIds?, categoryTagIds?, stages?, projectTypes? } -> { items[], nextCursor? }` (defaults to `is_hiring=true`).
+  - Empty or absent filters are ignored. Tag filters are AND across types, OR within a type. `stages?` is an array (OR inside stage facet).
 - getCollab(id): `-> { collaboration, tags, owner, upvoteCount, hasUserUpvoted, comments }`
 - updateCollab(id, fields): owner-only, fields optional: `{ title?, affiliatedOrg?, description?, stage?, lookingFor?, contact?, remarks?, isHiring? } -> { ok: true } | validation_error`
 - deleteCollab(id): owner-only `-> { ok: true }`
@@ -65,7 +66,8 @@ Conventions (Search)
 - Case-insensitive substring matching for `q`.
 - Ranking:
   - Projects: prioritize title > tagline > description; tie-break by upvotes desc, then created_at desc.
-  - Collaborations: title/description/skills match; tie-break by created_at desc.
+  - Collaborations: prioritize title/description (and optionally roles text if present); tie-break by created_at desc. Filters for `stages[]`, `projectTypes[]`, `techTagIds`, `categoryTagIds` apply; empty filters are ignored.
+- Facet “All” chip: selecting “All” for any facet is equivalent to no selection for that facet.
 
 References
 - Tech Spec: `docs/MVP_TECH_SPEC.md`
@@ -78,7 +80,6 @@ Profiles (Stage 3)
   - Submits via a server action form: `<form action={updateMyProfile}>`
   - Validation: display_name 1–80; bio ≤ 4000; building_now/looking_for ≤ 280; contact ≤ 200; URLs must be `http/https`. Writes occur under user session; RLS enforces owner-only updates.
   - On success: `revalidatePath('/profile')` then `redirect('/profile')`.
-  - Auto-create on first sign-in via `/api/profile/ensure` (called by `/auth/callback`).
 
 Implementation notes
 - Prefer server action forms over client `fetch` + API routes for authenticated writes.

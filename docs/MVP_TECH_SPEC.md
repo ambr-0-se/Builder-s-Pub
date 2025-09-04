@@ -40,7 +40,7 @@ Upvotes
 Discover/Search
 - As a user, I can search projects and collaborations with optional keyword(s) and filters.
   - Projects: optional q (keywords), technology tags, category tags.
-  - Collaborations: optional q (keywords), kind (ongoing|planned|individual|organization), skills substring.
+  - Collaborations: optional q (keywords), technology tags, category tags, `stages[]` (equals; OR within facet), and `projectTypes[]` (array overlap). Empty/“All” per facet is ignored.
   - AC: Filters are AND across tag types, OR within a type; case-insensitive substring search.
 
 Collaboration Board
@@ -69,8 +69,8 @@ Server Actions / API Contracts (shapes)
 - updateProject(id, fields): owner-only -> { ok: true }
 - deleteProject(id): owner-only -> { ok: true }
 
-- createCollab(input): { kind, title, description, skills[], region?, commitment? } -> { id }
-- listCollabs(params): { cursor?, limit=20, q?, kind?, skills? } -> { items[], nextCursor? }
+- createCollab(input): { title, affiliatedOrg?, projectTypes[], description, stage, lookingFor[], contact, remarks?, techTagIds[], categoryTagIds[] } -> { id }
+- listCollabs(params): { cursor?, limit=20, q?, techTagIds?, categoryTagIds?, stages?, projectTypes? } -> { items[], nextCursor? }
 - getCollab(id), updateCollab(id, fields), deleteCollab(id)
 
 Validation & UX States
@@ -153,7 +153,7 @@ Development Plan (MVP)
       - `getProject(id)` returns project, tags, owner profile display name, and upvote count.
     - Create flow uses a server action at `web/app/projects/actions.ts` and redirects to `/projects/[id]` on success.
     - Listing page (`/projects`) uses a thin client wrapper `web/lib/api/projects.ts` that calls `/api/projects/list` and converts `createdAt` back to `Date`.
-    - Landing page (`/`) calls server module `web/lib/server/projects.ts` directly (server runtime) and falls back to empty lists if fetch fails.
+    - Landing page (`/) calls server module `web/lib/server/projects.ts` directly (server runtime) and falls back to empty lists if fetch fails.
     - Note: keyword search (`q`) is deferred to Stage 9; current `listProjects` ignores `q`.
   - Done when: create redirects to detail; list supports Recent/Popular and tag filters (AND across types, OR within type). (Met)
 
@@ -181,55 +181,23 @@ Development Plan (MVP)
     - ✅ Single upvote enforcement via database PK constraints.
     - ✅ Upvote buttons disable after upvote and show correct visual state.
     - ✅ Rate limiting: per-user upvote toggles throttled (10/min/user).
-    - ✅ Lists consistency: landing (Featured + Trending) and `/projects` use non-interactive `UpvoteButton`; if user previously upvoted, the button appears darkened.
+    - ✅ Lists consistency: landing (Featured + Trending) and `/projects` use non-interactive `UpvoteButton`; if the signed-in user previously upvoted, the button appears darkened.
     - ✅ Personalization: `/api/projects/list` attaches `hasUserUpvoted` for authenticated users; anonymous users omit this field.
   - Done when: count updates instantly; duplicate upvotes are blocked with a friendly message; rate limits are enforced; list/landing show consistent non-interactive upvote UI with prior-upvote darkening. (Met)
 
 - Stage 8 — Collaboration board
   - Scope: Replace mocks with real CRUD under RLS and expand fields per PRD. Provide form (`/collaborations/new`), list (`/collaborations`), and detail (`/collaborations/[id]`) with upvotes and comments.
   - Data model (MVP, implemented):
-    - `collaborations` extended with:
-      - `affiliated_org text`
-      - `project_types text[]` (multi-select; replaces legacy `project_type`)
-      - `is_hiring boolean not null default true`
-      - `stage text` in one of: ideation, planning, requirements_analysis, design, mvp_development, testing_validation, implementation_deployment, monitoring_maintenance, evaluation_closure, scaling, adding_features
-      - `looking_for jsonb` array of items: `{ role text, amount int default 1, prerequisite text?, goodToHave text?, description text? }`
-      - `contact text`, `remarks text`
-      - `kind text` retained for board segmentation (UI hidden in form)
-    - `collaboration_tags(collaboration_id uuid, tag_id int)` — PK(collaboration_id, tag_id)
-    - `collaboration_upvotes(collaboration_id uuid, user_id uuid, created_at)` — PK(collaboration_id, user_id)
-    - `collab_comments(id uuid, collaboration_id uuid, author_id uuid, body text, parent_comment_id uuid null, soft_deleted bool, created_at)`
-    - Indexes: `collaborations(created_at desc)`, `collab_comments(parent_comment_id, created_at asc)`, `collaboration_tags(tag_id, collaboration_id)`, `collaboration_upvotes(collaboration_id)`
-  - RLS (implemented):
-    - collaborations: select `soft_deleted=false`; insert/update/delete only `owner_id=auth.uid()`
-    - collaboration_tags: select all; insert/delete only owner (via join to collaboration)
-    - collaboration_upvotes: select all; insert/delete only same `user_id`
-    - collab_comments: select `soft_deleted=false`; insert only author; delete only author
-  - Validation & contracts (implemented):
-    - CreateCollabInput: { title ≤160, affiliatedOrg?, projectTypes string[], description 1–4000, stage enum, lookingFor 1–5 items { role 1–80, amount 1–99 default 1, prerequisite ≤400, goodToHave ≤400, description ≤1200 }, contact ≤200, remarks ≤1000, techTagIds[], categoryTagIds[] }
-    - UpdateCollabInput: partial variant with same constraints plus `isHiring? boolean`
-    - List filters: default `is_hiring=true`; supports kind? (for board tab) and case-insensitive substring over role/prerequisite/goodToHave/description in `looking_for`
-  - Routes & server actions (implemented):
-    - Server module `web/lib/server/collabs.ts`: `createCollab`, `listCollabs`, `getCollab`, `updateCollab`, `deleteCollab`, `toggleCollabUpvote`, `addCollabComment`, `deleteCollabComment`
-    - Server actions `web/app/collaborations/actions.ts`: `createCollabAction`, `updateCollabAction`, `deleteCollabAction`, `toggleCollabUpvoteAction`, `addCollabCommentAction`, `deleteCollabCommentAction`
-  - UI/UX (implemented):
-    - Form `/collaborations/new`: Title (≤160) → Project Types (chips, multi-select) → Stage (default MVP Development) → Affiliated Organisation → Project Description → Roles Hiring (1–5 compact cards with Role + Amount + details/prereq/goodToHave/description with counters) → Contact → Remarks → Tech Tags → Category Tags. Kind removed from UI.
-    - List `/collaborations`: filters Kind + skills substring; shows owner/date, project type chips, top roles; hidden closed posts by default (`is_hiring=true`).
-    - Detail `/collaborations/[id]`: shows all fields, project type chips, upvote button, threaded comments, and an unverified-post warning.
-    - Hiring toggle: owner-only client button with optimistic update; non-owners see read-only badge.
-  - Analytics (implemented): `collaboration_created|updated|deleted`, `upvote_toggled` (target=collaboration), `collab_comment_added|deleted`.
-  - Done when (current status):
-    - Authenticated owners can create/update/delete own collaboration; others cannot (RLS enforced). ✅
-    - List returns filtered results (skills substring) and hides closed posts by default. ✅
-    - Detail supports upvote and comments; warning banner visible; tags load from DB; hiring toggle works. ✅
-    - Docs updated in this file, `supabase/schema.md`, and `docs/SERVER_ACTIONS.md`. ✅
+    - `collaborations` extended with: affiliated org, project_types text[], is_hiring, stage enum-ish text, looking_for jsonb, contact, remarks.
+    - Relations: `collaboration_tags`, `collaboration_upvotes`, `collab_comments`.
+  - UX: creation form, list with chips and hiring toggle, detail with comments.
 
 - Stage 9 — Search + pagination
   - Tasks:
     - Implement unified /search supporting type=projects|collabs (tabs or param).
     - Add q? keyword search and ranking per “Search & Trending”.
     - Projects: support techTagIds/categoryTagIds (AND across types, OR within type).
-    - Collaborations: support kind and skills substring filters.
+    - Collaborations: support filters for techTagIds/categoryTagIds (AND/OR), `stages[]` (equals; OR within facet), and `projectTypes[]` (overlap). Include “All” chip per facet behaving as no filter.
     - Add cursor pagination (default 20/page) to both.
   - Done when:
     - /search returns expected results for both types with the ranking rules.
