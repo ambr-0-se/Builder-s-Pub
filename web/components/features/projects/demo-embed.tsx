@@ -61,6 +61,16 @@ export function DemoEmbed({ url, title = "Project demo", className }: DemoEmbedP
               onError={() => setHasError(true)}
               allowFullScreen
             />
+            <div className="absolute bottom-2 right-2">
+              <a
+                href={parsed.originalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-white/90 bg-black/60 hover:bg-black rounded px-2 py-1"
+              >
+                Watch on YouTube
+              </a>
+            </div>
           </div>
         </AspectRatio>
       ) : (
