@@ -11,7 +11,7 @@ Performance
 Security
 - Mandatory Row-Level Security (RLS) for all user-generated tables.
 - Input validation and output encoding to mitigate XSS/SQLi; allow-list URL protocols (http/https).
-- Rate limits (per authed user): project create ≤ 10/min; comment ≤ 20/min; upvote ≤ 60/min. Anonymous: read-only.
+- Rate limits (per authenticated user): content creation (projects/collaborations) ≤ 5/day; comments/replies ≤ 5/min; upvote toggles ≤ 10/min. Anonymous: read-only.
 - Secrets in env vars; no secrets committed. Use `.env.local`.
 
 Availability & Observability

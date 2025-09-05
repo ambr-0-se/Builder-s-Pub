@@ -91,9 +91,12 @@ Search & Trending
   - Ranking (collabs): title/description/skills match; tie-break by created_at desc.
 - Trending: order by upvotes desc, then created_at desc (simple MVP).
 
-Rate Limits (MVP targets)
-- Authenticated: project create ≤ 10/min/user; comment ≤ 20/min/user; upvote ≤ 60/min/user.
+Rate Limits (Implemented - Aligned Strategy)
+- Authenticated users:
+  - Content creation: project create ≤ 5/day/user; collaboration create ≤ 5/day/user
+  - Engagement: comments/replies ≤ 5/min/user; upvote toggles ≤ 10/min/user
 - Anonymous: read endpoints only; cache at CDN where possible.
+- Rationale: Daily limits for content creation encourage quality; minute limits for engagement prevent spam while allowing active participation.
 
 Definition of Done (per feature)
 - RLS policies in place and tested.
@@ -209,9 +212,9 @@ Development Plan (MVP)
   - Security: Domain allowlisting, iframe sandboxing, URL validation for embed safety.
   - Done when: supported demos embed inline; comprehensive metadata on all core pages; sitemap.xml generates dynamically; security measures prevent malicious embeds.
 
-- Stage 11 — Rate limits (MVP-light)
-  - Tasks: simple per-user throttling (edge function or table) for create/comment/upvote to meet targets.
-  - Done when: excessive requests are rejected with clear UI.
+- Stage 11 — Rate limits (Aligned Strategy)
+  - Tasks: implement comprehensive rate limiting with aligned strategy - content creation (5/day), comments (5/min), upvotes (10/min); consolidate rate limiting utilities; ensure clear UI feedback.
+  - Done when: all creation and engagement actions are rate limited with appropriate time windows; users receive clear error messages with retry guidance; rate limiting code is consolidated and well-tested.
 
 - Stage 12 — Analytics
   - Tasks: replace analytics mock with provider or structured logging; instrument events per `docs/ANALYTICS.md`.
