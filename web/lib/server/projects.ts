@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js"
 import type { ProjectWithRelations, Tag, Comment, Profile } from "@/lib/types"
 import { getServerSupabase } from "@/lib/supabaseServer"
 import { checkRateLimit } from "@/lib/server/rate-limiting"
+import { formatDurationHMS } from "@/lib/utils"
 import { createProjectSchema, type CreateProjectInput } from "@/app/projects/schema"
 import { commentSchema } from "@/app/projects/schema"
 
@@ -24,7 +25,7 @@ export async function createProject(input: CreateProjectInput): Promise<{ id: st
 	// Daily rate limit for project creation: 5 per day per user
 	const rl = await checkRateLimit(supabase, { action: "project_create", userId: auth.user.id, limit: 5, windowSec: 24 * 60 * 60 })
 	if (rl.limited) {
-		const suffix = typeof rl.retryAfterSec === "number" ? ` Try again in ~${rl.retryAfterSec}s.` : ""
+		const suffix = typeof rl.retryAfterSec === "number" ? ` Try again in ~${formatDurationHMS(rl.retryAfterSec)}.` : ""
 		return { formError: `Daily limit reached (5 projects/day).${suffix}` }
 	}
 
