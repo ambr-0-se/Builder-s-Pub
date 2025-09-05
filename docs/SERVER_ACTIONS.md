@@ -9,6 +9,7 @@ Conventions
 
 Projects
 - createProject(input): `{ title, tagline, description, demoUrl, sourceUrl?, techTagIds[], categoryTagIds[] } -> { id } | validation_error`
+  - Rate limit: 5 per day per user (`project_create` action, 24-hour window)
 - listProjects(params): `{ cursor?, limit=20, sort='recent'|'popular', q?, techTagIds?, categoryTagIds? } -> { items[], nextCursor? }`
   - Note: when invoked via the API route (`/api/projects/list`) with a valid session, each item may include `hasUserUpvoted` based on the current user's upvotes (personalized server augmentation).
 - getProject(id): `-> { project, tags: {technology[], category[]}, upvoteCount, comments[], hasUserUpvoted }`
@@ -33,13 +34,16 @@ Comments
 - toggleCommentUpvote(commentId): `-> { ok: true, upvoted: boolean } | { error: 'unauthorized' }`
 
 Rate limits (server-enforced)
+- Content creation: projects and collaborations max 5 per day per user (`project_create`, `collab_create` actions, 24-hour window).
 - Comments: max 5 per minute per user (add/reply share separate buckets: `comment_add`, `reply_add`).
-- Upvote toggles (project/comment): max 10 per minute per user (`upvote_toggle`).
+- Upvote toggles (project/comment/collaboration): max 10 per minute per user (`upvote_toggle`).
 - On limit: server functions return `{ error: 'rate_limited', retryAfterSec }`.
 - Server actions surface a friendly `formError` and include `retryAfterSec` for UI cooldown messaging.
+- Daily limits show "Try again tomorrow" messaging; minute limits show "Please wait a bit" messaging.
 
 Collaborations
 - createCollab(input): `{ title≤160, affiliatedOrg?, projectTypes[], description 1–4000, stage, lookingFor[1..5]{ role, amount(1..99), prerequisite≤400, goodToHave≤400, description≤1200 }, contact≤200, remarks≤1000, techTagIds[], categoryTagIds[] } -> { id } | validation_error`
+  - Rate limit: 5 per day per user (`collab_create` action, 24-hour window)
 - listCollabs(params): `{ cursor?, limit=20, q?, techTagIds?, categoryTagIds?, stages?, projectTypes? } -> { items[], nextCursor? }` (defaults to `is_hiring=true`).
   - Empty or absent filters are ignored. Tag filters are AND across types, OR within a type. `stages?` is an array (OR inside stage facet).
 - getCollab(id): `-> { collaboration, tags, owner, upvoteCount, hasUserUpvoted, comments }`

@@ -2,6 +2,8 @@
 
 import { createClient } from "@supabase/supabase-js"
 import { getServerSupabase } from "@/lib/supabaseServer"
+import { checkRateLimit } from "@/lib/server/rate-limiting"
+import { formatDurationHMS } from "@/lib/utils"
 import type { Profile, Tag } from "@/lib/types"
 import { createCollabSchema, type CreateCollabInput, updateCollabSchema, type UpdateCollabInput, collabCommentSchema } from "@/app/collaborations/schema"
 
@@ -59,6 +61,13 @@ export async function createCollab(input: CreateCollabInput): Promise<{ id: stri
   const supabase = await getServerSupabase()
   const { data: auth } = await supabase.auth.getUser()
   if (!auth.user) return { formError: "unauthorized" }
+
+  // Daily rate limit for collaboration creation: 5 per day per user
+  const rl = await checkRateLimit(supabase, { action: "collab_create", userId: auth.user.id, limit: 5, windowSec: 24 * 60 * 60 })
+  if (rl.limited) {
+    const suffix = typeof rl.retryAfterSec === "number" ? ` Try again in ~${formatDurationHMS(rl.retryAfterSec)}.` : ""
+    return { formError: `Daily limit reached (5 collaborations/day).${suffix}` }
+  }
 
   const parsed = createCollabSchema.safeParse(input)
   if (!parsed.success) {
@@ -625,38 +634,6 @@ async function fetchCollabComments(collaborationId: string, anon: ReturnType<typ
   return parents as any
 }
 
-// Shared rate limit helper (copied from projects.ts to avoid cross-imports)
-async function checkRateLimit(
-  supabase: Awaited<ReturnType<typeof getServerSupabase>>,
-  {
-    action,
-    userId,
-    limit,
-    windowSec,
-  }: { action: string; userId: string; limit: number; windowSec: number }
-): Promise<{ limited: boolean; retryAfterSec?: number }> {
-  const nowMs = Date.now()
-  const windowMs = windowSec * 1000
-  const windowStartMs = Math.floor(nowMs / windowMs) * windowMs
-  const windowStartIso = new Date(windowStartMs).toISOString()
-
-  const { data: existing } = await (supabase as any)
-    .from("rate_limits")
-    .select("count")
-    .eq("action", action)
-    .eq("user_id", userId)
-    .eq("window_start", windowStartIso)
-    .maybeSingle()
-  const current = existing?.count ? Number(existing.count) : 0
-  if (current >= limit) {
-    const retryAfterSec = Math.ceil((windowStartMs + windowMs - nowMs) / 1000)
-    return { limited: true, retryAfterSec }
-  }
-  const nextCount = current + 1
-  await (supabase as any)
-    .from("rate_limits")
-    .upsert({ action, user_id: userId, window_start: windowStartIso, count: nextCount }, { onConflict: "action,user_id,window_start" })
-  return { limited: false }
-}
+// rate limiting helper moved to shared module
 
 

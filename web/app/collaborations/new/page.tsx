@@ -13,6 +13,7 @@ import { useAuth, ensureServerSession } from "@/lib/api/auth"
 import { useTags } from "@/hooks/useTags"
 import { createCollabAction, type CreateCollabState } from "@/app/collaborations/actions"
 import { COLLAB_KIND_OPTIONS, PROJECT_TYPE_OPTIONS, STAGE_OPTIONS } from "@/lib/collabs/options"
+import { showToast } from "@/components/ui/toast"
 
 export default function NewCollaborationPage() {
   const router = useRouter()
@@ -45,6 +46,13 @@ export default function NewCollaborationPage() {
       ensureServerSession()
     }
   }, [isAuthenticated])
+
+  // Show error toast when server action returns with formError (e.g., daily rate limit reached)
+  useEffect(() => {
+    if (state?.formError) {
+      showToast(state.formError, "error")
+    }
+  }, [state])
 
   const canSubmit = useMemo(() => {
     const title = formData.title.trim()

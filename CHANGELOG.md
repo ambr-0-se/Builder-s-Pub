@@ -7,6 +7,14 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- Stage 11: Rate Limits (Aligned Strategy)
+  - Daily limits for content creation: Projects and Collaborations ≤ 5/day/user.
+  - Engagement limits maintained: Comments/Replies ≤ 5/min/user; Upvote toggles ≤ 10/min/user.
+  - Shared server-side rate limiting utility consolidates logic (`web/lib/server/rate-limiting.ts`).
+  - UI: clear error toasts for daily limits on creation forms with retry hints.
+  - Tests added for project/collaboration creation limits and utility behavior.
+  - Docs updated: `docs/MVP_TECH_SPEC.md`, `docs/SERVER_ACTIONS.md`, Stage 11 plan.
+### Added
 - Stage 10: Demo Embed + SEO
   - Inline demo embedding (YouTube, Vercel) with sandbox + allowlist and graceful fallback.
   - Project detail SEO metadata (OpenGraph + Twitter).
