@@ -47,7 +47,7 @@ Update all relevant documentation and add changelog entries for the completed ra
 - `web/lib/server/projects.ts` (remove duplicate function, import shared utility)
 - `web/lib/server/collabs.ts` (remove duplicate function, import shared utility)
 
-**Status:** ⏳ Pending
+**Status:** ✅ Completed
 
 ---
 
@@ -66,7 +66,7 @@ Update all relevant documentation and add changelog entries for the completed ra
 **Files to modify:**
 - `web/lib/server/projects.ts` (add rate limit check to `createProject()`)
 
-**Status:** ⏳ Pending
+**Status:** ✅ Completed
 
 ---
 
@@ -85,7 +85,7 @@ Update all relevant documentation and add changelog entries for the completed ra
 **Files to modify:**
 - `web/lib/server/collabs.ts` (add rate limit check to `createCollab()`)
 
-**Status:** ⏳ Pending
+**Status:** ✅ Completed
 
 ---
 
@@ -105,7 +105,7 @@ Update all relevant documentation and add changelog entries for the completed ra
 - `web/app/projects/actions.ts` (update `createProjectAction()`)
 - `web/app/projects/new/page.tsx` (ensure error handling displays properly)
 
-**Status:** ⏳ Pending
+**Status:** ✅ Completed
 
 ---
 
@@ -317,11 +317,11 @@ At each step in 'Actionable and specific steps':
 
 | Step | Status | Started | Completed | Notes |
 |------|--------|---------|-----------|-------|
-| 1. Shared Rate Limiting Utility | ⏳ Pending | TBD | TBD | Consolidate duplicate functions |
-| 2. Project Creation Rate Limiting | ⏳ Pending | TBD | TBD | 5/day limit with 24h window |
-| 3. Collaboration Creation Rate Limiting | ⏳ Pending | TBD | TBD | Same limits as projects |
-| 4. Project Creation UI Error Handling | ⏳ Pending | TBD | TBD | Clear daily limit messaging |
-| 5. Collaboration Creation UI Error Handling | ⏳ Pending | TBD | TBD | Consistent with projects |
+| 1. Shared Rate Limiting Utility | ✅ Completed | Today | Today | Consolidated duplicate functions |
+| 2. Project Creation Rate Limiting | ✅ Completed | Today | Today | 5/day limit with 24h window |
+| 3. Collaboration Creation Rate Limiting | ✅ Completed | Today | Today | Same limits as projects |
+| 4. Project Creation UI Error Handling | ✅ Completed | Today | Today | Clear daily limit messaging |
+| 5. Collaboration Creation UI Error Handling | ✅ Completed | Today | Today | Consistent with projects |
 | 6. Comprehensive Rate Limit Tests | ⏳ Pending | TBD | TBD | All actions + edge cases |
 | 7. Server Actions Documentation | ⏳ Pending | TBD | TBD | Complete rate limit coverage |
 | 8. MVP Technical Specification Update | ⏳ Pending | TBD | TBD | Mark Stage 11 complete |
