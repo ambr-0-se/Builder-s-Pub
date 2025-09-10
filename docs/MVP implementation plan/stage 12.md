@@ -1,8 +1,8 @@
 # Stage 12 Implementation Plan: Analytics
 
-**Status:** 🔄 In Progress  
+**Status:** ✅ Completed  
 **Started:** 10/9/2025  
-**Completed:** TBD  
+**Completed:** 10/9/2025  
 
 ## Overview
 
@@ -211,7 +211,7 @@ Update analytics docs, environment docs, and technical spec; add an Unreleased c
 - `docs/MVP_TECH_SPEC.md` (mark Stage 12 as completed when done)
 - `CHANGELOG.md` (Unreleased: “Add analytics provider and instrumentation”)
 
-**Status:** ⏳ Pending
+**Status:** ✅ Completed
 
 ---
 
@@ -263,8 +263,9 @@ We will strictly adhere to this cadence, requesting explicit approval between st
 | 4. Names & Properties Alignment | ✅ Completed | 10/9/2025 | 10/9/2025 | Canonical names added; normalization refined |
 | 5. Missing Events | ✅ Completed | 10/9/2025 | 10/9/2025 | Added signup, profile_update, project_view; server project_create |
 | 6. Replace Mocks | ✅ Completed | 10/9/2025 | 10/9/2025 | Replaced mock with real hooks; server uses trackServer |
-| 7. Tests | ⏳ Pending | 10/9/2025 | TBD | Wrapper + server action tests |
-| 8. Documentation Updates | ✅ Completed | 10/9/2025 | 10/9/2025 | Analytics config/verify; Env guide updated |
+| 6.1. Unified filter_apply schema | ✅ Completed | 10/9/2025 | 10/9/2025 | Standardized keys; /search emission + signature guard; tests added |
+| 7. Tests | ✅ Completed | 10/9/2025 | 10/9/2025 | Wrapper, server action, search analytics tests |
+| 8. Documentation Updates | ✅ Completed | 10/9/2025 | 10/9/2025 | Analytics config/verify; Env guide updated; unified filter_apply schema |
 
 ## Risk Mitigation
 
@@ -293,4 +294,4 @@ We will strictly adhere to this cadence, requesting explicit approval between st
 ---
 
 **Last Updated:** 10/9/2025  
-**Next Review:** After Step 2 completion
+**Next Review:** N/A (Stage 12 complete)
