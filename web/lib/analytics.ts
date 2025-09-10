@@ -70,6 +70,15 @@ export function useAnalyticsMock() {
 export function trackServer(event: AnalyticsEvent | string, properties?: Record<string, unknown>) {
   const name = normalizeEventName(event)
   const props = withCommonProps(properties)
-  // Step 3 may route to a server-capable analytics sink; for now structured logging
-  console.log(`[Analytics] ${name}`, props)
+  const isServer = typeof window === "undefined"
+  if (!isServer) {
+    if (process.env.NODE_ENV !== "production") console.warn("[Analytics][server] called on client; ignoring", { name })
+    return
+  }
+  // Structured logging for server actions; future: send to provider using server-friendly client
+  try {
+    console.log(`[Analytics][server] ${name}`, props)
+  } catch {
+    // Avoid throwing inside server actions
+  }
 }
