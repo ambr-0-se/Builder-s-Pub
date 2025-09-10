@@ -36,6 +36,10 @@ function normalizeEventName(event: string): CanonicalAnalyticsEvent | string {
       return "project_create"
     case "project_viewed":
       return "project_view"
+    case "collab_comment_added":
+      return "comment_added"
+    case "collab_comment_deleted":
+      return "comment_deleted"
     case "collaboration_created":
       return "collab_create"
     case "filters_applied":
