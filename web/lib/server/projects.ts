@@ -6,6 +6,7 @@ import { getServerSupabase } from "@/lib/supabaseServer"
 import { checkRateLimit } from "@/lib/server/rate-limiting"
 import { formatDurationHMS } from "@/lib/utils"
 import { createProjectSchema, type CreateProjectInput } from "@/app/projects/schema"
+import { trackServer } from "@/lib/analytics"
 import { commentSchema } from "@/app/projects/schema"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
@@ -70,6 +71,16 @@ export async function createProject(input: CreateProjectInput): Promise<{ id: st
 			return { formError: tagsError.message }
 		}
 	}
+
+	// Analytics: project created (server-side)
+	try {
+		trackServer("project_create", {
+			projectId,
+			userId: auth.user.id,
+			techTagIds,
+			categoryTagIds,
+		})
+	} catch {}
 
 	return { id: projectId }
 }
