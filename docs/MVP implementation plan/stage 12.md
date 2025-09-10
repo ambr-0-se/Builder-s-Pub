@@ -127,7 +127,7 @@ Update analytics docs, environment docs, and technical spec; add an Unreleased c
 - Create: `web/app/projects/[id]/ProjectViewTracker.tsx` (client component that debounces and fires `project_view`)
 - Modify: `web/app/projects/[id]/page.tsx` (render `ProjectViewTracker` with ids/tags)
 
-**Status:** ⏳ Pending
+**Status:** ✅ Completed
 
 ---
 
@@ -149,7 +149,36 @@ Update analytics docs, environment docs, and technical spec; add an Unreleased c
 **Potentially affected by ripple changes:**
 - Any components importing from `@/lib/analytics`
 
-**Status:** ⏳ Pending
+**Status:** ✅ Completed
+
+---
+
+### Step 6.1: Unify `filter_apply` Schema Across Search and Projects
+**Goal:** Ensure a single, consistent analytics schema for filter application events on both `/projects` and `/search`.
+
+**What we’re doing:** Standardize the event properties so dashboards and queries remain consistent regardless of where filters are applied. We retain one event name (`filter_apply`) and distinguish context with a `type` property.
+
+**Canonical schema:**
+- event: `filter_apply`
+- properties:
+  - `type`: `'projects' | 'collabs'`
+  - `techTagIds`: `number[]`
+  - `categoryTagIds`: `number[]`
+  - `stages?`: `string[]` (only when `type='collabs'`)
+  - `projectTypes?`: `string[]` (only when `type='collabs'`)
+  - `triggeredBy?`: `'filters'` (optional provenance)
+
+**Files to modify:**
+- `web/app/projects/page.tsx` (change emitted keys to `techTagIds` / `categoryTagIds`; include `type: 'projects'`)
+- `web/app/search/page.tsx` (when emitting `filter_apply`, use unified keys and include `type: tab`)
+
+**Tests to add:**
+- `web/tests/analytics.search.events.test.ts` (new)
+  - Emits `filter_apply` with unified schema on filter change when `hasSearched=true`.
+  - No duplicate `filter_apply` when filters do not change (signature guard).
+  - `search_performed` still fires after results load.
+
+**Status:** ✅ Completed
 
 ---
 
@@ -167,7 +196,7 @@ Update analytics docs, environment docs, and technical spec; add an Unreleased c
 - Create: `web/tests/analytics.events.test.ts` (server action emission for comments/upvotes/collabs)
 - Modify: existing tests if event names changed (keep changes minimal)
 
-**Status:** ⏳ Pending
+**Status:** ✅ Completed
 
 ---
 
@@ -232,10 +261,10 @@ We will strictly adhere to this cadence, requesting explicit approval between st
 | 2. Client Provider & Hook | ✅ Completed | 10/9/2025 | 10/9/2025 | `AnalyticsProvider` added; `useAnalytics()` ready |
 | 3. Server Tracker | ✅ Completed | 10/9/2025 | 10/9/2025 | Structured server logging; client-guard |
 | 4. Names & Properties Alignment | ✅ Completed | 10/9/2025 | 10/9/2025 | Canonical names added; normalization refined |
-| 5. Missing Events | ⏳ Pending | 10/9/2025 | TBD | signup, profile_update, project_view |
-| 6. Replace Mocks | ⏳ Pending | 10/9/2025 | TBD | Swap imports site-wide |
+| 5. Missing Events | ✅ Completed | 10/9/2025 | 10/9/2025 | Added signup, profile_update, project_view; server project_create |
+| 6. Replace Mocks | ✅ Completed | 10/9/2025 | 10/9/2025 | Replaced mock with real hooks; server uses trackServer |
 | 7. Tests | ⏳ Pending | 10/9/2025 | TBD | Wrapper + server action tests |
-| 8. Documentation Updates | ⏳ Pending | 10/9/2025 | TBD | Analytics, Env, Tech Spec, Changelog |
+| 8. Documentation Updates | ✅ Completed | 10/9/2025 | 10/9/2025 | Analytics config/verify; Env guide updated |
 
 ## Risk Mitigation
 

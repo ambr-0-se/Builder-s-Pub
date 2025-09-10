@@ -219,6 +219,7 @@ Development Plan (MVP)
 - Stage 12 — Analytics
   - Tasks: replace analytics mock with provider or structured logging; instrument events per `docs/ANALYTICS.md`.
   - Done when: core flows emit events with required properties.
+  - Notes: `filter_apply` uses a unified schema across `/projects` and `/search` (type, techTagIds, categoryTagIds; stages/projectTypes for collabs only).
 
 - Stage 13 — QA, docs, deploy
   - Tasks: happy-path tests for server actions; doc updates in this file and `supabase/schema.md`; deploy `web/` to Vercel.

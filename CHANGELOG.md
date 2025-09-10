@@ -7,6 +7,13 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- Stage 12: Analytics
+  - PostHog-ready analytics wrapper: `AnalyticsProvider` + `useAnalytics()` with safe no‑op when disabled; hardened `trackServer()`.
+  - Canonical event names and normalization from legacy names (e.g., `project_created`→`project_create`, `filters_applied`→`filter_apply`).
+  - Instrumented events: `signup`, `profile_update`, `project_create`, debounced `project_view`, `search_performed`, `filter_apply` (unified schema with `type` and `*TagIds`, plus `stages`/`projectTypes` for collabs), `comment_added`/`comment_deleted`/`reply_added`, `upvote_toggled`, `collab_comment_added`/`collab_comment_deleted`.
+  - Tests: analytics wrapper unit tests and server action emission tests for projects and collaborations.
+  - Docs updated: `docs/ANALYTICS.md` (configuration & verification) and `ops/ENVIRONMENT.md` (local verification guide). Stage 12 plan updated.
+### Added
 - Stage 11: Rate Limits (Aligned Strategy)
   - Daily limits for content creation: Projects and Collaborations ≤ 5/day/user.
   - Engagement limits maintained: Comments/Replies ≤ 5/min/user; Upvote toggles ≤ 10/min/user.
@@ -14,6 +21,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
   - UI: clear error toasts for daily limits on creation forms with retry hints.
   - Tests added for project/collaboration creation limits and utility behavior.
   - Docs updated: `docs/MVP_TECH_SPEC.md`, `docs/SERVER_ACTIONS.md`, Stage 11 plan.
+
 ### Added
 - Stage 10: Demo Embed + SEO
   - Inline demo embedding (YouTube, Vercel) with sandbox + allowlist and graceful fallback.
