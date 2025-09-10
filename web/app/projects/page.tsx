@@ -9,7 +9,7 @@ import { FilterBar } from "@/components/features/projects/filter-bar"
 import { SortTabs } from "@/components/features/projects/sort-tabs"
 import { listProjects } from "@/lib/api/projects"
 import type { ProjectWithRelations } from "@/lib/types"
-import { useAnalyticsMock } from "@/lib/analytics"
+import { useAnalytics } from "@/lib/analytics"
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<ProjectWithRelations[]>([])
@@ -17,7 +17,7 @@ export default function ProjectsPage() {
   const [sort, setSort] = useState<"recent" | "popular">("recent")
   const [selectedTechTags, setSelectedTechTags] = useState<number[]>([])
   const [selectedCategoryTags, setSelectedCategoryTags] = useState<number[]>([])
-  const { track } = useAnalyticsMock()
+  const { track } = useAnalytics()
 
   const loadProjects = async () => {
     setLoading(true)
@@ -30,9 +30,11 @@ export default function ProjectsPage() {
       setProjects(items)
 
       if (selectedTechTags.length > 0 || selectedCategoryTags.length > 0) {
-        track("filters_applied", {
-          techTags: selectedTechTags,
-          categoryTags: selectedCategoryTags,
+        track("filter_apply", {
+          type: "projects",
+          techTagIds: selectedTechTags,
+          categoryTagIds: selectedCategoryTags,
+          triggeredBy: "filters",
         })
       }
     } catch (error) {

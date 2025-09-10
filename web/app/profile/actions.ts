@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { getServerSupabase } from "@/lib/supabaseServer"
 import { profileSchema } from "./schema"
+import { trackServer } from "@/lib/analytics"
 
 // schema is imported to keep this file exporting only async functions
 
@@ -126,6 +127,12 @@ export async function updateMyProfile(formData: FormData): Promise<UpdateProfile
   }
 
   revalidatePath("/profile")
+
+  // Analytics: profile updated
+  try {
+    trackServer("profile_update", { userId: user.id })
+  } catch {}
+
   redirect("/profile")
 }
 

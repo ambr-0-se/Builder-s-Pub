@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth, ensureServerSession } from "@/lib/api/auth"
-import { useAnalyticsMock } from "@/lib/analytics"
+import { useAnalytics } from "@/lib/analytics"
 import { showToast } from "@/components/ui/toast"
 import { useTags } from "@/hooks/useTags"
 import { createProjectAction, type CreateProjectState } from "@/app/projects/actions"
@@ -18,7 +18,7 @@ import { createProjectAction, type CreateProjectState } from "@/app/projects/act
 export default function NewProjectPage() {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
-  const { track } = useAnalyticsMock()
+  const { track } = useAnalytics()
   const { technology, category, loading } = useTags()
 
   const [formData, setFormData] = useState({

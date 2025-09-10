@@ -11,6 +11,18 @@ Required Environment Variables
 - NEXT_PUBLIC_POSTHOG_KEY (optional, analytics)
 - NEXT_PUBLIC_POSTHOG_HOST (optional, defaults to https://us.posthog.com)
 
+Enable/Disable Analytics
+- If `NEXT_PUBLIC_POSTHOG_KEY` is unset or empty, analytics is disabled and the app falls back to a safe no-op (no runtime errors).
+- To enable, set both `NEXT_PUBLIC_POSTHOG_KEY` and (optionally) `NEXT_PUBLIC_POSTHOG_HOST`.
+
+Local Verification Guide (Analytics)
+1) Set `NEXT_PUBLIC_POSTHOG_KEY` (and optionally `NEXT_PUBLIC_POSTHOG_HOST`).
+2) Restart: `cd web && pnpm dev`.
+3) In browser DevTools → Network, interact with the app:
+   - Project detail for ~1s (project_view)
+   - Search and apply filters (search_performed, filter_apply)
+4) Confirm events in PostHog Live Events. Server-side events currently log to the terminal with `[Analytics][server]`.
+
 Node & Tooling
 - Node.js 18.18–23.x (per `web/package.json` engines)
 - Package manager: pnpm (via Corepack)

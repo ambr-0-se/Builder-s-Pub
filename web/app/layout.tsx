@@ -6,6 +6,7 @@ import { Navbar } from "@/components/layout/navbar"
 import { isAdmin } from "@/lib/server/admin"
 import { Footer } from "@/components/layout/footer"
 import { ToastContainer } from "@/components/ui/toast"
+import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -35,6 +36,7 @@ export default async function RootLayout({
           <main className="flex-1">{children}</main>
           <Footer />
         </div>
+        <AnalyticsProvider />
         <ToastContainer />
       </body>
     </html>

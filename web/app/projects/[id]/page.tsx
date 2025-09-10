@@ -9,6 +9,7 @@ import { CommentCta } from "@/components/features/projects/comment-cta"
 import { CommentList } from "@/components/features/projects/comment-list"
 import { UpvoteButton } from "@/components/features/projects/upvote-button"
 import { CreatedToastOnce } from "@/app/projects/[id]/created-toast"
+import { ProjectViewTracker } from "@/app/projects/[id]/ProjectViewTracker"
 
 interface ProjectDetailPageProps {
   params: { id: string }
@@ -56,6 +57,12 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Analytics: debounced project view */}
+      <ProjectViewTracker
+        projectId={project.project.id}
+        techTags={project.tags.technology.map((t) => t.name)}
+        categoryTags={project.tags.category.map((t) => t.name)}
+      />
       <CreatedToastOnce />
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         {/* Header */}

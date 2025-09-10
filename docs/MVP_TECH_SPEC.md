@@ -219,10 +219,15 @@ Development Plan (MVP)
 - Stage 12 — Analytics
   - Tasks: replace analytics mock with provider or structured logging; instrument events per `docs/ANALYTICS.md`.
   - Done when: core flows emit events with required properties.
+  - Notes: `filter_apply` uses a unified schema across `/projects` and `/search` (type, techTagIds, categoryTagIds; stages/projectTypes for collabs only).
 
 - Stage 13 — QA, docs, deploy
   - Tasks: happy-path tests for server actions; doc updates in this file and `supabase/schema.md`; deploy `web/` to Vercel.
   - Done when: green build on main; smoke tests pass on preview.
+
+  - Subtask: Lint/Type Cleanup (timeboxed)
+    - Scope: fix lint/type errors only in files touched during Stage 12 analytics integration and adjacent trivial issues; avoid broad refactors.
+    - Rationale: keep analytics stage focused while ensuring touched areas remain clean and maintainable.
 
 - Stage 14 — Collaboration visibility (auth-only)
   - Tasks: gate `/collaborations` and `/collaborations/[id]` behind authentication; anonymous users are redirected to sign-in or see a friendly login-required screen; update navbar/links to hide collaboration entry points for non-auth users; enforce RLS to deny `select` on collaboration tables for anon; update tests and docs accordingly.

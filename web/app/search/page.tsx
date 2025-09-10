@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+ import { useState, useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { listProjects as listRealProjects } from "@/lib/api/projects"
 import { listCollabs as listRealCollabs } from "@/lib/api/collabs"
 import type { ProjectWithRelations } from "@/lib/types"
-import { useAnalyticsMock } from "@/lib/analytics"
+import { useAnalytics } from "@/lib/analytics"
 import { useTags } from "@/hooks/useTags"
 import { STAGE_OPTIONS, PROJECT_TYPE_OPTIONS } from "@/lib/collabs/options"
 import Link from "next/link"
@@ -22,7 +22,7 @@ import { formatProjectType } from "@/lib/collabs/options"
 export default function SearchPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { track } = useAnalyticsMock()
+  const { track } = useAnalytics()
   const { technology, category } = useTags()
 
   const [query, setQuery] = useState(searchParams.get("q") || "")
@@ -36,6 +36,7 @@ export default function SearchPage() {
   const [selectedProjectTypes, setSelectedProjectTypes] = useState<string[]>([])
   const [nextCursor, setNextCursor] = useState<string | undefined>(undefined)
   const [hasSearched, setHasSearched] = useState(false)
+  const lastFiltersSig = useRef<string | null>(null)
 
   // Initialize filters from URL params
   useEffect(() => {
@@ -95,8 +96,8 @@ export default function SearchPage() {
         track("search_performed", {
           type: "projects",
           query: query.trim(),
-          techTags: selectedTechTags,
-          categoryTags: selectedCategoryTags,
+          techTagIds: selectedTechTags,
+          categoryTagIds: selectedCategoryTags,
           resultCount: items.length,
         })
       } else {
@@ -113,8 +114,8 @@ export default function SearchPage() {
         track("search_performed", {
           type: "collabs",
           query: query.trim(),
-          techTags: selectedTechTags,
-          categoryTags: selectedCategoryTags,
+          techTagIds: selectedTechTags,
+          categoryTagIds: selectedCategoryTags,
           stages: selectedStages,
           projectTypes: selectedProjectTypes,
           resultCount: items.length,
@@ -153,6 +154,19 @@ export default function SearchPage() {
   // Re-search when filters change
   useEffect(() => {
     if (hasSearched) {
+      // Unified filter_apply emission with signature guard
+      const sig = JSON.stringify({ tab, selectedTechTags, selectedCategoryTags, selectedStages, selectedProjectTypes })
+      if (lastFiltersSig.current !== sig) {
+        track("filter_apply", {
+          type: tab,
+          techTagIds: selectedTechTags,
+          categoryTagIds: selectedCategoryTags,
+          stages: tab === "collabs" ? selectedStages : undefined,
+          projectTypes: tab === "collabs" ? selectedProjectTypes : undefined,
+          triggeredBy: "filters",
+        })
+        lastFiltersSig.current = sig
+      }
       performSearch()
     }
   }, [selectedTechTags, selectedCategoryTags, selectedStages, selectedProjectTypes, tab])
