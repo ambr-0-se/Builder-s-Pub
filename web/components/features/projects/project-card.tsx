@@ -6,7 +6,7 @@ import Link from "next/link"
 import type { ProjectWithRelations } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { useAnalyticsMock } from "@/lib/analytics"
+import { useAnalytics } from "@/lib/analytics"
 import { UpvoteButton } from "@/components/features/projects/upvote-button"
 
 interface ProjectCardProps {
@@ -15,7 +15,7 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project }: ProjectCardProps) {
-  const { track } = useAnalyticsMock()
+  const { track } = useAnalytics()
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">

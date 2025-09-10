@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { listProjects as listRealProjects } from "@/lib/api/projects"
 import { listCollabs as listRealCollabs } from "@/lib/api/collabs"
 import type { ProjectWithRelations } from "@/lib/types"
-import { useAnalyticsMock } from "@/lib/analytics"
+import { useAnalytics } from "@/lib/analytics"
 import { useTags } from "@/hooks/useTags"
 import { STAGE_OPTIONS, PROJECT_TYPE_OPTIONS } from "@/lib/collabs/options"
 import Link from "next/link"
@@ -22,7 +22,7 @@ import { formatProjectType } from "@/lib/collabs/options"
 export default function SearchPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { track } = useAnalyticsMock()
+  const { track } = useAnalytics()
   const { technology, category } = useTags()
 
   const [query, setQuery] = useState(searchParams.get("q") || "")

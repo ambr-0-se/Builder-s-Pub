@@ -4,13 +4,13 @@ import { useEffect, useRef } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { showToast } from "@/components/ui/toast"
 import { handleCreatedFlag } from "@/lib/created-flag"
-import { useAnalyticsMock } from "@/lib/analytics"
+import { useAnalytics } from "@/lib/analytics"
 
 export function CreatedToastOnce() {
 	const router = useRouter()
 	const pathname = usePathname()
 	const params = useSearchParams()
-	const { track } = useAnalyticsMock()
+	const { track } = useAnalytics()
 	const hasRunRef = useRef(false)
 
 	useEffect(() => {
