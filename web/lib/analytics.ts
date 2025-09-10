@@ -1,3 +1,4 @@
+// Legacy/source event names still used across the codebase today
 type AnalyticsEvent =
   | "project_created"
   | "project_viewed"
@@ -14,8 +15,22 @@ type AnalyticsEvent =
   | "search_performed"
   | "filters_applied"
 
+// Canonical event names per docs/ANALYTICS.md
+export type CanonicalAnalyticsEvent =
+  | "project_create"
+  | "project_view"
+  | "upvote_toggled"
+  | "comment_added"
+  | "comment_deleted"
+  | "reply_added"
+  | "collab_create"
+  | "search_performed"
+  | "filter_apply"
+  | "signup"
+  | "profile_update"
+
 // Temporary normalization to support legacy names; Step 4 will align names at call sites
-function normalizeEventName(event: string): string {
+function normalizeEventName(event: string): CanonicalAnalyticsEvent | string {
   switch (event) {
     case "project_created":
       return "project_create"
