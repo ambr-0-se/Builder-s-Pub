@@ -224,6 +224,10 @@ Development Plan (MVP)
   - Tasks: happy-path tests for server actions; doc updates in this file and `supabase/schema.md`; deploy `web/` to Vercel.
   - Done when: green build on main; smoke tests pass on preview.
 
+  - Subtask: Lint/Type Cleanup (timeboxed)
+    - Scope: fix lint/type errors only in files touched during Stage 12 analytics integration and adjacent trivial issues; avoid broad refactors.
+    - Rationale: keep analytics stage focused while ensuring touched areas remain clean and maintainable.
+
 - Stage 14 — Collaboration visibility (auth-only)
   - Tasks: gate `/collaborations` and `/collaborations/[id]` behind authentication; anonymous users are redirected to sign-in or see a friendly login-required screen; update navbar/links to hide collaboration entry points for non-auth users; enforce RLS to deny `select` on collaboration tables for anon; update tests and docs accordingly.
   - Done when: non-logged-in users cannot view collaboration lists or details (server and client enforced); logged-in users retain normal access.

@@ -11,6 +11,10 @@ Required Environment Variables
 - NEXT_PUBLIC_POSTHOG_KEY (optional, analytics)
 - NEXT_PUBLIC_POSTHOG_HOST (optional, defaults to https://us.posthog.com)
 
+Enable/Disable Analytics
+- If `NEXT_PUBLIC_POSTHOG_KEY` is unset or empty, analytics is disabled and the app falls back to a safe no-op (no runtime errors).
+- To enable, set both `NEXT_PUBLIC_POSTHOG_KEY` and (optionally) `NEXT_PUBLIC_POSTHOG_HOST`.
+
 Node & Tooling
 - Node.js 18.18–23.x (per `web/package.json` engines)
 - Package manager: pnpm (via Corepack)
