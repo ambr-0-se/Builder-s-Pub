@@ -30,9 +30,11 @@ export default function ProjectsPage() {
       setProjects(items)
 
       if (selectedTechTags.length > 0 || selectedCategoryTags.length > 0) {
-        track("filters_applied", {
-          techTags: selectedTechTags,
-          categoryTags: selectedCategoryTags,
+        track("filter_apply", {
+          type: "projects",
+          techTagIds: selectedTechTags,
+          categoryTagIds: selectedCategoryTags,
+          triggeredBy: "filters",
         })
       }
     } catch (error) {

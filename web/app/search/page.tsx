@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+ import { useState, useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -36,6 +36,7 @@ export default function SearchPage() {
   const [selectedProjectTypes, setSelectedProjectTypes] = useState<string[]>([])
   const [nextCursor, setNextCursor] = useState<string | undefined>(undefined)
   const [hasSearched, setHasSearched] = useState(false)
+  const lastFiltersSig = useRef<string | null>(null)
 
   // Initialize filters from URL params
   useEffect(() => {
@@ -95,8 +96,8 @@ export default function SearchPage() {
         track("search_performed", {
           type: "projects",
           query: query.trim(),
-          techTags: selectedTechTags,
-          categoryTags: selectedCategoryTags,
+          techTagIds: selectedTechTags,
+          categoryTagIds: selectedCategoryTags,
           resultCount: items.length,
         })
       } else {
@@ -113,8 +114,8 @@ export default function SearchPage() {
         track("search_performed", {
           type: "collabs",
           query: query.trim(),
-          techTags: selectedTechTags,
-          categoryTags: selectedCategoryTags,
+          techTagIds: selectedTechTags,
+          categoryTagIds: selectedCategoryTags,
           stages: selectedStages,
           projectTypes: selectedProjectTypes,
           resultCount: items.length,
@@ -153,6 +154,19 @@ export default function SearchPage() {
   // Re-search when filters change
   useEffect(() => {
     if (hasSearched) {
+      // Unified filter_apply emission with signature guard
+      const sig = JSON.stringify({ tab, selectedTechTags, selectedCategoryTags, selectedStages, selectedProjectTypes })
+      if (lastFiltersSig.current !== sig) {
+        track("filter_apply", {
+          type: tab,
+          techTagIds: selectedTechTags,
+          categoryTagIds: selectedCategoryTags,
+          stages: tab === "collabs" ? selectedStages : undefined,
+          projectTypes: tab === "collabs" ? selectedProjectTypes : undefined,
+          triggeredBy: "filters",
+        })
+        lastFiltersSig.current = sig
+      }
       performSearch()
     }
   }, [selectedTechTags, selectedCategoryTags, selectedStages, selectedProjectTypes, tab])
