@@ -89,7 +89,7 @@ Update analytics docs, environment docs, and technical spec; add an Unreleased c
 **Files to modify:**
 - Modify: `web/lib/analytics.ts` (implement robust server-side `trackServer`)
 
-**Status:** ⏳ Pending
+**Status:** ✅ Completed
 
 ---
 
@@ -107,7 +107,7 @@ Update analytics docs, environment docs, and technical spec; add an Unreleased c
 - Modify: `web/lib/analytics.ts` (event union/types)
 - Modify: all current usage sites to ensure event string alignment (see Step 6 list)
 
-**Status:** ⏳ Pending
+**Status:** ✅ Completed
 
 ---
 
@@ -230,8 +230,8 @@ We will strictly adhere to this cadence, requesting explicit approval between st
 |------|--------|---------|-----------|-------|
 | 1. SDK & Env Wiring | ✅ Completed | 10/9/2025 | 10/9/2025 | Dependency added, env notes updated |
 | 2. Client Provider & Hook | ✅ Completed | 10/9/2025 | 10/9/2025 | `AnalyticsProvider` added; `useAnalytics()` ready |
-| 3. Server Tracker | ⏳ Pending | 10/9/2025 | TBD | `trackServer()` robust fallback |
-| 4. Names & Properties Alignment | ⏳ Pending | 10/9/2025 | TBD | snake_case events, camelCase props |
+| 3. Server Tracker | ✅ Completed | 10/9/2025 | 10/9/2025 | Structured server logging; client-guard |
+| 4. Names & Properties Alignment | ✅ Completed | 10/9/2025 | 10/9/2025 | Canonical names added; normalization refined |
 | 5. Missing Events | ⏳ Pending | 10/9/2025 | TBD | signup, profile_update, project_view |
 | 6. Replace Mocks | ⏳ Pending | 10/9/2025 | TBD | Swap imports site-wide |
 | 7. Tests | ⏳ Pending | 10/9/2025 | TBD | Wrapper + server action tests |
