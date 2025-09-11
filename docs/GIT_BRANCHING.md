@@ -52,5 +52,3 @@ git rebase origin/main
 # Delete remote branch after merge
 git push origin --delete feat/stage-2-auth
 ```
-
-
