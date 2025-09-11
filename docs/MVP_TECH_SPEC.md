@@ -37,6 +37,16 @@ Upvotes
 - As an authenticated user, I can upvote a project once.
   - AC: Enforced by DB PK (project_id, user_id); unvote is out of scope for MVP.
 
+Errors
+- As a user, I see a friendly error page and helpful messages for typical failures.
+  - AC: App Router `error.tsx` and `not-found.tsx`; 401/403/409 show clear guidance; 500 shows retry and feedback link.
+- As an operator, I receive actionable error reports.
+  - AC: Client + server error reporting with PII redaction and rate limits; includes route, anonymized user id, and breadcrumbs.
+
+External Links
+- As a user, when leaving to an external site, I see a brief disclaimer.
+  - AC: One-time modal/toast with “Proceed” + “Don’t show again” persisted; external links use `rel="noopener noreferrer"`; event instrumented.
+
 Discover/Search
 - As a user, I can search projects and collaborations with optional keyword(s) and filters.
   - Projects: optional q (keywords), technology tags, category tags.
@@ -63,21 +73,28 @@ Server Actions / API Contracts (shapes)
 - createProject(input): { title, tagline, description, demoUrl, sourceUrl?, techTagIds[], categoryTagIds[] } -> { id } | validation_error
 - listProjects(params): { cursor?, limit=20, sort='recent'|'popular', q?, techTagIds?, categoryTagIds? } -> { items[], nextCursor? }
 - getProject(id): -> { project, tags: {technology[], category[]}, upvoteCount, comments[] }
+- requestProjectLogoUpload(projectId): owner-only -> { uploadUrl, path, maxBytes, mime }
+- setProjectLogo(projectId, path): owner-only -> { ok: true }
 - upvoteProject(projectId): -> { ok: true } | { error: 'conflict'|'unauthorized' }
 - addComment(projectId, body): -> { id }
 - deleteComment(commentId): -> { ok: true }
 - updateProject(id, fields): owner-only -> { ok: true }
-- deleteProject(id): owner-only -> { ok: true }
+- deleteProject(id): owner-only (soft delete) -> { ok: true }
 
-- createCollab(input): { title, affiliatedOrg?, projectTypes[], description, stage, lookingFor[], contact, remarks?, techTagIds[], categoryTagIds[] } -> { id }
-- listCollabs(params): { cursor?, limit=20, q?, techTagIds?, categoryTagIds?, stages?, projectTypes? } -> { items[], nextCursor? }
+- createCollab(input): { title, affiliatedOrg?, projectTypes[], description, stage, lookingFor[], contact, remarks?, techTagIds[], categoryTagIds[], role? } -> { id }
+- listCollabs(params): { cursor?, limit=20, q?, techTagIds?, categoryTagIds?, stages?, projectTypes?, role? } -> { items[], nextCursor? }
+- requestCollabLogoUpload(collabId): owner-only -> { uploadUrl, path, maxBytes, mime }
+- setCollabLogo(collabId, path): owner-only -> { ok: true }
 - getCollab(id), updateCollab(id, fields), deleteCollab(id)
+
+- reportError(input): { message, context?, url?, userMessage? } -> { ok: true }
 
 Validation & UX States
 - Forms: client + server validation; disabled submit during pending; inline field errors; success toast + redirect.
 - Lists: skeleton loaders; empty states with CTAs.
-- Errors: human-friendly messages for 401/403/409; retry for 500.
-- Demo embed: YouTube/Vercel recognized; else external link.
+- Errors: human-friendly messages for 401/403/409; retry for 500; error boundary pages present.
+- Demo embed: YouTube/Vercel recognized; else external link with disclaimer UX.
+- External links: always `rel="noopener noreferrer"`; one-time disclaimer ack persisted per browser.
 
 Tag Governance
 - Tags are controlled vocabulary: `tags (name, type)`, unique (name,type).
@@ -108,6 +125,9 @@ Definition of Done (per feature)
 
 References
 - Schema: `supabase/schema.sql` and `supabase/schema.md`
+-  - Additions for MVP:
+-    - Projects/Collabs: `logo_path text null`, `deleted_at timestamptz null` (soft delete)
+-    - Collaborations: `role text null` (simple field; consider normalization later)
 - RLS: `supabase/rls_policies.sql`
 - NFRs: `docs/NFR.md`
 - Analytics: `docs/ANALYTICS.md`
@@ -156,7 +176,7 @@ Development Plan (MVP)
       - `getProject(id)` returns project, tags, owner profile display name, and upvote count.
     - Create flow uses a server action at `web/app/projects/actions.ts` and redirects to `/projects/[id]` on success.
     - Listing page (`/projects`) uses a thin client wrapper `web/lib/api/projects.ts` that calls `/api/projects/list` and converts `createdAt` back to `Date`.
-    - Landing page (`/) calls server module `web/lib/server/projects.ts` directly (server runtime) and falls back to empty lists if fetch fails.
+    - Landing page (`/`) calls server module `web/lib/server/projects.ts` directly (server runtime) and falls back to empty lists if fetch fails.
     - Note: keyword search (`q`) is deferred to Stage 9; current `listProjects` ignores `q`.
   - Done when: create redirects to detail; list supports Recent/Popular and tag filters (AND across types, OR within type). (Met)
 
@@ -212,26 +232,39 @@ Development Plan (MVP)
   - Security: Domain allowlisting, iframe sandboxing, URL validation for embed safety.
   - Done when: supported demos embed inline; comprehensive metadata on all core pages; sitemap.xml generates dynamically; security measures prevent malicious embeds.
 
-- Stage 11 — Rate limits (Aligned Strategy)
+- Stage 11 — Rate limits (Aligned Strategy) — Done
   - Tasks: implement comprehensive rate limiting with aligned strategy - content creation (5/day), comments (5/min), upvotes (10/min); consolidate rate limiting utilities; ensure clear UI feedback.
   - Done when: all creation and engagement actions are rate limited with appropriate time windows; users receive clear error messages with retry guidance; rate limiting code is consolidated and well-tested.
 
-- Stage 12 — Analytics
+- Stage 12 — Analytics — Done
   - Tasks: replace analytics mock with provider or structured logging; instrument events per `docs/ANALYTICS.md`.
   - Done when: core flows emit events with required properties.
   - Notes: `filter_apply` uses a unified schema across `/projects` and `/search` (type, techTagIds, categoryTagIds; stages/projectTypes for collabs only).
 
-- Stage 13 — QA, docs, deploy
-  - Tasks: happy-path tests for server actions; doc updates in this file and `supabase/schema.md`; deploy `web/` to Vercel.
-  - Done when: green build on main; smoke tests pass on preview.
+- Stage 13 — Error handling, reporting, and external link disclaimer — Planned
+  - Tasks: implement App Router `error.tsx`/`not-found.tsx`; integrate error reporting (client + server); add `/report-problem` server action or endpoint; add one-time external link disclaimer modal/toast; ensure `rel="noopener noreferrer"`.
+  - Done when: 401/403/409/500 show friendly guidance; errors reach logging backend with redaction; disclaimer shown once and respected; tests cover 500 path and rate-limit on report.
 
-  - Subtask: Lint/Type Cleanup (timeboxed)
-    - Scope: fix lint/type errors only in files touched during Stage 12 analytics integration and adjacent trivial issues; avoid broad refactors.
-    - Rationale: keep analytics stage focused while ensuring touched areas remain clean and maintainable.
+- Stage 14 — Tag curation & validation tweaks — Planned
+  - Tasks: curate initial tag set in admin UI; enforce dedupe/casing; cap tags per item (e.g., ≤ 8 total).
+  - Done when: forms prevent dupes; curated tags visible; search behaves unchanged functionally.
 
-- Stage 14 — Collaboration visibility (auth-only)
+- Stage 15 — Logos for projects & collaborations (list display) — Planned
+  - Tasks: create storage buckets (`project-logos`, `collab-logos`) with RLS; add `request*LogoUpload` and `set*Logo` actions; UI to upload on create/edit; render logos with `next/image` in cards with fallback.
+  - Done when: owners upload ≤ 1MB images (PNG/JPEG/SVG); logos render on lists/detail; broken/missing logos fall back; tests cover RLS access.
+
+- Stage 16 — Collaboration by role (post + search) — Planned
+  - Tasks: add optional `role` to collab schema and forms (controlled vocab or free text with suggestions); update `/search` to filter by role; analytics for role usage.
+  - Done when: users can set role on create/edit; search filters by role; indexing present; validation enforced.
+
+- Stage 17 — Collaboration visibility (auth-only) — Planned
   - Tasks: gate `/collaborations` and `/collaborations/[id]` behind authentication; anonymous users are redirected to sign-in or see a friendly login-required screen; update navbar/links to hide collaboration entry points for non-auth users; enforce RLS to deny `select` on collaboration tables for anon; update tests and docs accordingly.
   - Done when: non-logged-in users cannot view collaboration lists or details (server and client enforced); logged-in users retain normal access.
 
-- Stage 15 - About us (Goal, Vision, Team), Error Page
+- Stage 18 — QA, docs, deploy — Planned
+  - Tasks: happy-path tests for new actions (logo upload, error report) and updates; doc updates in this file and `supabase/schema.md`; deploy `web/` to Vercel.
+    - Subtask: Lint/Type Cleanup, Fix lint/ type errors (timeboxed)
+  - Done when: green build on main; smoke tests pass on preview; CHANGELOG updated for user-visible items.
+
+- (Moved to Post‑MVP) About us (Goal, Vision, Team)
 
