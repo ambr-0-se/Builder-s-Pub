@@ -56,16 +56,20 @@ export function buildReportFromRejectionEvent(ev: PromiseRejectionEvent): Report
   }
 }
 
+import { createRing, type Crumb } from "@/lib/utils/ring"
+
 export function installGlobalClientErrorReporter(options?: { endpoint?: string; track?: (name: string, props?: any) => void }) {
   const endpoint = options?.endpoint || "/api/errors/report"
   const track = options?.track
+  const crumbs = createRing<Crumb>(30)
 
   const send: SendReport = async (input) => {
     try {
+      const enriched = { ...input, context: { ...(input.context as any), breadcrumbs: crumbs.serialize(8_000) } }
       await fetch(endpoint, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(input),
+        body: JSON.stringify(enriched),
         keepalive: true,
       })
       track?.("client_error_reported", { url: input.url })
@@ -75,6 +79,48 @@ export function installGlobalClientErrorReporter(options?: { endpoint?: string; 
   }
 
   const maybeSend = createThrottledSender(send, 30000)
+
+  // Route changes
+  const origPush = history.pushState
+  const origReplace = history.replaceState
+  history.pushState = function (s, t, u) {
+    try {
+      const href = u ? new URL(String(u), location.href).href : location.href
+      crumbs.add({ ts: Date.now(), type: "route", href })
+    } catch {}
+    return origPush.apply(this, arguments as any)
+  } as any
+  history.replaceState = function (s, t, u) {
+    try {
+      const href = u ? new URL(String(u), location.href).href : location.href
+      crumbs.add({ ts: Date.now(), type: "route", href })
+    } catch {}
+    return origReplace.apply(this, arguments as any)
+  } as any
+  window.addEventListener("popstate", () => {
+    try {
+      crumbs.add({ ts: Date.now(), type: "route", href: location.href })
+    } catch {}
+  })
+
+  // Clicks on links (capture phase)
+  let lastClickHref = ""
+  let lastClickAt = 0
+  document.addEventListener(
+    "click",
+    (e) => {
+      const el = (e.target as Element | null)?.closest?.("a[href]")
+      if (!el) return
+      const a = el as HTMLAnchorElement
+      const href = a.href
+      const now = Date.now()
+      if (href === lastClickHref && now - lastClickAt < 1000) return
+      lastClickHref = href
+      lastClickAt = now
+      crumbs.add({ ts: now, type: "click", href, text: (a.textContent || "").trim().slice(0, 80) })
+    },
+    { capture: true }
+  )
 
   function onError(ev: ErrorEvent) {
     void maybeSend(buildReportFromErrorEvent(ev))
