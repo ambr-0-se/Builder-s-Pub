@@ -138,8 +138,8 @@ At each step in ‘Actionable and specific steps’,
 - Identidy the files that the code would affect and prevent any bug.
 - Add testcases for the change. Then, make sure all testcases are passed.
 - After each atmoic change, guide user to review it
-- After user's approval, push changes to Github 
-- Do not forget to write test cases and update documentation.
+- After user's review and approval, push changes to Github 
+- Do not forget to update progress tracking and other relevant documents.
 - Proceed to the next step in ‘Actionable and specific steps’
 
 Always follow this plan, refer back to this document, update the progress after each step is done, and modify it if needed.

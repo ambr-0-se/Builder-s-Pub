@@ -1,5 +1,3 @@
-"use server"
-
 import crypto from "node:crypto"
 import { getServerSupabase } from "@/lib/supabaseServer"
 import { checkRateLimit } from "@/lib/server/rate-limiting"

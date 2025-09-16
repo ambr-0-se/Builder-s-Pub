@@ -7,6 +7,7 @@ import { isAdmin } from "@/lib/server/admin"
 import { Footer } from "@/components/layout/footer"
 import { ToastContainer } from "@/components/ui/toast"
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider"
+import { ClientErrorReporter } from "@/components/analytics/ClientErrorReporter"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -37,6 +38,7 @@ export default async function RootLayout({
           <Footer />
         </div>
         <AnalyticsProvider />
+        <ClientErrorReporter />
         <ToastContainer />
       </body>
     </html>
