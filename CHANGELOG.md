@@ -11,6 +11,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - Global error pages (`web/app/error.tsx`, `web/app/not-found.tsx`) with friendly actions.
 - Error report API (`POST /api/errors/report`) with PII redaction, anonymized user id, rate limiting, and breadcrumbs.
 - Client error reporter (global listeners) with throttling and a 30-cap breadcrumbs ring buffer (routes/clicks).
+- External link disclaimer modal (one-time per browser) with localStorage persistence; utilities and tests included.
 - `/report-problem` page and server action leveraging the same report pipeline.
 ### Added
 - Stage 12: Analytics

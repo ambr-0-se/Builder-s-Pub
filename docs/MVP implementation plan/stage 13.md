@@ -152,7 +152,7 @@ Always follow this plan, refer back to this document, update the progress after 
 | 2. Report endpoint + helpers (incl. rate limit) | ✅ Completed | 16/9/2025 | 16/9/2025 | API + helpers + tests |
 | 3. Client reporter | ✅ Completed | 16/9/2025 | 16/9/2025 | Global listeners + throttling |
 | 4. Report problem page | ✅ Completed | 16/9/2025 | 16/9/2025 | Server action + page + tests |
-| 5. External disclaimer | Planned | — | — |  |
+| 5. External disclaimer | ✅ Completed | 16/9/2025 | 16/9/2025 | One-time modal + utils + tests |
 | 6. noopener audit | Planned | — | — |  |
 | 7. Docs + changelog | In Progress | 16/9/2025 | — | Updated tech spec + server actions |
 
