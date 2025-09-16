@@ -13,6 +13,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - Client error reporter (global listeners) with throttling and a 30-cap breadcrumbs ring buffer (routes/clicks).
 - External link disclaimer modal (one-time per browser) with localStorage persistence; utilities and tests included.
 - `/report-problem` page and server action leveraging the same report pipeline.
+- Analytics events for external link disclaimer interactions.
 ### Added
 - Stage 12: Analytics
   - PostHog-ready analytics wrapper: `AnalyticsProvider` + `useAnalytics()` with safe no‑op when disabled; hardened `trackServer()`.
