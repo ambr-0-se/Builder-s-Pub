@@ -10,6 +10,7 @@ Required Environment Variables
 - ADMIN_EMAILS (comma-separated list of admin email addresses for tag management)
 - NEXT_PUBLIC_POSTHOG_KEY (optional, analytics)
 - NEXT_PUBLIC_POSTHOG_HOST (optional, defaults to https://us.posthog.com)
+ - ERROR_SALT (optional, used to anonymize user ids in error reports; set a project-unique non-secret value)
 
 Enable/Disable Analytics
 - If `NEXT_PUBLIC_POSTHOG_KEY` is unset or empty, analytics is disabled and the app falls back to a safe no-op (no runtime errors).
