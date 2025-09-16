@@ -25,6 +25,8 @@ Core Events
 - collab_create
 - search_performed
 - filter_apply
+ - external_link_disclaimer_shown
+ - external_link_proceed
 
 Event Properties (by context)
 - Common: userId (anon or authed), sessionId, ts
@@ -52,6 +54,7 @@ Implementation Notes
   - upvote_toggled (project|comment) with upvoted, limited?, retryAfterSec?
 - Derive trending with upvotes and recency in backend; no client-side ranking.
 - Respect user privacy; do not log PII in event properties.
+ - External links: the disclaimer component emits `external_link_disclaimer_shown` and `external_link_proceed` with `{ href, host }` (no PII). The click itself opens with `noopener,noreferrer`.
 
 Verification (MVP mock)
 - Open the terminal running `pnpm dev` to see lines prefixed with `[Analytics]` when you add/delete comments, add replies, or toggle upvotes.

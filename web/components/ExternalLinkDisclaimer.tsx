@@ -1,11 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { hasDisclaimerAck, isExternalUrl, setDisclaimerAck } from "@/lib/utils/external"
+import { hasDisclaimerAck, isExternalUrl, setDisclaimerAck, buildExternalEventProps } from "@/lib/utils/external"
+import { useAnalytics } from "@/lib/analytics"
 
 export function ExternalLinkDisclaimer() {
   const [show, setShow] = useState(false)
   const [pendingHref, setPendingHref] = useState<string | null>(null)
+  const { track } = useAnalytics()
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -19,6 +21,7 @@ export function ExternalLinkDisclaimer() {
         if (hasDisclaimerAck()) return
         e.preventDefault()
         setPendingHref(href)
+        try { track("external_link_disclaimer_shown", buildExternalEventProps(href)) } catch {}
         setShow(true)
       } catch {
         // ignore
@@ -31,7 +34,10 @@ export function ExternalLinkDisclaimer() {
   function proceed(dontShowAgain: boolean) {
     try {
       if (dontShowAgain) setDisclaimerAck()
-      if (pendingHref) window.open(pendingHref, "_blank", "noopener,noreferrer")
+      if (pendingHref) {
+        try { track("external_link_proceed", buildExternalEventProps(pendingHref)) } catch {}
+        window.open(pendingHref, "_blank", "noopener,noreferrer")
+      }
     } finally {
       setShow(false)
       setPendingHref(null)

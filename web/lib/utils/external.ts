@@ -31,4 +31,13 @@ export function setDisclaimerAck(storage: Storage = typeof window !== "undefined
   }
 }
 
+export function buildExternalEventProps(href: string, base: string = typeof window !== "undefined" ? window.location.href : "") {
+  try {
+    const u = new URL(href, base || undefined)
+    return { href: u.href, host: u.host }
+  } catch {
+    return { href, host: "" }
+  }
+}
+
 

@@ -12,9 +12,12 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
   return (
     <div className="max-w-2xl mx-auto px-4 py-16 text-center">
       <h1 className="text-2xl font-semibold text-gray-900">Something went wrong</h1>
-      <p className="mt-2 text-gray-600">
-        An unexpected error occurred. You can try again, go back, or report the problem so we can look into it.
-      </p>
+      <p className="mt-2 text-gray-600">You can try again, go back, or report the problem so we can look into it.</p>
+      <ul className="mt-3 text-sm text-gray-600 space-y-1">
+        <li>• If you were signing in (401), please refresh and sign in again.</li>
+        <li>• If you don’t have access (403), check that you are using the right account.</li>
+        <li>• If you saw a conflict (409), try again after a few seconds.</li>
+      </ul>
       <div className="mt-6 flex items-center justify-center gap-3">
         <button
           onClick={() => reset()}
