@@ -53,6 +53,14 @@ Collaborations
 - addCollabComment(collaborationId, body 1–1000, parentCommentId?): `-> { id } | { error }`
 - deleteCollabComment(commentId): `-> { ok: true } | { error }`
 
+Errors
+
+- reportError (API): `POST /api/errors/report`
+  - Input: `{ message: string, context?: unknown, url?: string, userMessage?: string }`
+  - Behavior: Enriches with anonymized user id (salted hash), user agent, and route; redacts emails and URL paths in `message`, `userMessage`, and `context`; rate limits using action `error_report` at 10/min per anonymized user hash (or IP fallback).
+  - Output: `{ ok: true }` on success; `{ error: 'rate_limited', retryAfterSec }` on limit; `{ error: 'invalid_input' }` on bad payload.
+  - Client: Global reporter listens to `window.onerror` and `unhandledrejection`, adds a throttled ring-buffer of breadcrumbs (recent routes/clicks), and posts to this endpoint. Manual reports are submitted via `/report-problem` server action using the same helper.
+
 Validation (UX)
 - Respect limits: Title ≤80, Tagline ≤140, Description ≤4000; URLs must be `http/https`.
 - Tag rules: at least one technology and one category.

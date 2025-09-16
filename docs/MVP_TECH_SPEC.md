@@ -241,8 +241,14 @@ Development Plan (MVP)
   - Done when: core flows emit events with required properties.
   - Notes: `filter_apply` uses a unified schema across `/projects` and `/search` (type, techTagIds, categoryTagIds; stages/projectTypes for collabs only).
 
-- Stage 13 — Error handling, reporting, and external link disclaimer — Planned
-  - Tasks: implement App Router `error.tsx`/`not-found.tsx`; integrate error reporting (client + server); add `/report-problem` server action or endpoint; add one-time external link disclaimer modal/toast; ensure `rel="noopener noreferrer"`.
+- Stage 13 — Error handling, reporting, and external link disclaimer — In Progress
+  - Implemented:
+    - Global error pages: `web/app/error.tsx`, `web/app/not-found.tsx` with friendly actions.
+    - Error report API: `POST /api/errors/report` with PII redaction, anonymized user id, breadcrumbs, and rate limiting.
+    - Client error reporter: global listeners for `error`/`unhandledrejection`, throttling, and breadcrumb capture (routes/clicks).
+    - Manual report page: `/report-problem` with server action using the same server helpers.
+  - Pending:
+    - External link disclaimer modal/toast and final docs polish.
   - Done when: 401/403/409/500 show friendly guidance; errors reach logging backend with redaction; disclaimer shown once and respected; tests cover 500 path and rate-limit on report.
 
 - Stage 14 — Tag curation & validation tweaks — Planned

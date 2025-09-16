@@ -148,13 +148,13 @@ Always follow this plan, refer back to this document, update the progress after 
 
 | Step | Status | Started | Completed | Notes |
 |------|--------|---------|-----------|-------|
-| 1. Error pages | Planned | — | — |  |
-| 2. Report endpoint + helpers (incl. rate limit) | Planned | — | — |  |
-| 3. Client reporter | Planned | — | — |  |
-| 4. Report problem page | Planned | — | — |  |
+| 1. Error pages | ✅ Completed | 16/9/2025 | 16/9/2025 | Added error.tsx and not-found.tsx + tests |
+| 2. Report endpoint + helpers (incl. rate limit) | ✅ Completed | 16/9/2025 | 16/9/2025 | API + helpers + tests |
+| 3. Client reporter | ✅ Completed | 16/9/2025 | 16/9/2025 | Global listeners + throttling |
+| 4. Report problem page | ✅ Completed | 16/9/2025 | 16/9/2025 | Server action + page + tests |
 | 5. External disclaimer | Planned | — | — |  |
 | 6. noopener audit | Planned | — | — |  |
-| 7. Docs + changelog | Planned | — | — |  |
+| 7. Docs + changelog | In Progress | 16/9/2025 | — | Updated tech spec + server actions |
 
 ## Risk Mitigation
 
