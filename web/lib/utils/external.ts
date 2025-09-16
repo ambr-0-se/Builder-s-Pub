@@ -3,6 +3,8 @@ export const DISCLAIMER_ACK_KEY = "ext_disclaimer_ack"
 export function isExternalUrl(href: string, base: string = typeof window !== "undefined" ? window.location.href : ""): boolean {
   try {
     const u = new URL(href, base || undefined)
+    // Only treat http/https as navigable external URLs. mailto:, tel:, javascript:, etc. are not considered here.
+    if (!/^https?:$/i.test(u.protocol)) return false
     if (!base && typeof window === "undefined") return true
     const origin = (base ? new URL(base) : new URL(window.location.href)).origin
     return u.origin !== origin

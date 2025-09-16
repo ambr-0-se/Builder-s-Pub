@@ -23,6 +23,18 @@ describe("client error util", () => {
     expect(sent.length).toBe(2)
   })
 
+  it("allows same message after window elapses", async () => {
+    const send = vi.fn(async () => {})
+    const maybeSend = createThrottledSender(send, 1000)
+    const input = { message: "boom", url: "/a" }
+    await maybeSend(input)
+    vi.advanceTimersByTime(999)
+    const r2 = await maybeSend(input)
+    expect(r2).toBe(false)
+    vi.advanceTimersByTime(2)
+    const r3 = await maybeSend(input)
+    expect(r3).toBe(true)
+  })
   it("signatureOf includes message and url", () => {
     const sig = signatureOf({ message: "a", url: "/u" })
     expect(sig).toContain("a@@/u")

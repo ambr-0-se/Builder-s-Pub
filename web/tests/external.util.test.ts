@@ -7,6 +7,8 @@ describe("external link utils", () => {
     expect(isExternalUrl("/a", base)).toBe(false)
     expect(isExternalUrl("https://example.com/b", base)).toBe(false)
     expect(isExternalUrl("https://other.com/b", base)).toBe(true)
+    // invalid URL should be treated as non-external (safe fallback)
+    expect(isExternalUrl("javascript:alert(1)", base)).toBe(false)
   })
 
   it("localStorage ack toggles", () => {

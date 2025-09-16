@@ -29,6 +29,18 @@ describe("/api/errors/report", () => {
     expect(json).toEqual({ ok: true })
   })
 
+  it("rejects invalid payload with 400", async () => {
+    const { POST } = await import("@/app/api/errors/report/route")
+    const req = new Request("http://localhost/api/errors/report", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ message: "" }),
+    })
+    const res = await POST(req)
+    expect((res as any).status).toBe(400)
+    const json = await (res as any).json()
+    expect(json.error).toBe("invalid_input")
+  })
   it("rate limits excessive reports", async () => {
     vi.doMock("@/lib/server/rate-limiting", () => ({
       checkRateLimit: vi.fn(async () => ({ limited: true, retryAfterSec: 42 })),
