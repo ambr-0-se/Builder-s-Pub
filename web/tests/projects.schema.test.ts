@@ -47,6 +47,23 @@ describe("createProjectSchema", () => {
 		const fields = (error?.issues || []).map((i) => i.path[0])
 		expect(fields).toEqual(expect.arrayContaining(["title", "tagline", "description", "demoUrl", "sourceUrl"]))
 	})
+
+	it("rejects more than 10 total tags (tech+category)", async () => {
+		const { createProjectSchema } = await import("@/app/projects/schema")
+		const tech = Array.from({ length: 6 }, (_, i) => i + 1)
+		const cat = Array.from({ length: 5 }, (_, i) => i + 100)
+		const { success, error } = createProjectSchema.safeParse({
+			title: "A",
+			tagline: "B",
+			description: "C",
+			demoUrl: "https://x.com",
+			sourceUrl: "",
+			techTagIds: tech,
+			categoryTagIds: cat, // 6 + 5 = 11
+		})
+		expect(success).toBe(false)
+		expect(error?.issues.some((i) => String(i.message).includes("at most 10"))).toBe(true)
+	})
 })
 
 

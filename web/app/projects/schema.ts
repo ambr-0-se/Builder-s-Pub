@@ -31,6 +31,16 @@ export const createProjectSchema = z.object({
 	techTagIds: z.array(z.number()).min(1, "At least one technology tag is required"),
 	categoryTagIds: z.array(z.number()).min(1, "At least one category tag is required"),
 })
+	.superRefine((value, ctx) => {
+		const total = (value.techTagIds?.length || 0) + (value.categoryTagIds?.length || 0)
+		if (total > 10) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: "You can select at most 10 tags in total (technology + category)",
+				path: ["categoryTagIds"],
+			})
+		}
+	})
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>
 

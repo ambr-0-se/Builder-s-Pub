@@ -49,13 +49,15 @@ export default function NewProjectPage() {
     const description = formData.description.trim()
     const demoUrl = formData.demoUrl.trim()
 
+    const tagsTotal = selectedTechTags.length + selectedCategoryTags.length
     return (
       title.length > 0 && title.length <= 160 &&
       tagline.length > 0 && tagline.length <= 140 &&
       description.length > 0 && description.length <= 4000 &&
       demoUrl.length > 0 && /^https?:\/\//.test(demoUrl) &&
       selectedTechTags.length > 0 &&
-      selectedCategoryTags.length > 0
+      selectedCategoryTags.length > 0 &&
+      tagsTotal <= 10
     )
   }, [formData, selectedTechTags, selectedCategoryTags])
 
@@ -88,11 +90,19 @@ export default function NewProjectPage() {
   }
 
   const toggleTechTag = (tagId: number) => {
-    setSelectedTechTags((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]))
+    setSelectedTechTags((prev) => {
+      const total = (prev.includes(tagId) ? prev.filter((id) => id !== tagId).length : prev.length + 1) + selectedCategoryTags.length
+      if (!prev.includes(tagId) && total > 10) return prev
+      return prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    })
   }
 
   const toggleCategoryTag = (tagId: number) => {
-    setSelectedCategoryTags((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]))
+    setSelectedCategoryTags((prev) => {
+      const total = selectedTechTags.length + (prev.includes(tagId) ? prev.filter((id) => id !== tagId).length : prev.length + 1)
+      if (!prev.includes(tagId) && total > 10) return prev
+      return prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    })
   }
 
   return (
@@ -185,6 +195,7 @@ export default function NewProjectPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Technology Tags * {errors.techTags && <span className="text-red-600">({errors.techTags})</span>}
+            <span className="ml-2 text-xs text-gray-500">{selectedTechTags.length + selectedCategoryTags.length}/10 selected</span>
           </label>
           <div className="flex flex-wrap gap-2">
             {technology.map((tag) => (
@@ -195,8 +206,11 @@ export default function NewProjectPage() {
                 className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium transition-colors ${
                   selectedTechTags.includes(tag.id)
                     ? "bg-blue-100 text-blue-800 border border-blue-200"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                    : (selectedTechTags.length + selectedCategoryTags.length) >= 10
+                      ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
                 }`}
+                disabled={!selectedTechTags.includes(tag.id) && (selectedTechTags.length + selectedCategoryTags.length) >= 10}
               >
                 {tag.name}
               </button>
@@ -207,6 +221,7 @@ export default function NewProjectPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Category Tags * {errors.categoryTags && <span className="text-red-600">({errors.categoryTags})</span>}
+            <span className="ml-2 text-xs text-gray-500">{selectedTechTags.length + selectedCategoryTags.length}/10 selected</span>
           </label>
           <div className="flex flex-wrap gap-2">
             {category.map((tag) => (
@@ -217,8 +232,11 @@ export default function NewProjectPage() {
                 className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium transition-colors ${
                   selectedCategoryTags.includes(tag.id)
                     ? "bg-green-100 text-green-800 border border-green-200"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                    : (selectedTechTags.length + selectedCategoryTags.length) >= 10
+                      ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
                 }`}
+                disabled={!selectedCategoryTags.includes(tag.id) && (selectedTechTags.length + selectedCategoryTags.length) >= 10}
               >
                 {tag.name}
               </button>

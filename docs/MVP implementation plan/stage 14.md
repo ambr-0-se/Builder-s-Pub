@@ -35,7 +35,7 @@ Stage 14 focuses on improving tag governance and form UX so projects and collabo
 
 Tests: Apply migration; insert `NLP` then `nlp` → expect unique violation; Admin UI duplicate message shows.
 
-**Status:** Not Started
+**Status:** In Progress
 
 ---
 
@@ -57,7 +57,7 @@ Tests: Apply migration; insert `NLP` then `nlp` → expect unique violation; Adm
 
 Tests: Unit test normalization; create "  Computer   Vision " → saved as "Computer Vision"; casing duplicate blocked.
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 
@@ -78,7 +78,7 @@ Tests: Unit test normalization; create "  Computer   Vision " → saved as "Comp
 
 Tests: Schema accepts 10 tags, rejects 11; UI disables 11th chip and shows counter.
 
-**Status:** Not Started
+**Status:** In Progress
 
 ---
 
