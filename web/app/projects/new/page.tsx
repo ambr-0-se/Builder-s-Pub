@@ -13,6 +13,7 @@ import { useAuth, ensureServerSession } from "@/lib/api/auth"
 import { useAnalytics } from "@/lib/analytics"
 import { showToast } from "@/components/ui/toast"
 import { useTags } from "@/hooks/useTags"
+import { TagMultiSelect } from "@/components/ui/tag-multiselect"
 import { createProjectAction, type CreateProjectState } from "@/app/projects/actions"
 
 export default function NewProjectPage() {
@@ -60,6 +61,8 @@ export default function NewProjectPage() {
       tagsTotal <= 10
     )
   }, [formData, selectedTechTags, selectedCategoryTags])
+
+  // Combobox variant handles filtering and alphabetical ordering internally
 
   // Show error toast when server action returns with formError
   useEffect(() => {
@@ -192,57 +195,34 @@ export default function NewProjectPage() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Technology Tags * {errors.techTags && <span className="text-red-600">({errors.techTags})</span>}
-            <span className="ml-2 text-xs text-gray-500">{selectedTechTags.length + selectedCategoryTags.length}/10 selected</span>
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {technology.map((tag) => (
-              <button
-                key={tag.id}
-                type="button"
-                onClick={() => toggleTechTag(tag.id)}
-                className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                  selectedTechTags.includes(tag.id)
-                    ? "bg-blue-100 text-blue-800 border border-blue-200"
-                    : (selectedTechTags.length + selectedCategoryTags.length) >= 10
-                      ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
-                }`}
-                disabled={!selectedTechTags.includes(tag.id) && (selectedTechTags.length + selectedCategoryTags.length) >= 10}
-              >
-                {tag.name}
-              </button>
-            ))}
-          </div>
-        </div>
+        <TagMultiSelect
+          label={`Technology Tags * ${errors.techTags ? `(${errors.techTags})` : ""}`}
+          options={technology}
+          pinned={technology.filter((t) => ["LLM","NLP","Computer Vision","Agents"].includes(t.name))}
+          value={selectedTechTags}
+          onChange={(next) => {
+            // enforce per-facet cap in UI guardrail
+            const allowed = next.slice(0, 5)
+            setSelectedTechTags(allowed)
+          }}
+          max={5}
+          placeholder="Add technology tag"
+          variant="tech"
+        />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Category Tags * {errors.categoryTags && <span className="text-red-600">({errors.categoryTags})</span>}
-            <span className="ml-2 text-xs text-gray-500">{selectedTechTags.length + selectedCategoryTags.length}/10 selected</span>
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {category.map((tag) => (
-              <button
-                key={tag.id}
-                type="button"
-                onClick={() => toggleCategoryTag(tag.id)}
-                className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                  selectedCategoryTags.includes(tag.id)
-                    ? "bg-green-100 text-green-800 border border-green-200"
-                    : (selectedTechTags.length + selectedCategoryTags.length) >= 10
-                      ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
-                }`}
-                disabled={!selectedCategoryTags.includes(tag.id) && (selectedTechTags.length + selectedCategoryTags.length) >= 10}
-              >
-                {tag.name}
-              </button>
-            ))}
-          </div>
-        </div>
+        <TagMultiSelect
+          label={`Category Tags * ${errors.categoryTags ? `(${errors.categoryTags})` : ""}`}
+          options={category}
+          pinned={category.filter((t) => ["Productivity","Education","Finance","Healthcare"].includes(t.name))}
+          value={selectedCategoryTags}
+          onChange={(next) => {
+            const allowed = next.slice(0, 3)
+            setSelectedCategoryTags(allowed)
+          }}
+          max={3}
+          placeholder="Add category tag"
+          variant="category"
+        />
 
         {selectedTechTags.map((id) => (
           <input key={`tech-${id}`} type="hidden" name="techTagIds" value={id} />
