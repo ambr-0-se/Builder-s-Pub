@@ -90,6 +90,7 @@ create index if not exists idx_projects_owner on projects (owner_id);
 create index if not exists idx_comments_project on comments (project_id, created_at desc);
 create index if not exists idx_upvotes_project on project_upvotes (project_id);
 create index if not exists idx_tags_type_name on tags (type, name);
+create unique index if not exists uq_tags_type_lower_name on tags (type, lower(name));
 create index if not exists idx_project_tags_tag on project_tags (tag_id, project_id);
 
 -- Basic search support (case-insensitive)
