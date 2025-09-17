@@ -13,6 +13,7 @@ import { useAuth, ensureServerSession } from "@/lib/api/auth"
 import { useTags } from "@/hooks/useTags"
 import { createCollabAction, type CreateCollabState } from "@/app/collaborations/actions"
 import { COLLAB_KIND_OPTIONS, PROJECT_TYPE_OPTIONS, STAGE_OPTIONS } from "@/lib/collabs/options"
+import { TagMultiSelect } from "@/components/ui/tag-multiselect"
 import { showToast } from "@/components/ui/toast"
 
 export default function NewCollaborationPage() {
@@ -38,6 +39,7 @@ export default function NewCollaborationPage() {
   ])
   const [selectedTechTags, setSelectedTechTags] = useState<number[]>([])
   const [selectedCategoryTags, setSelectedCategoryTags] = useState<number[]>([])
+  // filters handled within TagMultiSelect
 
   const errors = state?.fieldErrors || {}
 
@@ -115,6 +117,8 @@ export default function NewCollaborationPage() {
       if (!prev.includes(id) && total > 10) return prev
       return prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     })
+
+  // handled internally by TagMultiSelect
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -315,67 +319,33 @@ export default function NewCollaborationPage() {
           <Input id="remarks" name="remarks" value={formData.remarks} onChange={(e) => setFormData((p) => ({ ...p, remarks: e.target.value }))} placeholder="URL, Time Commitment, Additional Info" />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Technology Tags * {errors.techTagIds && <span className="text-red-600">({errors.techTagIds})</span>}
-            <span className="ml-2 text-xs text-gray-500">{selectedTechTags.length + selectedCategoryTags.length}/10 selected</span>
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {technology.map((tag) => {
-              const atCap = (selectedTechTags.length + selectedCategoryTags.length) >= 10
-              const selected = selectedTechTags.includes(tag.id)
-              const disabled = !selected && atCap
-              return (
-                <button
-                  key={tag.id}
-                  type="button"
-                  onClick={() => toggleTechTag(tag.id)}
-                  className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                    selected
-                      ? "bg-blue-100 text-blue-800 border border-blue-200"
-                      : disabled
-                        ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
-                  }`}
-                  disabled={disabled}
-                >
-                  {tag.name}
-                </button>
-              )
-            })}
-          </div>
-        </div>
+        <TagMultiSelect
+          label={`Technology Tags * ${errors.techTagIds ? `(${errors.techTagIds})` : ""}`}
+          options={technology}
+          pinned={technology.filter((t) => ["LLM","NLP","Computer Vision","Agents"].includes(t.name))}
+          value={selectedTechTags}
+          onChange={(next) => {
+            const allowed = next.slice(0, 5)
+            setSelectedTechTags(allowed)
+          }}
+          max={5}
+          placeholder="Add technology tag"
+          variant="tech"
+        />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Category Tags * {errors.categoryTagIds && <span className="text-red-600">({errors.categoryTagIds})</span>}
-            <span className="ml-2 text-xs text-gray-500">{selectedTechTags.length + selectedCategoryTags.length}/10 selected</span>
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {category.map((tag) => {
-              const atCap = (selectedTechTags.length + selectedCategoryTags.length) >= 10
-              const selected = selectedCategoryTags.includes(tag.id)
-              const disabled = !selected && atCap
-              return (
-                <button
-                  key={tag.id}
-                  type="button"
-                  onClick={() => toggleCategoryTag(tag.id)}
-                  className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                    selected
-                      ? "bg-green-100 text-green-800 border border-green-200"
-                      : disabled
-                        ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
-                  }`}
-                  disabled={disabled}
-                >
-                  {tag.name}
-                </button>
-              )
-            })}
-          </div>
-        </div>
+        <TagMultiSelect
+          label={`Category Tags * ${errors.categoryTagIds ? `(${errors.categoryTagIds})` : ""}`}
+          options={category}
+          pinned={category.filter((t) => ["Productivity","Education","Finance","Healthcare"].includes(t.name))}
+          value={selectedCategoryTags}
+          onChange={(next) => {
+            const allowed = next.slice(0, 3)
+            setSelectedCategoryTags(allowed)
+          }}
+          max={3}
+          placeholder="Add category tag"
+          variant="category"
+        />
 
         {formData.projectTypes.map((v) => (
           <input key={`ptype-${v}`} type="hidden" name="projectTypes" value={v} />

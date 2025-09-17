@@ -257,8 +257,8 @@ Development Plan (MVP)
   - Updates:
     - Case-insensitive uniqueness enforced at DB: `unique(type, lower(name))`.
     - Admin UI normalizes input (trim + collapse whitespace) and warns on CI duplicates with existing name.
-    - Caps: Projects ≤ 10 total tags (tech+category); Collaborations ≤ 10 total tags (tech+category; project types not counted).
-    - Forms show live counter and disable non-selected chips at cap; deselection always allowed.
+    - Caps (per-facet): Projects Technology ≤ 5 & Category ≤ 3; Collaborations Technology ≤ 5 & Category ≤ 3 (project types not counted).
+    - Forms use a compact combobox with quick‑pick chips and a searchable dropdown; live counters per facet; disabled chips when at cap; deselection always allowed.
   - Done when: forms prevent dupes and over-selection; curated tags visible; search unaffected.
 
 - Stage 15 — Logos for projects & collaborations (list display) — Planned

@@ -32,11 +32,19 @@ export const createProjectSchema = z.object({
 	categoryTagIds: z.array(z.number()).min(1, "At least one category tag is required"),
 })
 	.superRefine((value, ctx) => {
-		const total = (value.techTagIds?.length || 0) + (value.categoryTagIds?.length || 0)
-		if (total > 10) {
+		const techCount = value.techTagIds?.length || 0
+		const catCount = value.categoryTagIds?.length || 0
+		if (techCount > 5) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
-				message: "You can select at most 10 tags in total (technology + category)",
+				message: "You can select at most 5 technology tags",
+				path: ["techTagIds"],
+			})
+		}
+		if (catCount > 3) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: "You can select at most 3 category tags",
 				path: ["categoryTagIds"],
 			})
 		}

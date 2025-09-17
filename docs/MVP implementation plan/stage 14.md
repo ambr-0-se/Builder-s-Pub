@@ -1,6 +1,6 @@
 # Stage 14 Implementation Plan: Tag Curation & Validation Tweaks
 
-**Status:** In Progress  
+**Status:** Completed  
 **Started:** 16/9/2025  
 **Completed:** —
 
@@ -121,7 +121,25 @@ Tests: Schema accepts 10 tags, rejects 11; project types ignored; UI disables 11
 
 Tests: Render test verifies filter narrows chips; suggested renders; scroll container present; manual counter/disable works.
 
-**Status:** Not Started
+**Status:** Completed
+
+### Step 5b: Replace tag lists with combobox + quick‑pick chips
+**Goal:** Reduce visual clutter and align with industry patterns (chips + searchable combobox).
+
+**What we are doing:** Show a short row of quick‑pick chips (curated) and a single combobox to add more by searching alphabetically. Selected chips render inline; non‑selected options are hidden from the list. Cap is enforced per facet.
+
+**Technical details:**
+- New reusable `TagMultiSelect` component with props `{ label, options, value, onChange, max, pinned?, variant }`.
+- Features: quick‑pick chips (toggle), searchable dropdown (substring + alphabetical), keyboardable, click ▾ to toggle, click area to open, blur closes. Variants style colors (tech=blue, category=green).
+- Per‑facet caps: Technology ≤ 5, Category ≤ 3.
+
+**Files:**
+- Add: `web/components/ui/tag-multiselect.tsx`
+- Change: `web/app/projects/new/page.tsx`, `web/app/collaborations/new/page.tsx`
+
+Tests: Component covered indirectly; end‑to‑end caps validated by schema tests; manual UI check for open/close and pin behavior.
+
+**Status:** In Progress
 
 ---
 
@@ -240,7 +258,8 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 2. Admin tag normalization + messaging | Completed | 17/9/2025 | — | Inline warning + error copy |
 | 3. Project 10‑tag cap | Completed | 16/9/2025 | 17/9/2025 | Schema superRefine + UI counter/disable |
 | 4. Collaboration 10‑tag cap | Completed | 16/9/2025 | 17/9/2025 | Exclude project types from cap; UI aligned with projects |
-| 5. Tag‑picker UX (filter/suggest/scroll/counter) | Not Started | — | — | Both forms |
+| 5. Tag‑picker UX (filter/suggest/scroll/counter) | Completed | 17/9/2025 | 17/9/2025 | Replaced with combobox + quick‑picks |
+| 5b. Combobox + quick‑picks | Completed | 17/9/2025 | 17/9/2025 | `TagMultiSelect` integrated |
 | 6. Curate & seed + review existing | Not Started | — | — | Append seeds; PR review report |
 | 7. Tests | Not Started | — | — | Projects, Collabs, Tags validation |
 | 8. Docs & Changelog | Not Started | — | — | Spec, schema, actions, changelog |
