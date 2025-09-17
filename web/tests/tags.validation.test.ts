@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { validateTagInput } from "@/lib/validation/tags"
+import { validateTagInput, normalizeTagName } from "@/lib/validation/tags"
 
 describe("validateTagInput", () => {
   it("requires name", () => {
@@ -32,5 +32,9 @@ describe("validateTagInput", () => {
     const maxLength = "x".repeat(50)
     const { fieldErrors } = validateTagInput(maxLength, "category")
     expect(fieldErrors).toBeUndefined()
+  })
+
+  it("normalizes inner whitespace and trims ends", () => {
+    expect(normalizeTagName("  Computer   Vision ")).toBe("Computer Vision")
   })
 })

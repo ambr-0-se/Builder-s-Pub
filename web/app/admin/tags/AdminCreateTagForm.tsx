@@ -1,20 +1,27 @@
 "use client"
 
 import { useActionState } from "react"
+import { useState, useMemo } from "react"
 import { createTag, type CreateTagState } from "./actions"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select } from "@/components/ui/select"
+import { normalizeTagName } from "@/lib/validation/tags"
 
 const initialState: CreateTagState = null
 
 export function AdminCreateTagForm() {
   const [state, formAction] = useActionState(createTag, initialState)
+  const [name, setName] = useState("")
+  const normalized = useMemo(() => normalizeTagName(name), [name])
   return (
     <form action={formAction} className="space-y-4 max-w-md">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-        <Input name="name" placeholder="e.g., LLMs" error={state?.fieldErrors?.name} />
+        <Input name="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., LLMs" error={state?.fieldErrors?.name} />
+        {name && normalized !== name && (
+          <p className="text-xs text-gray-500 mt-1">Normalized: "{normalized}"</p>
+        )}
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
