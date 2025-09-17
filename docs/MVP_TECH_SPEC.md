@@ -252,9 +252,14 @@ Development Plan (MVP)
     - —
   - Done when: 401/403/409/500 show friendly guidance; errors reach logging backend with redaction; disclaimer shown once and respected; tests cover 500 path and rate-limit on report.
 
-- Stage 14 — Tag curation & validation tweaks — Planned
-  - Tasks: curate initial tag set in admin UI; enforce dedupe/casing; cap tags per item (e.g., ≤ 8 total).
-  - Done when: forms prevent dupes; curated tags visible; search behaves unchanged functionally.
+- Stage 14 — Tag curation & validation tweaks — In Progress
+  - Tasks: curate initial tag set in admin UI; enforce dedupe/casing; cap tags per item.
+  - Updates:
+    - Case-insensitive uniqueness enforced at DB: `unique(type, lower(name))`.
+    - Admin UI normalizes input (trim + collapse whitespace) and warns on CI duplicates with existing name.
+    - Caps: Projects ≤ 10 total tags (tech+category); Collaborations ≤ 10 total tags (tech+category; project types not counted).
+    - Forms show live counter and disable non-selected chips at cap; deselection always allowed.
+  - Done when: forms prevent dupes and over-selection; curated tags visible; search unaffected.
 
 - Stage 15 — Logos for projects & collaborations (list display) — Planned
   - Tasks: create storage buckets (`project-logos`, `collab-logos`) with RLS; add `request*LogoUpload` and `set*Logo` actions; UI to upload on create/edit; render logos with `next/image` in cards with fallback.

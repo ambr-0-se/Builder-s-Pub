@@ -35,7 +35,7 @@ Stage 14 focuses on improving tag governance and form UX so projects and collabo
 
 Tests: Apply migration; insert `NLP` then `nlp` → expect unique violation; Admin UI duplicate message shows.
 
-**Status:** In Progress
+**Status:** Completed
 
 ---
 
@@ -78,7 +78,7 @@ Tests: Unit test normalization; create "  Computer   Vision " → saved as "Comp
 
 Tests: Schema accepts 10 tags, rejects 11; UI disables 11th chip and shows counter.
 
-**Status:** In Progress
+**Status:** Completed
 
 ---
 
@@ -220,24 +220,26 @@ Tests: `pnpm lint && pnpm test`; manual Admin duplicate attempt; forms show filt
 
 At each step in 'Actionable and specific steps':
 
-- Explain clearly on what you are doing and the rationale behind with layman's term, and add detailed explanation if technical term is used.
-- Inspect relevant code, documents, and '.cursorrules' before making change.
-- Code the changes, and make sure codes are robust, reusable and modular.
+- Explain clearly on what you are doing and the rationale behind with layman's term, and add detailed explanation if technical term is used. 
+- Inspect relevant code, documents, and ‘.cursorrules’ before making change.
+- Code the changes, and make sure codes are robust, reusable and modular. 
 - Identidy the files that the code would affect and prevent any bug.
 - Add testcases for the change. Then, make sure all testcases are passed.
-- After each atmoic change, guide user to review it
-- Push changes to Github ONLY when you gain user's review and approval 
-- Do not forget to update progress tracking and other relevant documents.
-- Proceed to the next step in 'Actionable and specific steps'
+- Guide user to review the code changes and functionality change in UI.
+- After user's review and approval, update progress tracking and other relevant documents.
+- Lastly, commit and push changes to Github.
+- ONLY when everything above is done, proceed to the next step in ‘Actionable and specific steps’
+
+If you need help from user, give clear instructions to user on how to do it or what needs to be decided on.
 
 ## Progress Tracking
 
 | Step | Status | Started | Completed | Notes |
 |------|--------|---------|-----------|-------|
-| 1. CI unique index | In Progress | 16/9/2025 | — | Migration + schema docs updated |
-| 2. Admin tag normalization + messaging | In Progress | 16/9/2025 | — | Inline warning + error copy |
-| 3. Project 10‑tag cap | Not Started | — | — | Schema refine + UI counter/disable |
-| 4. Collaboration 10‑tag cap | Not Started | — | — | Exclude project types from cap |
+| 1. CI unique index | Completed | 16/9/2025 | 17/9/2025 | Migration + schema docs updated |
+| 2. Admin tag normalization + messaging | Completed | 17/9/2025 | — | Inline warning + error copy |
+| 3. Project 10‑tag cap | Completed | 16/9/2025 | 17/9/2025 | Schema superRefine + UI counter/disable |
+| 4. Collaboration 10‑tag cap | Completed | 16/9/2025 | 17/9/2025 | Exclude project types from cap; UI aligned with projects |
 | 5. Tag‑picker UX (filter/suggest/scroll/counter) | Not Started | — | — | Both forms |
 | 6. Curate & seed + review existing | Not Started | — | — | Append seeds; PR review report |
 | 7. Tests | Not Started | — | — | Projects, Collabs, Tags validation |
@@ -264,7 +266,7 @@ At each step in 'Actionable and specific steps':
 
 ---
 
-**Last Updated:** 16/9/2025  
+**Last Updated:** 17/9/2025
 **Next Review:** On implementation completion
 
 
