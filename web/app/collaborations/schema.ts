@@ -32,7 +32,7 @@ export const lookingForItemSchema = z.object({
     .or(z.literal("")),
 })
 
-export const createCollabSchema = z.object({
+const createCollabBase = z.object({
   title: z
     .string()
     .trim()
@@ -98,9 +98,20 @@ export const createCollabSchema = z.object({
   categoryTagIds: z.array(z.number()).min(1, "At least one category tag is required"),
 })
 
+export const createCollabSchema = createCollabBase.superRefine((value, ctx) => {
+    const total = (value.techTagIds?.length || 0) + (value.categoryTagIds?.length || 0)
+    if (total > 10) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "You can select at most 10 tags in total (technology + category)",
+        path: ["categoryTagIds"],
+      })
+    }
+  })
+
 export type CreateCollabInput = z.infer<typeof createCollabSchema>
 
-export const updateCollabSchema = createCollabSchema.partial().extend({
+export const updateCollabSchema = createCollabBase.partial().extend({
   // Optional id hint for internal usage (not from client forms)
   id: z.string().uuid().optional(),
   isHiring: z.boolean().optional(),

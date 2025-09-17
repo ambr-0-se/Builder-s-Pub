@@ -59,6 +59,7 @@ export default function NewCollaborationPage() {
     const description = formData.description.trim()
     const contact = formData.contact.trim()
     const roles = lookingFor.filter((r) => r.role.trim().length > 0)
+    const tagsTotal = selectedTechTags.length + selectedCategoryTags.length
     return (
       title.length > 0 &&
       title.length <= 160 &&
@@ -67,6 +68,7 @@ export default function NewCollaborationPage() {
       contact.length > 0 &&
       selectedTechTags.length > 0 &&
       selectedCategoryTags.length > 0 &&
+      tagsTotal <= 10 &&
       roles.length >= 1 &&
       roles.length <= 5
     )
@@ -101,8 +103,18 @@ export default function NewCollaborationPage() {
   const updateRole = (idx: number, field: keyof (typeof lookingFor)[number], value: string | number) => {
     setLookingFor((prev) => prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r)))
   }
-  const toggleTechTag = (id: number) => setSelectedTechTags((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-  const toggleCategoryTag = (id: number) => setSelectedCategoryTags((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  const toggleTechTag = (id: number) =>
+    setSelectedTechTags((prev) => {
+      const total = (prev.includes(id) ? prev.filter((x) => x !== id).length : prev.length + 1) + selectedCategoryTags.length
+      if (!prev.includes(id) && total > 10) return prev
+      return prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    })
+  const toggleCategoryTag = (id: number) =>
+    setSelectedCategoryTags((prev) => {
+      const total = selectedTechTags.length + (prev.includes(id) ? prev.filter((x) => x !== id).length : prev.length + 1)
+      if (!prev.includes(id) && total > 10) return prev
+      return prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    })
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -306,26 +318,62 @@ export default function NewCollaborationPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Technology Tags * {errors.techTagIds && <span className="text-red-600">({errors.techTagIds})</span>}
+            <span className="ml-2 text-xs text-gray-500">{selectedTechTags.length + selectedCategoryTags.length}/10 selected</span>
           </label>
           <div className="flex flex-wrap gap-2">
-            {technology.map((tag) => (
-              <button key={tag.id} type="button" onClick={() => toggleTechTag(tag.id)} className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium transition-colors ${selectedTechTags.includes(tag.id) ? "bg-blue-100 text-blue-800 border border-blue-200" : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"}`}>
-                {tag.name}
-              </button>
-            ))}
+            {technology.map((tag) => {
+              const atCap = (selectedTechTags.length + selectedCategoryTags.length) >= 10
+              const selected = selectedTechTags.includes(tag.id)
+              const disabled = !selected && atCap
+              return (
+                <button
+                  key={tag.id}
+                  type="button"
+                  onClick={() => toggleTechTag(tag.id)}
+                  className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+                    selected
+                      ? "bg-blue-100 text-blue-800 border border-blue-200"
+                      : disabled
+                        ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                  }`}
+                  disabled={disabled}
+                >
+                  {tag.name}
+                </button>
+              )
+            })}
           </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Category Tags * {errors.categoryTagIds && <span className="text-red-600">({errors.categoryTagIds})</span>}
+            <span className="ml-2 text-xs text-gray-500">{selectedTechTags.length + selectedCategoryTags.length}/10 selected</span>
           </label>
           <div className="flex flex-wrap gap-2">
-            {category.map((tag) => (
-              <button key={tag.id} type="button" onClick={() => toggleCategoryTag(tag.id)} className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium transition-colors ${selectedCategoryTags.includes(tag.id) ? "bg-green-100 text-green-800 border border-green-200" : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"}`}>
-                {tag.name}
-              </button>
-            ))}
+            {category.map((tag) => {
+              const atCap = (selectedTechTags.length + selectedCategoryTags.length) >= 10
+              const selected = selectedCategoryTags.includes(tag.id)
+              const disabled = !selected && atCap
+              return (
+                <button
+                  key={tag.id}
+                  type="button"
+                  onClick={() => toggleCategoryTag(tag.id)}
+                  className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+                    selected
+                      ? "bg-green-100 text-green-800 border border-green-200"
+                      : disabled
+                        ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                  }`}
+                  disabled={disabled}
+                >
+                  {tag.name}
+                </button>
+              )
+            })}
           </div>
         </div>
 
