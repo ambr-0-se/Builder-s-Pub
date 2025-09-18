@@ -12,6 +12,7 @@ export interface Profile {
   buildingNow?: string
   lookingFor?: string
   contact?: string
+  avatarPath?: string
 }
 
 export interface Tag {
@@ -30,6 +31,7 @@ export interface Project {
   sourceUrl?: string
   createdAt: Date
   softDeleted?: boolean
+  logoPath?: string
 }
 
 export interface ProjectWithRelations {

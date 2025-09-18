@@ -137,7 +137,7 @@ export async function listProjects(params: ListProjectsParams = {}): Promise<{ i
 	// Base projects query
 	let query = anon
 		.from("projects")
-		.select("id, owner_id, title, tagline, description, demo_url, source_url, created_at")
+		.select("id, owner_id, title, tagline, description, demo_url, source_url, logo_path, created_at")
 		.eq("soft_deleted", false)
 
 	if (candidateIds) {
@@ -268,7 +268,7 @@ export async function getProject(id: string): Promise<ProjectWithRelations | nul
 	const anon = getAnonServerClient()
 	const { data: p, error } = await anon
 		.from("projects")
-		.select("id, owner_id, title, tagline, description, demo_url, source_url, created_at, soft_deleted")
+		.select("id, owner_id, title, tagline, description, demo_url, source_url, logo_path, created_at, soft_deleted")
 		.eq("id", id)
 		.maybeSingle()
 
@@ -324,6 +324,7 @@ function toProjectWithRelations(
 			description: row.description,
 			demoUrl: row.demo_url,
 			sourceUrl: row.source_url || undefined,
+			logoPath: row.logo_path || undefined,
 			createdAt: new Date(row.created_at),
 			softDeleted: undefined,
 		},

@@ -53,7 +53,7 @@ Add server tests (authorization, path, size/mime), component tests (fallback ren
 **Tests:**
 - Migration loads without errors in local Supabase.
 
-**Status:** Not Started
+**Status:** ✅ Completed
 
 ---
 
@@ -76,7 +76,7 @@ Add server tests (authorization, path, size/mime), component tests (fallback ren
 **Tests:**
 - Type-level checks compile; add minimal DTO mapping tests if needed.
 
-**Status:** Not Started
+**Status:** ✅ Completed
 
 ---
 
@@ -229,8 +229,8 @@ At each step in 'Actionable and specific steps':
 
 | Step | Status | Started | Completed | Notes |
 |------|--------|---------|-----------|-------|
-| 1. DB & Buckets | Not Started | — | — |  |
-| 2. Types & DTOs | Not Started | — | — |  |
+| 1. DB & Buckets | ✅ Completed | 18/9/2025 | 18/9/2025 | Columns + buckets applied in Dashboard |
+| 2. Types & DTOs | ✅ Completed | 18/9/2025 | 18/9/2025 | types + selectors map logo_path/avatar_path |
 | 3. Server: project/collab logos | Not Started | — | — |  |
 | 4. Profile avatars | Not Started | — | — |  |
 | 5. LogoUploader component | Not Started | — | — |  |

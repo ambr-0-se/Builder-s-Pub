@@ -48,6 +48,7 @@ export interface CollaborationWithRelations {
     contact: string
     remarks?: string
     createdAt: Date
+    logoPath?: string
   }
   tags: { technology: Tag[]; category: Tag[] }
   upvoteCount: number
@@ -208,7 +209,7 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
 
   let rows: any[] = []
   try {
-    rows = await fetchRows("id, owner_id, kind, title, description, affiliated_org, project_type, project_types, stage, looking_for, contact, remarks, created_at, soft_deleted, is_hiring")
+    rows = await fetchRows("id, owner_id, kind, title, description, affiliated_org, project_type, project_types, stage, looking_for, contact, remarks, logo_path, created_at, soft_deleted, is_hiring")
   } catch (e: any) {
     // Fallback for environments where migration hasn't run yet (missing columns)
     if (e && (e.code === "42703" || /column .* does not exist/i.test(String(e.message || "")))) {
@@ -300,7 +301,7 @@ export async function getCollab(id: string): Promise<CollaborationWithRelations 
   }
   let r: any = null
   try {
-    r = await fetchOne("id, owner_id, kind, title, description, affiliated_org, project_type, project_types, stage, looking_for, contact, remarks, created_at, soft_deleted, is_hiring")
+    r = await fetchOne("id, owner_id, kind, title, description, affiliated_org, project_type, project_types, stage, looking_for, contact, remarks, logo_path, created_at, soft_deleted, is_hiring")
   } catch (e: any) {
     if (e && (e.code === "42703" || /column .* does not exist/i.test(String(e.message || "")))) {
       r = await fetchOne("id, owner_id, kind, title, description, created_at, soft_deleted")
@@ -486,6 +487,7 @@ function toCollabWithRelations(
       contact: row.contact || "",
       remarks: row.remarks || undefined,
       createdAt: new Date(row.created_at),
+      logoPath: (row as any).logo_path || undefined,
     },
     tags,
     upvoteCount,
