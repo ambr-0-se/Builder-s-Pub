@@ -16,13 +16,13 @@ alter table if exists profiles
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'project-logos') THEN
-    PERFORM storage.create_bucket('project-logos', public => true);
+    PERFORM storage.create_bucket('project-logos', true);
   END IF;
   IF NOT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'collab-logos') THEN
-    PERFORM storage.create_bucket('collab-logos', public => true);
+    PERFORM storage.create_bucket('collab-logos', true);
   END IF;
   IF NOT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'profile-avatars') THEN
-    PERFORM storage.create_bucket('profile-avatars', public => true);
+    PERFORM storage.create_bucket('profile-avatars', true);
   END IF;
 END$$;
 
