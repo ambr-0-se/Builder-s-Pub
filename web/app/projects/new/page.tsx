@@ -196,9 +196,9 @@ export default function NewProjectPage() {
         </div>
 
         <TagMultiSelect
-          label={`Technology Tags * ${errors.techTags ? `(${errors.techTags})` : ""}`}
+          label={`Technology * ${errors.techTags ? `(${errors.techTags})` : ""}`}
           options={technology}
-          pinned={technology.filter((t) => ["LLM","NLP","Computer Vision","Agents"].includes(t.name))}
+          pinned={technology.filter((t) => ["Agents","LLM","Speech","Vibe Coding","Fine-tuning"].includes(t.name))}
           value={selectedTechTags}
           onChange={(next) => {
             // enforce per-facet cap in UI guardrail
@@ -211,9 +211,9 @@ export default function NewProjectPage() {
         />
 
         <TagMultiSelect
-          label={`Category Tags * ${errors.categoryTags ? `(${errors.categoryTags})` : ""}`}
+          label={`Category * ${errors.categoryTags ? `(${errors.categoryTags})` : ""}`}
           options={category}
-          pinned={category.filter((t) => ["Productivity","Education","Finance","Healthcare"].includes(t.name))}
+          pinned={category.filter((t) => ["Productivity","Education/ Study tools","Content/Media","Research"].includes(t.name))}
           value={selectedCategoryTags}
           onChange={(next) => {
             const allowed = next.slice(0, 3)

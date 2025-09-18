@@ -149,10 +149,14 @@ Tests: Component covered indirectly; end‑to‑end caps validated by schema tes
 **What we are doing:** Use well‑known sources to draft simple tag lists people understand (e.g., NLP, Computer Vision, Education, Finance). Add them to seeds and check what we already have.
 
 **Technical details:**
-- Research references: Hugging Face Tasks, Papers with Code areas/tasks, Product Hunt Topics.
-- Draft concise lists (e.g., ~12–20 per facet). Submit for review before seeding.
+- Research references and cite links in spec:
+  - Hugging Face — Tasks (https://huggingface.co/tasks)
+  - Papers with Code — Tasks (https://paperswithcode.com/task)
+  - Product Hunt — Topics (https://www.producthunt.com/topics)
+  - LinkedIn — Industry codes (https://learn.microsoft.com/linkedin/shared/references/reference-tables/industry-codes)
+- Draft lists (longer allowed due to searchable dropdown). Include: Vibe Coding, Data Science, Data Analytics, Traditional ML, Model Training, Fine‑tuning; plus Sports, Marketing, and common university subjects.
 - Append to `seed_mvp.sql` with `on conflict do nothing` (non‑destructive).
-- Generate a brief report of current tags: case‑insensitive dupes and coverage gaps; include in PR description only (no renames).
+- Store the curated snapshot at `docs/tags/curated-tags.csv` for provenance.
 
 **Files:**
 - Change: `supabase/seed/seed_mvp.sql`
@@ -160,7 +164,7 @@ Tests: Component covered indirectly; end‑to‑end caps validated by schema tes
 
 Tests: Re-run seeds idempotently; curated tags visible in UI; existing tags unchanged; PR report lists dupes/gaps.
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 
@@ -260,7 +264,7 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 4. Collaboration 10‑tag cap | Completed | 16/9/2025 | 17/9/2025 | Exclude project types from cap; UI aligned with projects |
 | 5. Tag‑picker UX (filter/suggest/scroll/counter) | Completed | 17/9/2025 | 17/9/2025 | Replaced with combobox + quick‑picks |
 | 5b. Combobox + quick‑picks | Completed | 17/9/2025 | 17/9/2025 | `TagMultiSelect` integrated |
-| 6. Curate & seed + review existing | Not Started | — | — | Append seeds; PR review report |
+| 6. Curate & seed + review existing | Completed | 17/9/2025 | 18/9/2025 | Curated CSV + seeds applied |
 | 7. Tests | Not Started | — | — | Projects, Collabs, Tags validation |
 | 8. Docs & Changelog | Not Started | — | — | Spec, schema, actions, changelog |
 | 9. QA | Not Started | — | — | Lint/test + manual smoke |

@@ -320,9 +320,9 @@ export default function NewCollaborationPage() {
         </div>
 
         <TagMultiSelect
-          label={`Technology Tags * ${errors.techTagIds ? `(${errors.techTagIds})` : ""}`}
+          label={`Technology * ${errors.techTagIds ? `(${errors.techTagIds})` : ""}`}
           options={technology}
-          pinned={technology.filter((t) => ["LLM","NLP","Computer Vision","Agents"].includes(t.name))}
+          pinned={technology.filter((t) => ["Agents","LLM","Speech","Vibe Coding","Fine-tuning"].includes(t.name))}
           value={selectedTechTags}
           onChange={(next) => {
             const allowed = next.slice(0, 5)
@@ -334,9 +334,9 @@ export default function NewCollaborationPage() {
         />
 
         <TagMultiSelect
-          label={`Category Tags * ${errors.categoryTagIds ? `(${errors.categoryTagIds})` : ""}`}
+          label={`Category * ${errors.categoryTagIds ? `(${errors.categoryTagIds})` : ""}`}
           options={category}
-          pinned={category.filter((t) => ["Productivity","Education","Finance","Healthcare"].includes(t.name))}
+          pinned={category.filter((t) => ["Productivity","Education/ Study tools","Content/Media","Research"].includes(t.name))}
           value={selectedCategoryTags}
           onChange={(next) => {
             const allowed = next.slice(0, 3)

@@ -41,7 +41,14 @@ export function TagMultiSelect({ label, options, value, onChange, max, placehold
     if (excludePinnedFromDropdown && pinnedIds.size > 0) {
       pool = pool.filter((t) => !pinnedIds.has(t.id))
     }
-    const sorted = [...pool].sort((a, b) => a.name.localeCompare(b.name))
+    // Sort alphabetically, but force 'Others' to the bottom
+    const sorted = [...pool].sort((a, b) => {
+      const aIsOthers = a.name.toLowerCase() === "others"
+      const bIsOthers = b.name.toLowerCase() === "others"
+      if (aIsOthers && !bIsOthers) return 1
+      if (!aIsOthers && bIsOthers) return -1
+      return a.name.localeCompare(b.name)
+    })
     if (!q) return sorted
     return sorted.filter((t) => t.name.toLowerCase().includes(q))
   }, [options, byId, query])

@@ -8,6 +8,11 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
+-- Stage 14: Tag curation & validation
+  - Case-insensitive uniqueness for tags at DB: `unique(type, lower(name))`.
+  - Admin tag normalization (trim/collapse whitespace) with friendly duplicate warnings.
+  - Combobox tag picker with quick‑pick chips; per-facet caps (Tech ≤ 5, Category ≤ 3).
+  - Curated initial tag set seeded idempotently; sources cited in `docs/MVP_TECH_SPEC.md` and CSV at `docs/tags/curated-tags.csv`.
 - Global error pages (`web/app/error.tsx`, `web/app/not-found.tsx`) with friendly actions.
 - Error report API (`POST /api/errors/report`) with PII redaction, anonymized user id, rate limiting, and breadcrumbs.
 - Client error reporter (global listeners) with throttling and a 30-cap breadcrumbs ring buffer (routes/clicks).
