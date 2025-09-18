@@ -13,6 +13,7 @@ import { useAuth, ensureServerSession } from "@/lib/api/auth"
 import { useAnalytics } from "@/lib/analytics"
 import { showToast } from "@/components/ui/toast"
 import { useTags } from "@/hooks/useTags"
+import { TagMultiSelect } from "@/components/ui/tag-multiselect"
 import { createProjectAction, type CreateProjectState } from "@/app/projects/actions"
 
 export default function NewProjectPage() {
@@ -49,15 +50,19 @@ export default function NewProjectPage() {
     const description = formData.description.trim()
     const demoUrl = formData.demoUrl.trim()
 
+    const tagsTotal = selectedTechTags.length + selectedCategoryTags.length
     return (
       title.length > 0 && title.length <= 160 &&
       tagline.length > 0 && tagline.length <= 140 &&
       description.length > 0 && description.length <= 4000 &&
       demoUrl.length > 0 && /^https?:\/\//.test(demoUrl) &&
       selectedTechTags.length > 0 &&
-      selectedCategoryTags.length > 0
+      selectedCategoryTags.length > 0 &&
+      tagsTotal <= 10
     )
   }, [formData, selectedTechTags, selectedCategoryTags])
+
+  // Combobox variant handles filtering and alphabetical ordering internally
 
   // Show error toast when server action returns with formError
   useEffect(() => {
@@ -88,11 +93,19 @@ export default function NewProjectPage() {
   }
 
   const toggleTechTag = (tagId: number) => {
-    setSelectedTechTags((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]))
+    setSelectedTechTags((prev) => {
+      const total = (prev.includes(tagId) ? prev.filter((id) => id !== tagId).length : prev.length + 1) + selectedCategoryTags.length
+      if (!prev.includes(tagId) && total > 10) return prev
+      return prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    })
   }
 
   const toggleCategoryTag = (tagId: number) => {
-    setSelectedCategoryTags((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]))
+    setSelectedCategoryTags((prev) => {
+      const total = selectedTechTags.length + (prev.includes(tagId) ? prev.filter((id) => id !== tagId).length : prev.length + 1)
+      if (!prev.includes(tagId) && total > 10) return prev
+      return prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    })
   }
 
   return (
@@ -182,49 +195,34 @@ export default function NewProjectPage() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Technology Tags * {errors.techTags && <span className="text-red-600">({errors.techTags})</span>}
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {technology.map((tag) => (
-              <button
-                key={tag.id}
-                type="button"
-                onClick={() => toggleTechTag(tag.id)}
-                className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                  selectedTechTags.includes(tag.id)
-                    ? "bg-blue-100 text-blue-800 border border-blue-200"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
-                }`}
-              >
-                {tag.name}
-              </button>
-            ))}
-          </div>
-        </div>
+        <TagMultiSelect
+          label={`Technology * ${errors.techTags ? `(${errors.techTags})` : ""}`}
+          options={technology}
+          pinned={technology.filter((t) => ["Agents","LLM","Speech","Vibe Coding","Fine-tuning"].includes(t.name))}
+          value={selectedTechTags}
+          onChange={(next) => {
+            // enforce per-facet cap in UI guardrail
+            const allowed = next.slice(0, 5)
+            setSelectedTechTags(allowed)
+          }}
+          max={5}
+          placeholder="Add technology tag"
+          variant="tech"
+        />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Category Tags * {errors.categoryTags && <span className="text-red-600">({errors.categoryTags})</span>}
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {category.map((tag) => (
-              <button
-                key={tag.id}
-                type="button"
-                onClick={() => toggleCategoryTag(tag.id)}
-                className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                  selectedCategoryTags.includes(tag.id)
-                    ? "bg-green-100 text-green-800 border border-green-200"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
-                }`}
-              >
-                {tag.name}
-              </button>
-            ))}
-          </div>
-        </div>
+        <TagMultiSelect
+          label={`Category * ${errors.categoryTags ? `(${errors.categoryTags})` : ""}`}
+          options={category}
+          pinned={category.filter((t) => ["Productivity","Education/ Study tools","Content/Media","Research"].includes(t.name))}
+          value={selectedCategoryTags}
+          onChange={(next) => {
+            const allowed = next.slice(0, 3)
+            setSelectedCategoryTags(allowed)
+          }}
+          max={3}
+          placeholder="Add category tag"
+          variant="category"
+        />
 
         {selectedTechTags.map((id) => (
           <input key={`tech-${id}`} type="hidden" name="techTagIds" value={id} />

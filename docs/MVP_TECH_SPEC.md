@@ -252,9 +252,23 @@ Development Plan (MVP)
     - —
   - Done when: 401/403/409/500 show friendly guidance; errors reach logging backend with redaction; disclaimer shown once and respected; tests cover 500 path and rate-limit on report.
 
-- Stage 14 — Tag curation & validation tweaks — Planned
-  - Tasks: curate initial tag set in admin UI; enforce dedupe/casing; cap tags per item (e.g., ≤ 8 total).
-  - Done when: forms prevent dupes; curated tags visible; search behaves unchanged functionally.
+- Stage 14 — Tag curation & validation tweaks — Completed
+  - Tasks: curate initial tag set in admin UI; enforce dedupe/casing; cap tags per item.
+  - Updates:
+    - Case-insensitive uniqueness enforced at DB: `unique(type, lower(name))`.
+    - Admin UI normalizes input (trim + collapse whitespace) and warns on CI duplicates with existing name.
+    - Caps (per-facet): Projects Technology ≤ 5 & Category ≤ 3; Collaborations Technology ≤ 5 & Category ≤ 3 (project types not counted).
+    - Forms use a compact combobox with quick‑pick chips and a searchable dropdown; live counters per facet; disabled chips when at cap; deselection always allowed.
+  - Done when: forms prevent dupes and over-selection; curated tags visible; search unaffected. (Met)
+  - See also: `docs/UI_PATTERNS.md` for quick‑pick defaults and the rule that "Others" sorts last in tag dropdowns.
+
+Tag Sources & Curation (Stage 14)
+- We curated generally understandable tags from well-known taxonomies:
+  - [Hugging Face — Tasks](https://huggingface.co/tasks)
+  - [Papers with Code — Tasks](https://paperswithcode.com/task)
+  - [Product Hunt — Topics](https://www.producthunt.com/topics)
+  - [LinkedIn — Industry codes](https://learn.microsoft.com/linkedin/shared/references/reference-tables/industry-codes)
+- Curated snapshot lives at `docs/tags/curated-tags.csv`. Seeds append with `on conflict do nothing` to avoid renames or duplicates.
 
 - Stage 15 — Logos for projects & collaborations (list display) — Planned
   - Tasks: create storage buckets (`project-logos`, `collab-logos`) with RLS; add `request*LogoUpload` and `set*Logo` actions; UI to upload on create/edit; render logos with `next/image` in cards with fallback.

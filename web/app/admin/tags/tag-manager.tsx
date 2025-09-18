@@ -3,11 +3,13 @@
 import { useMemo, useState, useTransition } from "react"
 import type { Tag } from "@/lib/types"
 import { createTag } from "./actions"
+import { normalizeTagName } from "@/lib/validation/tags"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 function normalize(s: string) {
-  return (s || "").trim().toLowerCase()
+  // Use shared normalization (collapse whitespace + trim) then lower-case for compare
+  return normalizeTagName(s).toLowerCase()
 }
 
 function useSuggestions(existing: Tag[], type: "technology" | "category", query: string) {
@@ -18,10 +20,10 @@ function useSuggestions(existing: Tag[], type: "technology" | "category", query:
   }, [existing, type, q])
 }
 
-function hasExact(existing: Tag[], type: "technology" | "category", query: string) {
+function findExact(existing: Tag[], type: "technology" | "category", query: string) {
   const q = normalize(query)
-  if (!q) return false
-  return existing.some((t) => normalize(t.type) === type && normalize(t.name) === q)
+  if (!q) return undefined
+  return existing.find((t) => normalize(t.type) === type && normalize(t.name) === q)
 }
 
 export function AdminTagManager({
@@ -41,14 +43,16 @@ export function AdminTagManager({
   const techSuggestions = useSuggestions(technology, "technology", techInput)
   const catSuggestions = useSuggestions(category, "category", catInput)
 
-  const techExact = hasExact(technology, "technology", techInput)
-  const catExact = hasExact(category, "category", catInput)
+  const techExisting = findExact(technology, "technology", techInput)
+  const catExisting = findExact(category, "category", catInput)
+  const techExact = Boolean(techExisting)
+  const catExact = Boolean(catExisting)
 
   const onAdd = (type: "technology" | "category") => {
     setError(null)
     startTransition(async () => {
       const form = new FormData()
-      form.set("name", type === "technology" ? techInput.trim() : catInput.trim())
+      form.set("name", type === "technology" ? normalizeTagName(techInput) : normalizeTagName(catInput))
       form.set("type", type)
       const res = await createTag(null, form)
       if (res?.formError || res?.fieldErrors) {
@@ -91,12 +95,15 @@ export function AdminTagManager({
               Add
             </Button>
           </div>
+          {techExisting && (
+            <div className="text-xs text-red-600">A tag with this name already exists: "{techExisting.name}".</div>
+          )}
           {techInput && techSuggestions.length > 0 && (
             <div className="text-xs text-gray-600">
               Similar existing: {techSuggestions.map((t) => t.name).join(", ")}
             </div>
           )}
-          {techExact && <div className="text-xs text-red-600">An identical technology tag already exists.</div>}
+          {/* duplicate message shown above with concrete name */}
         </div>
       </section>
 
@@ -121,12 +128,15 @@ export function AdminTagManager({
               Add
             </Button>
           </div>
+          {catExisting && (
+            <div className="text-xs text-red-600">A tag with this name already exists: "{catExisting.name}".</div>
+          )}
           {catInput && catSuggestions.length > 0 && (
             <div className="text-xs text-gray-600">
               Similar existing: {catSuggestions.map((t) => t.name).join(", ")}
             </div>
           )}
-          {catExact && <div className="text-xs text-red-600">An identical category tag already exists.</div>}
+          {/* duplicate message shown above with concrete name */}
         </div>
       </section>
     </div>

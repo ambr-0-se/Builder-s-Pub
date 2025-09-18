@@ -35,6 +35,14 @@ Purpose: Concise, reusable UI patterns used across the MVP. Keep this scoped to 
   - Hiring: black background, white text, solid border.
   - No longer hiring: white background, gray text, outlined border.
 
+- Tag Pickers (projects & collaborations)
+  - Quick‑pick chips (curated) above a searchable combobox.
+  - Selected colors: Technology (blue), Category (green). Do not convey meaning by color alone; include text/labels.
+  - Caps: Technology ≤ 5; Category ≤ 3. Disable non‑selected options at cap; allow deselection always.
+  - Keyboard: ArrowDown opens; Enter selects; Escape closes; focus returns to input.
+  - Sorting: options are alphabetical; any tag named "Others" is forced to the bottom for clarity.
+  - Defaults (current quick‑picks): Technology → Agents, LLM, Speech, Vibe Coding, Fine‑tuning. Category → Productivity, Education/ Study tools, Content/Media, Research.
+
 ## Character Counters and Limits
 
 - Counters appear to the right of field labels or in compact helper text below inputs.

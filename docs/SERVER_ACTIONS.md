@@ -64,6 +64,9 @@ Errors
 Validation (UX)
 - Respect limits: Title ≤80, Tagline ≤140, Description ≤4000; URLs must be `http/https`.
 - Tag rules: at least one technology and one category.
+- Caps (per-facet):
+  - Projects: Technology ≤ 5; Category ≤ 3.
+  - Collaborations: Technology ≤ 5; Category ≤ 3. Project types do not count toward caps.
 - Comments/Replies: 1–1000 chars; reply allowed only 1 level.
 - Friendly errors: 401/403/409 with actionable messages; retry for 500.
  - Rate-limited actions include a friendly message plus optional cooldown seconds.

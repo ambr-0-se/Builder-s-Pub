@@ -31,6 +31,7 @@ Indexes (key)
  - comments(parent_comment_id, created_at asc)
  - comment_upvotes(comment_id)
 - tags(type, name)
+- uq_tags_type_lower_name unique(type, lower(name)) — prevents case-insensitive duplicates (e.g., 'nlp' vs 'NLP')
 - project_tags(tag_id, project_id)
 
 RLS Summary
