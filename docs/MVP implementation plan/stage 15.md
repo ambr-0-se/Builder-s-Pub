@@ -180,6 +180,34 @@ Add server tests (authorization, path, size/mime), component tests (fallback ren
 
 ---
 
+### Step 6a: Profile avatar UI integration
+**Goal:** Allow users to upload/replace their profile avatar from the profile edit page and render it across the app.
+
+**What we are doing:** Add the same upload experience used for logos to the profile page. Users can pick a small image (PNG/JPEG/SVG, ≤1MB), upload it via a one‑time signed URL, and immediately see it on their profile and in the navbar. When no avatar exists, we show a graceful fallback (initial letter).
+
+**Technical details:**
+- Use the reusable `LogoUploader` with `entity="profile"`.
+- Request/Set actions (already implemented): `requestProfileAvatarUploadAction`, `setProfileAvatarAction` in `web/app/profile/actions.ts`.
+- Rendering:
+  - On `/profile/edit`, show an "Avatar" section (uploader) at the top or right column.
+  - On `/profile`, if `avatarPath` present: render a 80–96px rounded image; else show current initial.
+  - In navbar, if authenticated and `avatarPath` present: render a 24px rounded image next to/replace display name; fallback to display name when absent.
+- Constraints: enforce client accept filter and size check; server actions validate path ownership.
+
+**Files:**
+- Change: `web/app/profile/edit/page.tsx` (render `LogoUploader` wired to actions)
+- Change: `web/app/profile/page.tsx` (render avatar if present)
+- Change: `web/components/layout/navbar.tsx` (render small avatar if present)
+- Potentially affected: `web/app/profile/edit/EditForm.tsx` (if we place uploader inside the form layout), styles
+
+**Tests:**
+- Component smoke: `LogoUploader` already covered for basic validation.
+- Optional: add a simple render test to ensure profile view shows fallback vs avatar.
+
+**Status:** Not Started
+
+---
+
 ### Step 7: Tests, docs, and changelog
 **Goal:** Ensure correctness and document the feature.
 
@@ -232,9 +260,10 @@ At each step in 'Actionable and specific steps':
 | 1. DB & Buckets | ✅ Completed | 18/9/2025 | 18/9/2025 | Columns + buckets applied in Dashboard |
 | 2. Types & DTOs | ✅ Completed | 18/9/2025 | 18/9/2025 | types + selectors map logo_path/avatar_path |
 | 3. Server: project/collab logos | ✅ Completed | 18/9/2025 | 18/9/2025 | request*/set* helpers + actions added |
-| 4. Profile avatars | Not Started | — | — |  |
-| 5. LogoUploader component | Not Started | — | — |  |
+| 4. Profile avatars | ✅ Completed | 18/9/2025 | 18/9/2025 | request/set + actions implemented |
+| 5. LogoUploader component | ✅ Completed | 18/9/2025 | 18/9/2025 | reusable uploader + tests |
 | 6. UI integration (lists/detail/forms) | Not Started | — | — |  |
+| 6a. Profile avatar UI integration | Not Started | — | — |  |
 | 7. Tests & Docs | Not Started | — | — |  |
 
 ## Risk Mitigation
