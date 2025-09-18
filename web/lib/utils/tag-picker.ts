@@ -15,4 +15,15 @@ export function selectSuggested(tags: Tag[], count = 12): Tag[] {
   return (tags || []).slice(0, Math.max(0, count))
 }
 
+export function sortWithOthersLast(tags: Tag[]): Tag[] {
+  const isOthers = (name: string) => (name || "").toLowerCase() === "others"
+  return [...(tags || [])].sort((a, b) => {
+    const aIs = isOthers(a.name)
+    const bIs = isOthers(b.name)
+    if (aIs && !bIs) return 1
+    if (!aIs && bIs) return -1
+    return a.name.localeCompare(b.name)
+  })
+}
+
 

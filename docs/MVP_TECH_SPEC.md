@@ -260,6 +260,7 @@ Development Plan (MVP)
     - Caps (per-facet): Projects Technology ≤ 5 & Category ≤ 3; Collaborations Technology ≤ 5 & Category ≤ 3 (project types not counted).
     - Forms use a compact combobox with quick‑pick chips and a searchable dropdown; live counters per facet; disabled chips when at cap; deselection always allowed.
   - Done when: forms prevent dupes and over-selection; curated tags visible; search unaffected. (Met)
+  - See also: `docs/UI_PATTERNS.md` for quick‑pick defaults and the rule that "Others" sorts last in tag dropdowns.
 
 Tag Sources & Curation (Stage 14)
 - We curated generally understandable tags from well-known taxonomies:

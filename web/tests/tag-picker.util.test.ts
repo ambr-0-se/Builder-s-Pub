@@ -17,6 +17,17 @@ describe("tag-picker utils", () => {
     expect(selectSuggested(tags as any, 12).length).toBe(12)
     expect(selectSuggested(tags as any, 0).length).toBe(0)
   })
+
+  it("sorts with 'Others' last regardless of name position", async () => {
+    const { sortWithOthersLast } = await import("@/lib/utils/tag-picker")
+    const tags = [
+      { id: 1, name: "Others", type: "technology" as const },
+      { id: 2, name: "Agents", type: "technology" as const },
+      { id: 3, name: "LLM", type: "technology" as const },
+    ]
+    const sorted = sortWithOthersLast(tags as any)
+    expect(sorted.map((t) => t.name)).toEqual(["Agents", "LLM", "Others"])
+  })
 })
 
 

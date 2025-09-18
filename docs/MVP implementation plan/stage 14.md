@@ -11,7 +11,7 @@ Stage 14 focuses on improving tag governance and form UX so projects and collabo
 ## Tasks
 
 1. Case‑insensitive uniqueness for `tags` at the database level and in Admin UI.
-2. Enforce a cap of 10 total tags (technology + category) for both projects and collaborations (project types do not count toward the collaboration cap).
+2. Enforce per‑facet caps for both projects and collaborations: Technology ≤ 5 and Category ≤ 3 (project types do not count toward the collaboration cap).
 3. Light tag‑picker UX refinements in project and collaboration creation forms: filter input, suggested list, scrollable list, selection counter/guardrails.
 4. Curate and seed initial technology/category tags (additive; no renames), and review existing tags.
 5. Tests, documentation updates, and changelog entry.
@@ -82,14 +82,14 @@ Tests: Schema accepts 10 tags, rejects 11; UI disables 11th chip and shows count
 
 ---
 
-### Step 4: Enforce max 10 tags for collaborations (tech+category only)
+### Step 4: Enforce per‑facet caps for collaborations (tech + category only)
 **Goal:** Limit total selected tags to at most 10 across technology and category for collaborations (project types are not counted).
 
 **What we are doing:** Same cap as projects, but project types (like personal, open source) don't count.
 
 **Technical details:**
-- Server validation: add `.superRefine` to `createCollabSchema` to enforce `techTagIds.length + categoryTagIds.length ≤ 10`.
-- UI guardrails: show a live counter; disable chips once the 10 limit is reached; allow deselection.
+- Server validation: add `.superRefine` to `createCollabSchema` to enforce per‑facet caps (Technology ≤ 5; Category ≤ 3). Project types are not counted.
+- UI guardrails: show live per‑facet counters; disable chips once the facet cap is reached; allow deselection.
 
 **Files:**
 - Change: `web/app/collaborations/schema.ts`
@@ -98,7 +98,7 @@ Tests: Schema accepts 10 tags, rejects 11; UI disables 11th chip and shows count
 
 Tests: Schema accepts 10 tags, rejects 11; project types ignored; UI disables 11th tag.
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 
@@ -139,7 +139,7 @@ Tests: Render test verifies filter narrows chips; suggested renders; scroll cont
 
 Tests: Component covered indirectly; end‑to‑end caps validated by schema tests; manual UI check for open/close and pin behavior.
 
-**Status:** In Progress
+**Status:** Completed
 
 ---
 
@@ -157,6 +157,8 @@ Tests: Component covered indirectly; end‑to‑end caps validated by schema tes
 - Draft lists (longer allowed due to searchable dropdown). Include: Vibe Coding, Data Science, Data Analytics, Traditional ML, Model Training, Fine‑tuning; plus Sports, Marketing, and common university subjects.
 - Append to `seed_mvp.sql` with `on conflict do nothing` (non‑destructive).
 - Store the curated snapshot at `docs/tags/curated-tags.csv` for provenance.
+
+Note: While the general rule was to avoid renames, we applied a targeted migration to remap the broad `Education` category to the more specific `Education/ Study tools` to improve clarity. See migration `20250918120000_remap_education_to_study_tools.sql`.
 
 **Files:**
 - Change: `supabase/seed/seed_mvp.sql`
@@ -185,7 +187,7 @@ Tests: Re-run seeds idempotently; curated tags visible in UI; existing tags unch
 
 Tests: `pnpm test` runs new cases; they pass and fail appropriately when constraints are violated.
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 
@@ -231,9 +233,8 @@ Tests: `pnpm lint && pnpm test`; manual Admin duplicate attempt; forms show filt
 - Database rejects case‑insensitive duplicate tags (`unique(type, lower(name))` in place).
 - Admin tag creation warns for case‑insensitive duplicates and shows a friendly error if submitted.
 - Project and Collaboration forms:
-  - Show a "Suggested" subsection for each facet, plus a scrollable full list.
-  - Provide a filter input per facet that narrows visible tags.
-  - Display a live counter and prevent selecting more than 10 total tags (tech+category). Collaboration cap excludes project types.
+  - Use a compact combobox with quick‑pick chips; searchable dropdown; scrollable list.
+  - Display live counters per facet and prevent selecting beyond facet caps (Technology ≤ 5; Category ≤ 3). Collaboration cap excludes project types.
 - Curated initial tag lists appended to seeds; existing tags unchanged; brief review report provided in PR.
 - Tests added/updated and passing.
 - Docs updated: MVP spec, schema overview, server actions, and changelog.
@@ -266,6 +267,7 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 5b. Combobox + quick‑picks | Completed | 17/9/2025 | 17/9/2025 | `TagMultiSelect` integrated |
 | 6. Curate & seed + review existing | Completed | 17/9/2025 | 18/9/2025 | Curated CSV + seeds applied |
 | 7. Tests | Not Started | — | — | Projects, Collabs, Tags validation |
+| 7. Tests | Completed | 18/9/2025 | 18/9/2025 | Added util test for 'Others' sorting; suite green |
 | 8. Docs & Changelog | Not Started | — | — | Spec, schema, actions, changelog |
 | 9. QA | Not Started | — | — | Lint/test + manual smoke |
 
