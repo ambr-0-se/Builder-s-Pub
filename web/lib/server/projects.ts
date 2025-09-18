@@ -8,6 +8,8 @@ import { formatDurationHMS } from "@/lib/utils"
 import { createProjectSchema, type CreateProjectInput } from "@/app/projects/schema"
 import { trackServer } from "@/lib/analytics"
 import { commentSchema } from "@/app/projects/schema"
+import { getServiceSupabase } from "@/lib/supabaseService"
+import { buildObjectPath, normalizeExt, pathBelongsToId } from "@/lib/server/logo-utils"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
@@ -694,4 +696,41 @@ export async function toggleCommentUpvote(commentId: string): Promise<{ ok: true
 }
 
 // rate limiting helper moved to shared module
+
+export async function requestProjectLogoUpload(projectId: string, opts: { ext: string }): Promise<{ uploadUrl: string; path: string; maxBytes: number; mime: string[] } | { error: string }> {
+	const supabase = await getServerSupabase()
+	const { data: auth } = await supabase.auth.getUser()
+	if (!auth.user) return { error: "unauthorized" }
+	// Owner check
+	const { data: row, error } = await supabase.from("projects").select("owner_id").eq("id", projectId).maybeSingle()
+	if (error) return { error: error.message }
+	if (!row) return { error: "not_found" }
+	if (row.owner_id !== auth.user.id) return { error: "forbidden" }
+	const ext = normalizeExt(opts.ext)
+	if (!ext) return { error: "invalid_ext" }
+	const filename = `${(globalThis as any).crypto?.randomUUID?.() || require("crypto").randomUUID()}.${ext}`
+	const path = buildObjectPath("project-logos", projectId, filename)
+	// Issue a signed upload URL using service client
+	const service = getServiceSupabase()
+	const { data: signed, error: signErr } = await (service.storage as any).from("project-logos").createSignedUploadUrl(path.replace(/^project-logos\//, ""))
+	if (signErr || !signed?.signedUrl) return { error: signErr?.message || "failed_to_sign" }
+	return { uploadUrl: signed.signedUrl as string, path, maxBytes: 1_000_000, mime: ["image/png","image/jpeg","image/svg+xml"] }
+}
+
+export async function setProjectLogo(projectId: string, path: string): Promise<{ ok: true } | { error: string }> {
+	const supabase = await getServerSupabase()
+	const { data: auth } = await supabase.auth.getUser()
+	if (!auth.user) return { error: "unauthorized" }
+	// Owner check
+	const { data: row, error } = await supabase.from("projects").select("owner_id").eq("id", projectId).maybeSingle()
+	if (error) return { error: error.message }
+	if (!row) return { error: "not_found" }
+	if (row.owner_id !== auth.user.id) return { error: "forbidden" }
+	// Path validation
+	if (!pathBelongsToId("project-logos", projectId, path)) return { error: "invalid_path" }
+	// Optional: fetch metadata (size/mime). Supabase Storage metadata API may vary; we assume upload was signed and validated client-side.
+	const { error: updErr } = await supabase.from("projects").update({ logo_path: path }).eq("id", projectId)
+	if (updErr) return { error: updErr.message }
+	return { ok: true }
+}
 

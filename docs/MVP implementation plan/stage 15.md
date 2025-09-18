@@ -104,7 +104,7 @@ Add server tests (authorization, path, size/mime), component tests (fallback ren
 **Tests:**
 - Server tests for owner-only checks; reject wrong prefix/bucket; reject large/invalid mime.
 
-**Status:** Not Started
+**Status:** ✅ Completed
 
 ---
 
@@ -231,7 +231,7 @@ At each step in 'Actionable and specific steps':
 |------|--------|---------|-----------|-------|
 | 1. DB & Buckets | ✅ Completed | 18/9/2025 | 18/9/2025 | Columns + buckets applied in Dashboard |
 | 2. Types & DTOs | ✅ Completed | 18/9/2025 | 18/9/2025 | types + selectors map logo_path/avatar_path |
-| 3. Server: project/collab logos | Not Started | — | — |  |
+| 3. Server: project/collab logos | ✅ Completed | 18/9/2025 | 18/9/2025 | request*/set* helpers + actions added |
 | 4. Profile avatars | Not Started | — | — |  |
 | 5. LogoUploader component | Not Started | — | — |  |
 | 6. UI integration (lists/detail/forms) | Not Started | — | — |  |

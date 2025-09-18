@@ -6,6 +6,7 @@ import { createProject } from "@/lib/server/projects"
 import { addComment, deleteComment, addReply, toggleCommentUpvote, toggleProjectUpvote } from "@/lib/server/projects"
 import { commentSchema } from "@/app/projects/schema"
 import { trackServer } from "@/lib/analytics"
+import { requestProjectLogoUpload, setProjectLogo } from "@/lib/server/projects"
 
 export type CreateProjectState = { fieldErrors?: Record<string, string>; formError?: string } | null
 
@@ -132,6 +133,26 @@ export async function toggleProjectUpvoteAction(_: ToggleUpvoteState, formData: 
 		return { formError: "Too many upvotes. Please slow down.", retryAfterSec: (result as any).retryAfterSec }
 	}
 	return { formError: (result as any).error || "failed_to_toggle_upvote" }
+}
+
+export type RequestProjectLogoUploadState = { formError?: string; uploadUrl?: string; path?: string; maxBytes?: number; mime?: string[] } | null
+export async function requestProjectLogoUploadAction(_: RequestProjectLogoUploadState, formData: FormData): Promise<RequestProjectLogoUploadState> {
+	const projectId = String(formData.get("projectId") || "").trim()
+	const ext = String(formData.get("ext") || "").trim()
+	if (!projectId || !ext) return { formError: "missing_params" }
+	const res = await requestProjectLogoUpload(projectId, { ext })
+	if ((res as any).error) return { formError: (res as any).error }
+	return res as any
+}
+
+export type SetProjectLogoState = { formError?: string; ok?: true } | null
+export async function setProjectLogoAction(_: SetProjectLogoState, formData: FormData): Promise<SetProjectLogoState> {
+	const projectId = String(formData.get("projectId") || "").trim()
+	const path = String(formData.get("path") || "").trim()
+	if (!projectId || !path) return { formError: "missing_params" }
+	const res = await setProjectLogo(projectId, path)
+	if ((res as any).error) return { formError: (res as any).error }
+	return { ok: true }
 }
 
 
