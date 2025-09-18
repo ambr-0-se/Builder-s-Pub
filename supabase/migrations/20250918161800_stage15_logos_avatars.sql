@@ -12,17 +12,17 @@ alter table if exists profiles
   add column if not exists avatar_path text;
 
 -- Storage buckets (public-read); create only if missing
--- Note: Public-read buckets are used for rendering performance. Uploads use signed URLs from the server.
+-- Note: Use direct INSERTs into storage.buckets for compatibility across environments.
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'project-logos') THEN
-    PERFORM storage.create_bucket('project-logos', true);
+    INSERT INTO storage.buckets (id, name, public) VALUES ('project-logos', 'project-logos', true);
   END IF;
   IF NOT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'collab-logos') THEN
-    PERFORM storage.create_bucket('collab-logos', true);
+    INSERT INTO storage.buckets (id, name, public) VALUES ('collab-logos', 'collab-logos', true);
   END IF;
   IF NOT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'profile-avatars') THEN
-    PERFORM storage.create_bucket('profile-avatars', true);
+    INSERT INTO storage.buckets (id, name, public) VALUES ('profile-avatars', 'profile-avatars', true);
   END IF;
 END$$;
 
