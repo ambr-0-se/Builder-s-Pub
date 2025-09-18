@@ -2,7 +2,7 @@
 
 **Status:** Completed  
 **Started:** 16/9/2025  
-**Completed:** —
+**Completed:** 18/9/2025
 
 ## Overview
 
@@ -207,7 +207,7 @@ Tests: `pnpm test` runs new cases; they pass and fail appropriately when constra
 
 Tests: Manual doc review; ensure caps and CI uniqueness documented; changelog entry present.
 
-**Status:** In Progress
+**Status:** Completed
 
 ---
 
@@ -224,7 +224,7 @@ Tests: Manual doc review; ensure caps and CI uniqueness documented; changelog en
 - No new files; verify changes across touched files.
 Tests: `pnpm lint && pnpm test`; manual Admin duplicate attempt; forms show filter/suggest/scroll and cap at 10.
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 
@@ -268,8 +268,8 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 6. Curate & seed + review existing | Completed | 17/9/2025 | 18/9/2025 | Curated CSV + seeds applied |
 | 7. Tests | Not Started | — | — | Projects, Collabs, Tags validation |
 | 7. Tests | Completed | 18/9/2025 | 18/9/2025 | Added util test for 'Others' sorting; suite green |
-| 8. Docs & Changelog | Not Started | — | — | Spec, schema, actions, changelog |
-| 9. QA | Not Started | — | — | Lint/test + manual smoke |
+| 8. Docs & Changelog | Completed | 18/9/2025 | 18/9/2025 | UI patterns + spec aligned; changelog updated |
+| 9. QA | Completed | 18/9/2025 | 18/9/2025 | Tests green; scoped lint on changed files clean |
 
 ## Risk Mitigation
 
@@ -291,7 +291,7 @@ If you need help from user, give clear instructions to user on how to do it or w
 
 ---
 
-**Last Updated:** 17/9/2025
+**Last Updated:** 18/9/2025
 **Next Review:** On implementation completion
 
 
