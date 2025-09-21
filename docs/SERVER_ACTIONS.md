@@ -114,6 +114,12 @@ Storage cleanup & utilities
 - Scheduled cleanup: a GitHub Actions workflow runs daily to delete stale temp objects older than 24h; see `.github/workflows/cleanup-new-uploads.yml` and `web/scripts/cleanup-new-uploads.ts`.
 - Backfill: one-off script `web/scripts/finalize-new-logos.ts` migrates any existing temp paths referenced in DB to canonical `<entityId>/…` and updates rows; supports `--dry-run`.
 
+Profiles (avatars)
+- requestProfileAvatarUpload({ ext }): auth-only `-> { uploadUrl, path, maxBytes, mime }`
+- setProfileAvatar(path): auth-only `-> { ok: true }`
+- clearProfileAvatar(): auth-only `-> { ok: true }`
+  - UI: owner-only overlay on `/profile` header (size 96, rounded full). “Remove Avatar” available only on `/profile` overlay.
+
 Profiles (Stage 3)
 - getMyProfile(): `-> { profile: { userId, displayName, bio?, githubUrl?, linkedinUrl?, websiteUrl? } | null, isAuthenticated: boolean, error? }`
 - updateMyProfile(formData): `-> UpdateProfileState | null` where `UpdateProfileState = { fieldErrors?: Record<string,string>; formError?: string } | null`

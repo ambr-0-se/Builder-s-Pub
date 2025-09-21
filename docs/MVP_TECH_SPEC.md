@@ -277,11 +277,16 @@ Tag Sources & Curation (Stage 14)
   - [LinkedIn — Industry codes](https://learn.microsoft.com/linkedin/shared/references/reference-tables/industry-codes)
 - Curated snapshot lives at `docs/tags/curated-tags.csv`. Seeds append with `on conflict do nothing` to avoid renames or duplicates.
 
-- Stage 15 — Logos for projects & collaborations (list/detail + owner change) — Completed (21/9/2025)
+- Stage 15 — Logos for projects & collaborations (list/detail + owner change) — Completed (22/9/2025)
   - Tasks: create storage buckets (`project-logos`, `collab-logos`) with RLS; add `request*LogoUpload` and `set*Logo` (+ `clear*Logo`) actions; add `requestNewProjectLogoUpload()` and `requestNewCollabLogoUpload()` for create forms; UI uses auto-upload dropzone on create; detail pages use an avatar-style overlay with a headless native file picker (no large dropzone), optimistic preview, always-visible uploading spinner, and no reload.
   - Rendering: server maps `logo_path` → `logoUrl` (public URL). `LogoImage` renders center-cropped squares with fallback; final URL uses cache-busting query param after successful upload.
   - Placeholder policy: When `logoUrl` is absent, `LogoImage` renders a monogram avatar with a hashed gradient background and 1–2 initials from the title; static `/placeholder-logo.svg` is a secondary fallback.
   - Deliverables: server `logoUrl` mapping; shared `LogoImage`; homepage/search/cards/detail wired; submit gating on create; owner-only overlay with headless picker and spinner; finalize-on-submit; scheduled cleanup; backfill script; server + UI tests.
+
+Profile avatars (Step 6a)
+- UX: owner-only overlay on `/profile` header (size 96, rounded full). Change opens file picker; optimistic preview; spinner during upload; cache-busting on success. “Remove Avatar” is exposed only on `/profile` overlay.
+- Server actions: `requestProfileAvatarUploadAction`, `setProfileAvatarAction`, `clearProfileAvatarAction`.
+- Paths: `profile-avatars/<userId>/<uuid>.<ext>`; no finalize-on-submit required.
   - Done when: owners upload ≤ 1MB images (PNG/JPEG/SVG); logos render on lists/detail; change/remove works without page reload; broken/missing logos fall back; tests cover RLS access and client validation.
 
 - Stage 16 — Collaboration by role (post + search) — Planned

@@ -278,31 +278,26 @@ Add server tests (authorization, path, size/mime), component tests (fallback ren
 ---
 
 ### Step 6a: Profile avatar UI integration (Option B)
-**Goal:** Provide a clean avatar change experience on `/profile/edit` and render avatar across `/profile` and navbar.
+**Goal:** Provide a clean avatar change experience on `/profile` (header overlay) and render avatar in profile.
 
-**What we are doing:** Use an avatar tile with a small “Change” overlay button. After selection, preview shows in the tile (square/circle) using `object-cover object-center`. Requirements stay visible below.
+**What we are doing:** Use an avatar tile with a small “Change” overlay button on `/profile`. After selection, preview shows in the tile (circle) using `object-cover object-center`. Requirements are enforced (PNG/JPEG/SVG — max 1MB). No large dropzone.
 
 **Technical details:**
-- `/profile/edit`: integrate `LogoUploader` with `variant="avatar"`, using `requestProfileAvatarUploadAction` + `setProfileAvatarAction`. Overlay button opens file picker; progress bar and inline errors; preview updates on success.
-- `/profile`: if `avatarPath` present, render 80–96px rounded image with `object-cover object-center`; otherwise initial letter fallback.
-- Navbar: if authenticated and `avatarPath` present, render a 24px rounded avatar next to (or instead of) the display name.
+- `/profile`: if `avatarPath` present, render 96px rounded image; otherwise monogram fallback. Owner-only overlay allows Change/Remove. “Remove Avatar” is exposed only on `/profile` overlay.
+- `/profile/edit`: unchanged (avatar edits happen on `/profile`).
 - Accessibility: overlay button keyboard focusable; announce errors via `aria-live`.
 
-**Sub‑step 6a.1: Profile Edit (avatar overlay)**
+**Sub‑step 6a.1: Profile header (avatar overlay)**
 - Files:
-  - Change: `web/app/profile/edit/page.tsx` (insert avatar uploader block)
-  - Change: `web/components/ui/logo-uploader.tsx` (avatar variant)
-  - Uses existing profile actions.
-
-**Sub‑step 6a.2: Profile View + Navbar**
-- Files:
-  - Change: `web/app/profile/page.tsx` (render avatar)
-  - Change: `web/components/layout/navbar.tsx` (small avatar)
+  - Change: `web/app/profile/page.tsx` (insert `LogoChangeOverlay` size 96, rounded full, owner-only; wire profile actions)
+  - Change: `web/components/ui/logo-change-overlay.tsx` (support `entity="profile"`)
+  - Change: `web/app/profile/actions.ts` (add `clearProfileAvatar` + server action)
 
 **Tests:**
-- Component smoke (avatar variant): overlay triggers input; preview visible; no regressions.
+- Server: request/set/clear avatar; invalid ext/path rejections.
+- UI: overlay renders for owner; remove visible and actionable; monogram fallback when missing.
 
-**Status:** Not Started
+**Status:** ✅ Completed (22/9/2025)
 
 ---
 
