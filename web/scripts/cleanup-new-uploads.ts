@@ -83,7 +83,8 @@ function hoursBetween(a: Date, b: Date): number {
 }
 
 function toAgeHours(now: Date, f: FileObject): number | null {
-  const t = f.updated_at || f.created_at || f.last_accessed_at
+  // Prefer created_at to avoid keeping files alive if updated_at is bumped by internal ops
+  const t = f.created_at || f.updated_at || f.last_accessed_at
   if (!t) return null
   const d = new Date(t)
   if (Number.isNaN(d.getTime())) return null
