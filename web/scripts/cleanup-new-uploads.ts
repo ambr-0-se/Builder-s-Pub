@@ -24,6 +24,7 @@ type Flags = {
   dryRun: boolean
   buckets: string[]
   batchSize: number
+  minAgeMinutes: number
 }
 
 function parseFlags(argv: string[]): Flags {
@@ -32,6 +33,7 @@ function parseFlags(argv: string[]): Flags {
     dryRun: true,
     buckets: ["project-logos", "collab-logos", "profile-avatars"],
     batchSize: 100,
+    minAgeMinutes: 10,
   }
 
   const out = { ...defaults }
@@ -41,6 +43,7 @@ function parseFlags(argv: string[]): Flags {
     else if (arg === "--dry-run=true") out.dryRun = true
     else if (arg.startsWith("--buckets=")) out.buckets = arg.slice(10).split(",").map(s => s.trim()).filter(Boolean)
     else if (arg.startsWith("--batch=")) out.batchSize = Math.max(1, Number(arg.slice(8)) || defaults.batchSize)
+    else if (arg.startsWith("--min-age-min=")) out.minAgeMinutes = Math.max(0, Number(arg.slice(14)) || defaults.minAgeMinutes)
   }
   return out
 }
@@ -111,6 +114,7 @@ async function main() {
 
   const now = new Date()
   const ttl = flags.ttlHours
+  const minAgeMin = flags.minAgeMinutes
   let totalCandidates = 0
   let totalDeleted = 0
   let totalErrors = 0
@@ -131,7 +135,8 @@ async function main() {
         if (!f.name || f.name.endsWith("/")) continue
         const age = toAgeHours(now, f)
         if (age === null) continue
-        if (age > ttl) {
+        // Guard against very recent files even if ttl is configured aggressively (manual runs)
+        if (age > ttl && age * 60 > minAgeMin) {
           totalCandidates += 1
           deleteKeys.push(`new/${user}/${f.name}`)
         }

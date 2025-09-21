@@ -18,6 +18,10 @@ on:
         description: "Comma-separated buckets (e.g., collab-logos or project-logos,collab-logos)"
         required: false
         default: ""
+      min_age_min:
+        description: "Minimum file age in minutes (extra safety; defaults to 10)"
+        required: false
+        default: "10"
 
 jobs:
   cleanup:
@@ -56,7 +60,7 @@ jobs:
       - name: Run cleanup script
         shell: bash
         run: |
-          CMD="pnpm dlx tsx scripts/cleanup-new-uploads.ts --ttl=${{ inputs.ttl || '24' }} --dry-run=${{ inputs.dry_run || 'false' }}"
+          CMD="pnpm dlx tsx scripts/cleanup-new-uploads.ts --ttl=${{ inputs.ttl || '24' }} --dry-run=${{ inputs.dry_run || 'false' }} --min-age-min=${{ inputs.min_age_min || '10' }}"
           if [[ -n "${{ inputs.buckets }}" ]]; then
             CMD="$CMD --buckets=${{ inputs.buckets }}"
           fi
