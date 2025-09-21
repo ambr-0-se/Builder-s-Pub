@@ -37,6 +37,12 @@ vi.mock("@/lib/supabaseService", () => ({
   })),
 }))
 
+// Mock logo-public-url delete helper used by clear actions and storage cleanup
+vi.mock("@/lib/server/logo-public-url", () => ({
+  deleteStorageObject: vi.fn(async () => ({ ok: true })),
+  toPublicUrl: (path?: string) => (path ? `public/${path}` : undefined),
+}))
+
 describe("logos finalize + set", () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -169,6 +175,75 @@ describe("logo upload requests (owner/path/mime)", () => {
     const { clearProfileAvatar } = await import("@/app/profile/actions")
     const res = await clearProfileAvatar()
     expect(res).toEqual({ ok: true })
+  })
+})
+
+describe("clear logo actions delete storage object (best-effort)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("clearProjectLogo clears DB and deletes object", async () => {
+    const { getServerSupabase } = await import("@/lib/supabaseServer") as any
+    // Owner u1 with existing logo
+    ;(getServerSupabase as any).mockResolvedValueOnce({
+      auth: { getUser: async () => ({ data: { user: { id: "u1" } } }) },
+      from: vi.fn().mockImplementation((table: string) => ({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({ single: vi.fn(async () => ({ data: { owner_id: "u1", logo_path: "project-logos/p1/file.png" }, error: null })) }),
+        }),
+        update: vi.fn().mockReturnValue({ eq: vi.fn(async () => ({ error: null })) }),
+      })),
+    })
+    const { deleteStorageObject } = await import("@/lib/server/logo-public-url") as any
+    const { clearProjectLogo } = await import("@/lib/server/projects")
+    const res = await clearProjectLogo("p1")
+    expect(res).toEqual({ ok: true })
+    expect(deleteStorageObject).toHaveBeenCalledWith("project-logos", "project-logos/p1/file.png")
+  })
+
+  it("clearCollabLogo clears DB and deletes object", async () => {
+    const { getServerSupabase } = await import("@/lib/supabaseServer") as any
+    ;(getServerSupabase as any).mockResolvedValueOnce({
+      auth: { getUser: async () => ({ data: { user: { id: "u1" } } }) },
+      from: vi.fn().mockImplementation((table: string) => ({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({ single: vi.fn(async () => ({ data: { owner_id: "u1", logo_path: "collab-logos/c1/file.png" }, error: null })) }),
+        }),
+        update: vi.fn().mockReturnValue({ eq: vi.fn(async () => ({ error: null })) }),
+      })),
+    })
+    const { deleteStorageObject } = await import("@/lib/server/logo-public-url") as any
+    const { clearCollabLogo } = await import("@/lib/server/collabs")
+    const res = await clearCollabLogo("c1")
+    expect(res).toEqual({ ok: true })
+    expect(deleteStorageObject).toHaveBeenCalledWith("collab-logos", "collab-logos/c1/file.png")
+  })
+})
+
+describe("deleteTempLogo helper", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("allows deleting own temp object under new/<userId>", async () => {
+    const { getServerSupabase } = await import("@/lib/supabaseServer") as any
+    ;(getServerSupabase as any).mockResolvedValueOnce({
+      auth: { getUser: async () => ({ data: { user: { id: "u1" } } }) },
+    })
+    const { deleteTempLogo } = await import("@/lib/server/storage-cleanup")
+    const res = await deleteTempLogo("project-logos/new/u1/tmp.png")
+    expect(res).toEqual({ ok: true })
+  })
+
+  it("rejects deleting another user's temp object", async () => {
+    const { getServerSupabase } = await import("@/lib/supabaseServer") as any
+    ;(getServerSupabase as any).mockResolvedValueOnce({
+      auth: { getUser: async () => ({ data: { user: { id: "u1" } } }) },
+    })
+    const { deleteTempLogo } = await import("@/lib/server/storage-cleanup")
+    const res = await deleteTempLogo("project-logos/new/u2/tmp.png")
+    expect((res as any).error).toBeTruthy()
   })
 })
 
