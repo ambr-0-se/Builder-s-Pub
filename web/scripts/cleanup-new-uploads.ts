@@ -17,7 +17,7 @@
  *  pnpm dlx tsx scripts/cleanup-new-uploads.ts --ttl=24 --dry-run=false
  */
 
-import { createClient } from "@supabase/supabase-js"
+import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 
 type Flags = {
   ttlHours: number
@@ -60,7 +60,7 @@ type FileObject = {
   metadata?: Record<string, unknown>
 }
 
-async function listAll(service: ReturnType<typeof createClient>, bucket: string, path: string): Promise<FileObject[]> {
+async function listAll(service: SupabaseClient<any, any, any>, bucket: string, path: string): Promise<FileObject[]> {
   const limit = 100
   let offset = 0
   const out: FileObject[] = []
@@ -87,7 +87,7 @@ function toAgeHours(now: Date, f: FileObject): number | null {
   return hoursBetween(now, d)
 }
 
-async function deleteInBatches(service: ReturnType<typeof createClient>, bucket: string, keys: string[], batchSize: number): Promise<{ deleted: number; errors: number }> {
+async function deleteInBatches(service: SupabaseClient<any, any, any>, bucket: string, keys: string[], batchSize: number): Promise<{ deleted: number; errors: number }> {
   let deleted = 0
   let errors = 0
   for (let i = 0; i < keys.length; i += batchSize) {

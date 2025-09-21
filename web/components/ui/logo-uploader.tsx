@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useRef, useState } from "react"
+import { deleteTempLogoAction } from "@/app/shared/actions/storage"
 
 interface LogoUploaderProps {
   entity: "project" | "collab" | "profile"
@@ -23,6 +24,7 @@ export function LogoUploader({ entity, entityId, requestAction, setAction, curre
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
   const [dragging, setDragging] = useState(false)
+  const lastTempPathRef = useRef<string>("")
 
   function validateAndSetFile(f: File | null) {
     setError(null)
@@ -58,6 +60,13 @@ export function LogoUploader({ entity, entityId, requestAction, setAction, curre
         fdReq.set(entity === "project" ? "projectId" : "collaborationId", entityId)
       }
       fdReq.set("ext", ext)
+      // If we have a previously created temp path, delete it to reduce storage litter
+      if (lastTempPathRef.current && lastTempPathRef.current.includes("/new/")) {
+        const fdDel = new FormData()
+        fdDel.set("path", lastTempPathRef.current)
+        await deleteTempLogoAction(null, fdDel)
+        lastTempPathRef.current = ""
+      }
       const res = await requestAction(null, fdReq)
       if (!res || !res.uploadUrl || !res.path) {
         setError(res?.formError || "Failed to initialize upload.")
@@ -65,6 +74,8 @@ export function LogoUploader({ entity, entityId, requestAction, setAction, curre
       }
       // optional early surface of path to reduce race with submit
       if (typeof onUploadedPath === "function") onUploadedPath(res.path)
+      // Track last temp path for cleanup on replacement (only for new/* keys)
+      if (res.path.includes("/new/")) lastTempPathRef.current = res.path
       const put = await fetch(res.uploadUrl, { method: "PUT", body: fileToUpload, headers: { "content-type": fileToUpload.type } })
       if (!put.ok) {
         setError("Upload failed. Please try again.")
