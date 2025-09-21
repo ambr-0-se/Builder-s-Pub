@@ -31,6 +31,4 @@ export async function deleteTempLogo(path: string): Promise<{ ok: true } | { err
   return { ok: true }
 }
 
-export const __test__ = { isOwnNewPath }
-
-
+// Note: no non-async exports. Helper kept internal to satisfy Next.js server action constraints.
