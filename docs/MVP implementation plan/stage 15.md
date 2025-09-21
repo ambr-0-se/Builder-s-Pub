@@ -154,55 +154,134 @@ Add server tests (authorization, path, size/mime), component tests (fallback ren
 ---
 
 ### Step 6: Integrate logos into UI (projects/collabs)
-**Goal:** Display logos with fallbacks across list and detail pages; add optional upload on create forms.
+**Goal:** Display logos with fallbacks across list and detail pages; add optional upload on create forms using a dropzone card at the bottom of the form; persist `logo_path` on create.
 
-**What we are doing:** Add an `Image` slot to cards/detail headers. On create pages, add an optional “Upload your logo” section that performs upload then includes the stored path with submission (or allows setting after creation on detail page).
+**What we are doing:**
+- Add `Image` slots to list/detail views for projects/collabs.
+- On create pages, add a dropzone card (Option A) that uploads the file and writes a hidden `logoPath` field submitted with the form. Owners can still change the logo later via the detail page.
+- Detail pages (owner-only): adopt an avatar-style overlay with a headless native file picker (no large dropzone), optimistic preview, inline uploading spinner always visible during upload, and no-page-reload finalization with cache-busted URL.
 
-**Technical details:**
-- Rendering: use `next/image` with `images.unoptimized = true`. Sizes: list 40–48px square; detail 96px.
-- Fallback: `public/placeholder-logo.svg` or `.png` if missing/broken.
-- Create forms: optional uploader placed at bottom; if uploaded before submit, include hidden `logoPath` field to pre-set; otherwise can upload later from detail page.
+**Technical details (shared):**
+- Rendering: `next/image` with `images.unoptimized = true`. Use fixed, square containers with `object-cover object-center` to capture the middle portion without stretch (natural center‑crop effect).
+- Fallback: Monogram avatar with gradient background when no `logoPath`/`logoUrl` present. Deterministic colors from item title; 1–2 initials centered. Secondary static fallback `public/placeholder-logo.svg` remains available.
+- Path validation (already enforced in schemas):
+  - Projects: `logoPath` must start with `project-logos/<projectId>/` (or temporary `project-logos/new/<userId>/` prior to create).
+  - Collaborations: `logoPath` must start with `collab-logos/<collabId>/`.
+- Create schemas: include optional `logoPath?: string` (already added) with prefix checks.
+- Server create:
+  - Projects / Collaborations: if `logoPath` present and valid, persist to `logo_path`.
 
-**Files:**
-- Change: `web/components/features/projects/project-card.tsx` (add logo)
-- Change: `web/app/projects/[id]/page.tsx` (add logo in header + owner uploader)
-- Change: `web/app/projects/new/page.tsx` (optional uploader section)
-- Change: `web/app/collaborations/page.tsx` (add logo to list item)
-- Change: `web/app/collaborations/[id]/page.tsx` (add logo + owner uploader)
-- Change: `web/app/collaborations/new/page.tsx` (optional uploader)
-- Add: `web/public/placeholder-logo.svg` (if not present)
-- Potentially affected: `web/components/features/...` where owner toolbars live
+**Sub‑step 6.1: List & Detail Rendering**
+- Files:
+  - Change: `web/components/features/projects/project-card.tsx` (48×48 logo, object-cover)
+  - Change: `web/app/projects/[id]/page.tsx` (96×96 logo in header)
+  - Change: `web/app/collaborations/page.tsx` (40×40 logo)
+  - Change: `web/app/collaborations/[id]/page.tsx` (96×96 logo in header)
+  - Add/Change: `web/components/ui/logo-image.tsx` reusable image renderer with monogram gradient fallback; wired in all the above.
+- Tests:
+  - UI smoke: placeholder shown when `logoPath` absent; no regressions.
+
+Sub‑step 6.1b: Submit gating, correct rendering, temp cleanup (Create pages)
+- Goal: Ensure logos persist reliably on submit; render using public URLs; reduce duplicate temp uploads.
+- Technical details:
+  - Ensure `logoPath` on submit: extend `LogoUploader` with `onPendingChange(pending:boolean)` that flips true when requesting/uploading and false when finished. Parent create pages disable the submit button while pending and only enable after `onUploadedPath` fires. Keep the hidden `<input name="logoPath">` in sync. Variables: `pendingUpload` in create pages; prop `onPendingChange` in `LogoUploader`.
+  - Render via public URLs: add helper `toPublicUrl(path: string) => string` that maps `project-logos/...` → `${NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${path}`. Apply when mapping server DTOs: in `toProjectWithRelations` and `toCollabWithRelations`, set `logoUrl` field (leave `logoPath` intact). Update UI to prefer `logoUrl || placeholder`.
+  - Reduce duplicates in `*/new/<userId>/`: when a new file is selected while a previous temp path exists and wasn’t submitted, call a small server action `deleteTempLogo(path)` that verifies the prefix `*/new/<userId>/` and deletes that object. This runs before requesting the next signed URL. Add a low-priority follow-up: scheduled cleanup to delete temp objects older than 24h.
+- Files:
+  - Change: `web/components/ui/logo-uploader.tsx` (add `onPendingChange`, track previous temp path, call `deleteTempLogoAction` on replace)
+  - Change: `web/app/projects/new/page.tsx` and `web/app/collaborations/new/page.tsx` (track `pendingUpload`, disable submit while pending)
+  - Change: `web/lib/server/projects.ts` and `web/lib/server/collabs.ts` (add `toPublicUrl` usage in DTO mapping as `logoUrl`)
+  - Add: `web/lib/server/logo-public-url.ts` (export `toPublicUrl`)
+  - Add: `web/app/(shared)/actions/delete-temp-logo.ts` (server action calling `deleteTempLogo`)
+  - Add: `web/lib/server/storage-cleanup.ts` (deleteTempLogo helper; optional scheduled cleanup stub)
+- Tests:
+Sub‑step 6.1c: Owner-only logo change UX (detail pages)
+- Goal: Remove layout shift and page reload; provide instant feedback.
+- Technical details:
+  - Replace in-detail dropzone with a headless input[type=file] triggered by the overlay “Change” button.
+  - Validate on client (PNG/JPEG/SVG, ≤1MB). On failure, show toast; do nothing.
+  - On success: optimistically set a local ObjectURL as thumbnail, request signed URL, PUT, call set-logo action, then set final `src = toPublicUrl(path) + '?v=' + Date.now()` to bust cache.
+  - Show an always-visible centered spinner overlay while `pending` is true (desktop + mobile).
+  - “Remove Logo” clears to placeholder immediately and persists via clear action.
+- Files:
+  - Change: `web/components/ui/logo-change-overlay.tsx` (headless picker, optimistic preview, spinner, cache-busting, toasts)
+  - Change: `web/app/projects/[id]/page.tsx`, `web/app/collaborations/[id]/page.tsx` (already wired to overlay component)
+  - Change: `web/app/projects/actions.ts`, `web/app/collaborations/actions.ts` (request action types return non-null objects)
+  - Change: `web/lib/publicUrl.ts` (used by overlay)
+
+  - Component: uploader emits pending true/false; submit disabled while pending; hidden input updates after success.
+  - Server: `toPublicUrl` mapping returns correct public URL; `deleteTempLogo` rejects non-`/new/<userId>/` paths.
+
+**Sub‑step 6.2: Project Create Page (dropzone at bottom)**
+- UX (Option A): dashed, rounded dropzone card labeled "Drop your logo here, or browse"; requirement text below ("PNG, JPEG, or SVG — max 1MB"). Click or drop opens selection and auto-uploads immediately.
+- Preview: square (e.g., 96×96) with `object-cover object-center`; inline "×" button to clear; "Uploading..." text during PUT.
+- Accessibility: dropzone has role="button", keyboard activation, focus visible; errors and progress announced via `aria-live`.
+- Wiring:
+  - Use `LogoUploader` with `variant="dropzone"`, `requestNewProjectLogoUploadAction`, `preventReload`, and `onUploadedPath` to set `<input name="logoPath">`.
+  - Place this dropzone section at the bottom of the form, just above Submit.
+- Files:
+  - Change: `web/app/projects/new/page.tsx`
+  - Change: `web/components/ui/logo-uploader.tsx` (dropzone variant, drag/drop handlers, progress)
+  - Change: `web/app/projects/actions.ts` (already includes `requestNewProjectLogoUploadAction`)
+- Tests:
+  - Component test: dropzone handles invalid type; `onUploadedPath` fires (basic covered in existing test; extend if time allows).
+
+**Sub‑step 6.3: Collaboration Create Page (dropzone at bottom)**
+- Same UX and placement as 6.2: auto-upload dropzone with inline "×" to clear.
+- Files:
+  - Change: `web/app/collaborations/new/page.tsx` (wire to `requestNewCollabLogoUploadAction`)
+  - Change: `web/app/collaborations/actions.ts` (add `requestNewCollabLogoUploadAction`)
+  - Change: `web/lib/server/collabs.ts` (add `requestNewCollabLogoUpload` server helper)
+  - Change: `web/components/ui/logo-uploader.tsx` (shared)
+- Tests:
+  - Optional: component smoke as above.
+
+**Files (summary):**
+- Change: `web/components/features/projects/project-card.tsx`
+- Change: `web/app/projects/[id]/page.tsx`
+- Change: `web/app/collaborations/page.tsx`
+- Change: `web/app/collaborations/[id]/page.tsx`
+- Change: `web/app/projects/new/page.tsx` (dropzone bottom + hidden `logoPath`)
+- Change: `web/app/collaborations/new/page.tsx` (dropzone bottom + hidden `logoPath`)
+- Change: `web/components/ui/logo-uploader.tsx` (dropzone UI, DnD, progress, preview)
+- Add: `web/components/ui/logo-image.tsx` (shared renderer)
+- Change: `web/app/projects/schema.ts`, `web/app/collaborations/schema.ts` (optional `logoPath` with prefix checks)
+- Change: `web/lib/server/projects.ts` / (collabs server if needed) (persist `logo_path` on create)
+- Add: `web/public/placeholder-logo.svg` (if missing)
 
 **Tests:**
-- UI tests: renders logo when `logoPath` present; renders placeholder otherwise; create-page optional flow does not block submission.
+- UI: logo renders when `logoPath` present; placeholder otherwise.
+- Schema: `logoPath` optional; invalid prefixes rejected (projects/collabs).
+- Server: `logo_path` set on create when provided and valid.
 
-**Status:** Not Started
+**Status:** In Progress
 
 ---
 
-### Step 6a: Profile avatar UI integration
-**Goal:** Allow users to upload/replace their profile avatar from the profile edit page and render it across the app.
+### Step 6a: Profile avatar UI integration (Option B)
+**Goal:** Provide a clean avatar change experience on `/profile/edit` and render avatar across `/profile` and navbar.
 
-**What we are doing:** Add the same upload experience used for logos to the profile page. Users can pick a small image (PNG/JPEG/SVG, ≤1MB), upload it via a one‑time signed URL, and immediately see it on their profile and in the navbar. When no avatar exists, we show a graceful fallback (initial letter).
+**What we are doing:** Use an avatar tile with a small “Change” overlay button. After selection, preview shows in the tile (square/circle) using `object-cover object-center`. Requirements stay visible below.
 
 **Technical details:**
-- Use the reusable `LogoUploader` with `entity="profile"`.
-- Request/Set actions (already implemented): `requestProfileAvatarUploadAction`, `setProfileAvatarAction` in `web/app/profile/actions.ts`.
-- Rendering:
-  - On `/profile/edit`, show an "Avatar" section (uploader) at the top or right column.
-  - On `/profile`, if `avatarPath` present: render a 80–96px rounded image; else show current initial.
-  - In navbar, if authenticated and `avatarPath` present: render a 24px rounded image next to/replace display name; fallback to display name when absent.
-- Constraints: enforce client accept filter and size check; server actions validate path ownership.
+- `/profile/edit`: integrate `LogoUploader` with `variant="avatar"`, using `requestProfileAvatarUploadAction` + `setProfileAvatarAction`. Overlay button opens file picker; progress bar and inline errors; preview updates on success.
+- `/profile`: if `avatarPath` present, render 80–96px rounded image with `object-cover object-center`; otherwise initial letter fallback.
+- Navbar: if authenticated and `avatarPath` present, render a 24px rounded avatar next to (or instead of) the display name.
+- Accessibility: overlay button keyboard focusable; announce errors via `aria-live`.
 
-**Files:**
-- Change: `web/app/profile/edit/page.tsx` (render `LogoUploader` wired to actions)
-- Change: `web/app/profile/page.tsx` (render avatar if present)
-- Change: `web/components/layout/navbar.tsx` (render small avatar if present)
-- Potentially affected: `web/app/profile/edit/EditForm.tsx` (if we place uploader inside the form layout), styles
+**Sub‑step 6a.1: Profile Edit (avatar overlay)**
+- Files:
+  - Change: `web/app/profile/edit/page.tsx` (insert avatar uploader block)
+  - Change: `web/components/ui/logo-uploader.tsx` (avatar variant)
+  - Uses existing profile actions.
+
+**Sub‑step 6a.2: Profile View + Navbar**
+- Files:
+  - Change: `web/app/profile/page.tsx` (render avatar)
+  - Change: `web/components/layout/navbar.tsx` (small avatar)
 
 **Tests:**
-- Component smoke: `LogoUploader` already covered for basic validation.
-- Optional: add a simple render test to ensure profile view shows fallback vs avatar.
+- Component smoke (avatar variant): overlay triggers input; preview visible; no regressions.
 
 **Status:** Not Started
 
@@ -262,7 +341,7 @@ At each step in 'Actionable and specific steps':
 | 3. Server: project/collab logos | ✅ Completed | 18/9/2025 | 18/9/2025 | request*/set* helpers + actions added |
 | 4. Profile avatars | ✅ Completed | 18/9/2025 | 18/9/2025 | request/set + actions implemented |
 | 5. LogoUploader component | ✅ Completed | 18/9/2025 | 18/9/2025 | reusable uploader + tests |
-| 6. UI integration (lists/detail/forms) | Not Started | — | — |  |
+| 6. UI integration (lists/detail/forms) | In progress | 18/9/2025 | — | 6.2 & 6.3 completed (create-page dropzones). Remaining: 6.1 collab detail header logo. |
 | 6a. Profile avatar UI integration | Not Started | — | — |  |
 | 7. Tests & Docs | Not Started | — | — |  |
 

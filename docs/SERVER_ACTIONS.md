@@ -45,6 +45,7 @@ Collaborations
 - createCollab(input): `{ title≤160, affiliatedOrg?, projectTypes[], description 1–4000, stage, lookingFor[1..5]{ role, amount(1..99), prerequisite≤400, goodToHave≤400, description≤1200 }, contact≤200, remarks≤1000, techTagIds[], categoryTagIds[] } -> { id } | validation_error`
   - Rate limit: 5 per day per user (`collab_create` action, 24-hour window)
 - listCollabs(params): `{ cursor?, limit=20, q?, techTagIds?, categoryTagIds?, stages?, projectTypes? } -> { items[], nextCursor? }` (defaults to `is_hiring=true`).
+  - Each item exposes `collaboration.logoUrl` (derived) and `collaboration.logoPath` (storage key). `logoUrl` is a public URL built from `logoPath`.
   - Empty or absent filters are ignored. Tag filters are AND across types, OR within a type. `stages?` is an array (OR inside stage facet).
 - getCollab(id): `-> { collaboration, tags, owner, upvoteCount, hasUserUpvoted, comments }`
 - updateCollab(id, fields): owner-only, fields optional: `{ title?, affiliatedOrg?, description?, stage?, lookingFor?, contact?, remarks?, isHiring? } -> { ok: true } | validation_error`
@@ -88,6 +89,11 @@ References
 - Tech Spec: `docs/MVP_TECH_SPEC.md`
 - Schema & RLS: `supabase/schema.md`, `supabase/rls_policies.sql`
 - Auth: `docs/AUTH.md`
+
+Placeholder policy
+- When `logoUrl` is absent (no uploaded logo), UI renders a monogram avatar with a deterministic gradient background and 1–2 initials derived from the item title via `LogoImage`.
+- A static `/placeholder-logo.svg` remains as a secondary fallback.
+- After successful uploads, final image URLs are cache‑busted client‑side by appending a `?v=<timestamp>` query to ensure immediate refresh.
 
 Profiles (Stage 3)
 - getMyProfile(): `-> { profile: { userId, displayName, bio?, githubUrl?, linkedinUrl?, websiteUrl? } | null, isAuthenticated: boolean, error? }`
