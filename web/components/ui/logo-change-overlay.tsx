@@ -12,13 +12,13 @@ interface LogoChangeOverlayProps {
   src?: string
   alt: string
   size: number
-  entity: "project" | "collab"
+  entity: "project" | "collab" | "profile"
   entityId: string
   isOwner: boolean
   requestAction: (prevState: any, formData: FormData) => Promise<{ uploadUrl?: string; path?: string; maxBytes?: number; mime?: string[]; formError?: string }>
   setAction: (prevState: any, formData: FormData) => Promise<{ ok?: true; formError?: string }>
   clearAction: (prevState: any, formData: FormData) => Promise<{ ok?: true; formError?: string }>
-  rounded?: "none" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "full"
+  rounded?: "none" | "sm" | "md" | "lg" | "full"
 }
 
 export function LogoChangeOverlay({
@@ -137,6 +137,7 @@ export function LogoChangeOverlay({
   return (
     <div
       className="relative group"
+      data-testid="logo-overlay"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -147,6 +148,7 @@ export function LogoChangeOverlay({
         accept="image/png,image/jpeg,image/svg+xml"
         className="sr-only"
         onChange={onFilePicked}
+        data-testid="file-input"
       />
 
       <LogoImage src={localSrc} alt={alt} size={size} rounded={rounded} />
@@ -157,6 +159,7 @@ export function LogoChangeOverlay({
           className={`absolute inset-0 bg-black/50 rounded-${rounded} flex items-center justify-center z-10`}
           aria-live="polite"
           aria-busy="true"
+          data-testid="uploading-overlay"
         >
           <div className="flex items-center gap-2 text-white text-sm">
             <Loader2 className="h-4 w-4 animate-spin" /> Uploading...
@@ -181,6 +184,7 @@ export function LogoChangeOverlay({
             onClick={openPicker}
             disabled={pending || clearPending}
             className="flex items-center gap-2"
+            data-testid="change-btn"
           >
             <Camera className="h-4 w-4" />
             Change
@@ -197,6 +201,7 @@ export function LogoChangeOverlay({
               variant="secondary"
               className="h-8 w-8 rounded-full p-0"
               disabled={pending || clearPending}
+              data-testid="mobile-edit-btn"
             >
               <Camera className="h-3 w-3" />
             </Button>
@@ -211,6 +216,7 @@ export function LogoChangeOverlay({
                 onClick={handleClearLogo}
                 disabled={clearPending}
                 className="text-red-600"
+                data-testid="remove-menu-item"
               >
                 <X className="h-4 w-4 mr-2" />
                 {clearPending ? "Removing..." : "Remove Logo"}
@@ -229,6 +235,7 @@ export function LogoChangeOverlay({
               variant="secondary"
               className="h-6 w-6 p-0"
               disabled={pending || clearPending}
+              data-testid="kebab-btn"
             >
               <MoreHorizontal className="h-3 w-3" />
             </Button>
@@ -243,6 +250,7 @@ export function LogoChangeOverlay({
                 onClick={handleClearLogo}
                 disabled={clearPending}
                 className="text-red-600"
+                data-testid="remove-menu-item"
               >
                 <X className="h-4 w-4 mr-2" />
                 {clearPending ? "Removing..." : "Remove Logo"}

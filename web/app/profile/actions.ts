@@ -183,4 +183,21 @@ export async function setProfileAvatarAction(_: SetProfileAvatarState, formData:
   return { ok: true }
 }
 
+export async function clearProfileAvatar(): Promise<{ ok: true } | { error: string }> {
+  const supabase = await getServerSupabase()
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) return { error: "unauthorized" }
+  const { error } = await supabase.from("profiles").update({ avatar_path: null }).eq("user_id", auth.user.id)
+  if (error) return { error: error.message }
+  revalidatePath("/profile")
+  return { ok: true }
+}
+
+export type ClearProfileAvatarState = { formError?: string; ok?: true } | null
+export async function clearProfileAvatarAction(_: ClearProfileAvatarState, _formData: FormData): Promise<ClearProfileAvatarState> {
+  const res = await clearProfileAvatar()
+  if ((res as any).error) return { formError: (res as any).error }
+  return { ok: true }
+}
+
 
