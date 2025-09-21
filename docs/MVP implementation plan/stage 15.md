@@ -322,7 +322,7 @@ Add server tests (authorization, path, size/mime), component tests (fallback ren
 **Tests:**
 - All new tests pass locally (vitest); existing suite remains green.
 
-**Status:** Not Started
+**Status:** ✅ Completed (22/9/2025)
 
 --- 
 
@@ -357,7 +357,8 @@ At each step in 'Actionable and specific steps':
 | 5. LogoUploader component | ✅ Completed | 18/9/2025 | 18/9/2025 | reusable uploader + tests |
 | 6. UI integration (lists/detail/forms) | ✅ Completed | 18/9/2025 | 22/9/2025 | Lists/detail/create wired; owner overlay done; submit gating; public URL mapping; monogram fallback; server+UI tests added; temp cleanup + cron; finalize-on-submit + backfill in place. |
 | 6a. Profile avatar UI integration | Not Started | — | — |  |
-| 7. Tests & Docs | In Progress | 21/9/2025 | — | Server tests (owner/path/ext) and overlay UI tests added; docs updated (Server Actions, Tech Spec, Schema, Ops, Changelog). |
+| 6a. Profile avatar UI integration | ✅ Completed | 22/9/2025 | 22/9/2025 | Overlay on /profile; actions wired; server+UI tests. |
+| 7. Tests & Docs | ✅ Completed | 21/9/2025 | 22/9/2025 | Server tests (owner/path/ext) and overlay UI tests added; docs updated (Server Actions, Tech Spec, Schema, Ops, Changelog). |
 
 ## Risk Mitigation
 
@@ -368,5 +369,5 @@ At each step in 'Actionable and specific steps':
 
 ---
 
-**Last Updated:** 18/9/2025  
-**Next Review:** After Step 3 implementation
+**Last Updated:** 22/9/2025  
+**Next Review:** Before merge to main
