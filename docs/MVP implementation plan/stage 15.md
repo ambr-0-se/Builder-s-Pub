@@ -181,7 +181,7 @@ Add server tests (authorization, path, size/mime), component tests (fallback ren
 - Tests:
   - UI smoke: placeholder shown when `logoPath` absent; no regressions.
 
-Sub‑step 6.1b: Submit gating, correct rendering, temp cleanup (Create pages)
+**Sub‑step 6.1b: Submit gating, correct rendering, temp cleanup (Create pages)**
 - Goal: Ensure logos persist reliably on submit; render using public URLs; reduce duplicate temp uploads.
 - Technical details:
   - Ensure `logoPath` on submit: extend `LogoUploader` with `onPendingChange(pending:boolean)` that flips true when requesting/uploading and false when finished. Parent create pages disable the submit button while pending and only enable after `onUploadedPath` fires. Keep the hidden `<input name="logoPath">` in sync. Variables: `pendingUpload` in create pages; prop `onPendingChange` in `LogoUploader`.
@@ -195,7 +195,7 @@ Sub‑step 6.1b: Submit gating, correct rendering, temp cleanup (Create pages)
   - Add: `web/app/(shared)/actions/delete-temp-logo.ts` (server action calling `deleteTempLogo`)
   - Add: `web/lib/server/storage-cleanup.ts` (deleteTempLogo helper; optional scheduled cleanup stub)
 - Tests:
-Sub‑step 6.1c: Owner-only logo change UX (detail pages)
+**Sub‑step 6.1c: Owner-only logo change UX (detail pages)**
 - Goal: Remove layout shift and page reload; provide instant feedback.
 - Technical details:
   - Replace in-detail dropzone with a headless input[type=file] triggered by the overlay “Change” button.
@@ -211,6 +211,24 @@ Sub‑step 6.1c: Owner-only logo change UX (detail pages)
 
   - Component: uploader emits pending true/false; submit disabled while pending; hidden input updates after success.
   - Server: `toPublicUrl` mapping returns correct public URL; `deleteTempLogo` rejects non-`/new/<userId>/` paths.
+
+**Sub‑step 6.1d: Finalize storage paths (move‑on‑submit) + backfill**
+- Goal: Ensure canonical storage keys under entity ids and migrate any existing temp keys.
+- Technical details:
+  - Finalize on create: when `logoPath` is `project-logos/new/<userId>/…` or `collab-logos/new/<userId>/…`, after insert, move the object to `<bucket>/<entityId>/<filename>` (e.g., `project-logos/<projectId>/<filename>`) and update the DB row. If `move` is unavailable or fails, `copy` then `remove` as a fallback. On failure, keep the temp path (non‑blocking) and log.
+  - Finalize on set: when setting a logo for an existing entity with a temp path (new/<userId>/…), move it immediately to `<entityId>/…` prior to persisting the new path in DB.
+  - Helpers: centralize path logic and storage ops:
+    - `isTempPathForUser(path, userId, bucket)` → boolean
+    - `destForProject(projectId, filename)` / `destForCollab(collabId, filename)`
+    - `moveObject(bucket, fromFull, toFull)` → `{ ok } | { error }` (tries move; copy+remove fallback)
+- Files:
+  - Add: `web/lib/server/logo-finalize.ts` (helpers above)
+  - Change: `web/lib/server/projects.ts` (finalize temp path in `createProject` and in `setProjectLogo`)
+  - Change: `web/lib/server/collabs.ts` (finalize temp path in `createCollab` and in `setCollabLogo`)
+  - Add: `web/scripts/finalize-new-logos.ts` (one‑off backfill tool: find rows with `logo_path like '*/new/%'`, move to canonical `<entityId>/…`, update row; supports dry‑run)
+- Tests:
+  - Server: set‑logo with temp path moves under entity id and updates DB; create with temp path finalizes post‑insert; reject temp paths that don’t belong to the current user.
+- Status: Planned
 
 **Sub‑step 6.2: Project Create Page (dropzone at bottom)**
 - UX (Option A): dashed, rounded dropzone card labeled "Drop your logo here, or browse"; requirement text below ("PNG, JPEG, or SVG — max 1MB"). Click or drop opens selection and auto-uploads immediately.
@@ -341,7 +359,7 @@ At each step in 'Actionable and specific steps':
 | 3. Server: project/collab logos | ✅ Completed | 18/9/2025 | 18/9/2025 | request*/set* helpers + actions added |
 | 4. Profile avatars | ✅ Completed | 18/9/2025 | 18/9/2025 | request/set + actions implemented |
 | 5. LogoUploader component | ✅ Completed | 18/9/2025 | 18/9/2025 | reusable uploader + tests |
-| 6. UI integration (lists/detail/forms) | In progress | 18/9/2025 | — | 6.2 & 6.3 completed (create-page dropzones). Remaining: 6.1 collab detail header logo. |
+| 6. UI integration (lists/detail/forms) | In progress | 18/9/2025 | — | Code complete (lists, detail, create, owner change UI). Pending: tests (server/ui) and temp upload cleanup. |
 | 6a. Profile avatar UI integration | Not Started | — | — |  |
 | 7. Tests & Docs | Not Started | — | — |  |
 

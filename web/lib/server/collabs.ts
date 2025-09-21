@@ -8,6 +8,7 @@ import type { Profile, Tag } from "@/lib/types"
 import { createCollabSchema, type CreateCollabInput, updateCollabSchema, type UpdateCollabInput, collabCommentSchema } from "@/app/collaborations/schema"
 import { getServiceSupabase } from "@/lib/supabaseService"
 import { buildObjectPath, normalizeExt, pathBelongsToId } from "@/lib/server/logo-utils"
+import { isTempPathForUser, destForCollab, moveObject } from "@/lib/server/logo-finalize"
 import { toPublicUrl } from "@/lib/server/logo-public-url"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
@@ -130,6 +131,20 @@ export async function createCollab(input: CreateCollabInput): Promise<{ id: stri
       await supabase.from("collaborations").delete().eq("id", collabId)
       return { formError: tagErr.message }
     }
+  }
+
+  // Finalize temp logo path after insert
+  try {
+    if (typeof (input as any).logoPath === "string" && (input as any).logoPath.startsWith("collab-logos/new/") && isTempPathForUser((input as any).logoPath, auth.user.id, "collab-logos")) {
+      const filename = String((input as any).logoPath).split("/").pop() || `${collabId}.png`
+      const dest = destForCollab(collabId, filename)
+      const moved = await moveObject("collab-logos", (input as any).logoPath, dest)
+      if ((moved as any).ok) {
+        await supabase.from("collaborations").update({ logo_path: dest }).eq("id", collabId)
+      }
+    }
+  } catch (e) {
+    console.warn("finalize collab logo failed", e)
   }
 
   return { id: collabId }
@@ -503,8 +518,16 @@ export async function setCollabLogo(collabId: string, path: string): Promise<{ o
   if (error) return { error: error.message }
   if (!row) return { error: "not_found" }
   if (row.owner_id !== auth.user.id) return { error: "forbidden" }
-  if (!pathBelongsToId("collab-logos", collabId, path)) return { error: "invalid_path" }
-  const { error: updErr } = await supabase.from("collaborations").update({ logo_path: path }).eq("id", collabId)
+  // If temp under new/<userId>, move under collabId first
+  let finalPath = path
+  if (isTempPathForUser(path, auth.user.id, "collab-logos")) {
+    const filename = path.split("/").pop() || `${collabId}.png`
+    const dest = destForCollab(collabId, filename)
+    const moved = await moveObject("collab-logos", path, dest)
+    if ((moved as any).ok) finalPath = dest
+  }
+  if (!pathBelongsToId("collab-logos", collabId, finalPath)) return { error: "invalid_path" }
+  const { error: updErr } = await supabase.from("collaborations").update({ logo_path: finalPath }).eq("id", collabId)
   if (updErr) return { error: updErr.message }
   return { ok: true }
 }

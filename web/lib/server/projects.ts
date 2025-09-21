@@ -11,6 +11,7 @@ import { commentSchema } from "@/app/projects/schema"
 import { getServiceSupabase } from "@/lib/supabaseService"
 import { buildObjectPath, normalizeExt, pathBelongsToId } from "@/lib/server/logo-utils"
 import { toPublicUrl } from "@/lib/server/logo-public-url"
+import { isTempPathForUser, destForProject, moveObject } from "@/lib/server/logo-finalize"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
@@ -88,7 +89,21 @@ export async function createProject(input: CreateProjectInput): Promise<{ id: st
 		})
 	} catch {}
 
-	return { id: projectId }
+    // Finalize temp logo path: move from new/<userId>/ to <projectId>/
+    try {
+        if (typeof insertPayload.logo_path === "string" && insertPayload.logo_path.startsWith("project-logos/new/") && isTempPathForUser(insertPayload.logo_path, auth.user.id, "project-logos")) {
+            const filename = String(insertPayload.logo_path).split("/").pop() || `${projectId}.png`
+            const dest = destForProject(projectId, filename)
+            const moved = await moveObject("project-logos", insertPayload.logo_path, dest)
+            if ((moved as any).ok) {
+                await supabase.from("projects").update({ logo_path: dest }).eq("id", projectId)
+            }
+        }
+    } catch (e) {
+        console.warn("finalize project logo failed", e)
+    }
+
+    return { id: projectId }
 }
 
 export interface ListProjectsParams {
@@ -745,10 +760,18 @@ export async function setProjectLogo(projectId: string, path: string): Promise<{
 	if (error) return { error: error.message }
 	if (!row) return { error: "not_found" }
 	if (row.owner_id !== auth.user.id) return { error: "forbidden" }
-	// Path validation
-	if (!pathBelongsToId("project-logos", projectId, path)) return { error: "invalid_path" }
-	// Optional: fetch metadata (size/mime). Supabase Storage metadata API may vary; we assume upload was signed and validated client-side.
-	const { error: updErr } = await supabase.from("projects").update({ logo_path: path }).eq("id", projectId)
+    // If the provided path is still a temp under new/<userId>, move under projectId before persisting
+    let finalPath = path
+    if (isTempPathForUser(path, auth.user.id, "project-logos")) {
+        const filename = path.split("/").pop() || `${projectId}.png`
+        const dest = destForProject(projectId, filename)
+        const moved = await moveObject("project-logos", path, dest)
+        if ((moved as any).ok) finalPath = dest
+    }
+    // Path validation
+    if (!pathBelongsToId("project-logos", projectId, finalPath)) return { error: "invalid_path" }
+    // Optional: fetch metadata (size/mime). Supabase Storage metadata API may vary; we assume upload was signed and validated client-side.
+    const { error: updErr } = await supabase.from("projects").update({ logo_path: finalPath }).eq("id", projectId)
 	if (updErr) return { error: updErr.message }
 	return { ok: true }
 }
