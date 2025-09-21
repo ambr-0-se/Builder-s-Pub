@@ -1,8 +1,8 @@
 # Stage 15 Implementation Plan: Logos for Projects & Collaborations + Profile Avatars
 
-**Status:** Planned  
+**Status:** Completed  
 **Started:** 18/9/2025
-**Completed:** —
+**Completed:** 22/9/2025
 
 ## Overview
 
@@ -114,21 +114,19 @@ Add server tests (authorization, path, size/mime), component tests (fallback ren
 **What we are doing:** Add request/set avatar functions analogous to logos, and surface upload in profile edit.
 
 **Technical details:**
-- Server (new or extend profile actions):
+- Server (profile actions):
   - `requestProfileAvatarUpload() -> { uploadUrl, path, maxBytes, mime }` with key `profile-avatars/<userId>/<uuid>.<ext>`.
   - `setProfileAvatar(path) -> { ok: true }` with validation then update `profiles.avatar_path`.
-- UI: integrate into `/profile/edit` as optional upload with preview, and render avatar in profile view/navbar if present.
+- UI: avatar change UI is implemented on `/profile` via overlay (see Step 6a).
 
 **Files:**
 - Change: `web/app/profile/actions.ts` (add request/set)
-- Change: `web/app/profile/edit/page.tsx` (add uploader section)
-- Change: `web/components/layout/*` or navbar if avatar is shown (check existing UI)
-- Potentially affected: `web/lib/api/auth.ts` (if profile fetch shape changes), profile components
+- Potentially affected: profile components (rendered via Step 6a overlay)
 
 **Tests:**
 - Owner/self validation; path/mime/size checks; UI fallback when no avatar.
 
-**Status:** Not Started
+**Status:** ✅ Completed (22/9/2025)
 
 ---
 
@@ -149,7 +147,7 @@ Add server tests (authorization, path, size/mime), component tests (fallback ren
 **Tests:**
 - Component test: rejects oversize/invalid mime; calls actions in correct order; renders fallback state.
 
-**Status:** Not Started
+**Status:** ✅ Completed (18/9/2025)
 
 ---
 
@@ -192,7 +190,7 @@ Add server tests (authorization, path, size/mime), component tests (fallback ren
   - Change: `web/app/projects/new/page.tsx` and `web/app/collaborations/new/page.tsx` (track `pendingUpload`, disable submit while pending)
   - Change: `web/lib/server/projects.ts` and `web/lib/server/collabs.ts` (add `toPublicUrl` usage in DTO mapping as `logoUrl`)
   - Add: `web/lib/server/logo-public-url.ts` (export `toPublicUrl`)
-  - Add: `web/app/(shared)/actions/delete-temp-logo.ts` (server action calling `deleteTempLogo`)
+  - Change: `web/app/shared/actions/storage.ts` (server action calling `deleteTempLogo`)
   - Add: `web/lib/server/storage-cleanup.ts` (deleteTempLogo helper; optional scheduled cleanup stub)
 - Tests:
 **Sub‑step 6.1c: Owner-only logo change UX (detail pages)**
@@ -356,7 +354,6 @@ At each step in 'Actionable and specific steps':
 | 4. Profile avatars | ✅ Completed | 18/9/2025 | 18/9/2025 | request/set + actions implemented |
 | 5. LogoUploader component | ✅ Completed | 18/9/2025 | 18/9/2025 | reusable uploader + tests |
 | 6. UI integration (lists/detail/forms) | ✅ Completed | 18/9/2025 | 22/9/2025 | Lists/detail/create wired; owner overlay done; submit gating; public URL mapping; monogram fallback; server+UI tests added; temp cleanup + cron; finalize-on-submit + backfill in place. |
-| 6a. Profile avatar UI integration | Not Started | — | — |  |
 | 6a. Profile avatar UI integration | ✅ Completed | 22/9/2025 | 22/9/2025 | Overlay on /profile; actions wired; server+UI tests. |
 | 7. Tests & Docs | ✅ Completed | 21/9/2025 | 22/9/2025 | Server tests (owner/path/ext) and overlay UI tests added; docs updated (Server Actions, Tech Spec, Schema, Ops, Changelog). |
 
