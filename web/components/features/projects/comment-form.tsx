@@ -6,7 +6,7 @@ import { useActionState } from "react"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { useFormStatus } from "react-dom"
-import { addCommentAction, type AddCommentState } from "@/app/projects/actions"
+import { addCommentAction, addReplyAction, type AddCommentState } from "@/app/projects/actions"
 import { showToast } from "@/components/ui/toast"
 
 interface CommentFormProps {
@@ -53,8 +53,7 @@ export function CommentForm({ projectId, parentCommentId, onSuccess }: CommentFo
         const content = String(fd.get("body") || body)
         lastSubmittedBodyRef.current = content
         if (parentCommentId) {
-          const reply = (await import("@/app/projects/actions")).addReplyAction
-          const res = await reply(null, fd as any)
+          const res = await addReplyAction(null as any, fd as any)
           if (res && (res as any).ok) {
             onSuccess?.(content)
             setBody("")

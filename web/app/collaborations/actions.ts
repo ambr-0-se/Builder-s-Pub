@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { createCollab, updateCollab, deleteCollab, addCollabComment, deleteCollabComment, toggleCollabUpvote } from "@/lib/server/collabs"
 import { createCollabSchema, updateCollabSchema, collabCommentSchema } from "@/app/collaborations/schema"
 import { trackServer } from "@/lib/analytics"
+import { requestCollabLogoUpload, setCollabLogo } from "@/lib/server/collabs"
 
 export type CreateCollabState = { fieldErrors?: Record<string, string>; formError?: string } | null
 
@@ -46,6 +47,7 @@ export async function createCollabAction(_: CreateCollabState, formData: FormDat
     remarks: String(formData.get("remarks") || ""),
     techTagIds,
     categoryTagIds,
+    logoPath: String(formData.get("logoPath") || "").trim() || undefined,
   })
 
   if (!parsed.success) {
@@ -200,6 +202,44 @@ export async function deleteCollabCommentAction(_: DeleteCollabCommentState, for
     return { ok: true }
   }
   return { formError: (result as any).error || "failed_to_delete_comment" }
+}
+
+export type RequestCollabLogoUploadState = { formError?: string; uploadUrl?: string; path?: string; maxBytes?: number; mime?: string[] }
+export async function requestCollabLogoUploadAction(_: RequestCollabLogoUploadState | null, formData: FormData): Promise<RequestCollabLogoUploadState> {
+  const collabId = String(formData.get("collaborationId") || "").trim()
+  const ext = String(formData.get("ext") || "").trim()
+  if (!collabId || !ext) return { formError: "missing_params" }
+  const res = await requestCollabLogoUpload(collabId, { ext })
+  if ((res as any).error) return { formError: (res as any).error }
+  return res as any
+}
+
+export type SetCollabLogoState = { formError?: string; ok?: true }
+export async function setCollabLogoAction(_: SetCollabLogoState | null, formData: FormData): Promise<SetCollabLogoState> {
+  const collabId = String(formData.get("collaborationId") || "").trim()
+  const path = String(formData.get("path") || "").trim()
+  if (!collabId || !path) return { formError: "missing_params" }
+  const res = await setCollabLogo(collabId, path)
+  if ((res as any).error) return { formError: (res as any).error }
+  return { ok: true }
+}
+
+export type RequestNewCollabLogoUploadState = { formError?: string; uploadUrl?: string; path?: string; maxBytes?: number; mime?: string[] } | null
+export async function requestNewCollabLogoUploadAction(_: RequestNewCollabLogoUploadState, formData: FormData): Promise<RequestNewCollabLogoUploadState> {
+  const ext = String(formData.get("ext") || "").trim()
+  if (!ext) return { formError: "missing_params" }
+  const res = await (await import("@/lib/server/collabs")).requestNewCollabLogoUpload({ ext })
+  if ((res as any).error) return { formError: (res as any).error }
+  return res as any
+}
+
+export type ClearCollabLogoState = { formError?: string; ok?: true }
+export async function clearCollabLogoAction(_: ClearCollabLogoState | null, formData: FormData): Promise<ClearCollabLogoState> {
+  const collaborationId = String(formData.get("collaborationId") || "").trim()
+  if (!collaborationId) return { formError: "missing_params" }
+  const res = await (await import("@/lib/server/collabs")).clearCollabLogo(collaborationId)
+  if ((res as any).error) return { formError: (res as any).error }
+  return { ok: true }
 }
 
 

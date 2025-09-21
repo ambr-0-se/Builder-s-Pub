@@ -1,5 +1,8 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { LogoChangeOverlay } from "@/components/ui/logo-change-overlay"
+import { toPublicUrl } from "@/lib/publicUrl"
+import { clearProfileAvatarAction, requestProfileAvatarUploadAction, setProfileAvatarAction } from "./actions"
 import { Badge } from "@/components/ui/badge"
 import { redirect } from "next/navigation"
 import { Globe } from "lucide-react"
@@ -18,9 +21,18 @@ export default async function ProfilePage() {
         <div className="px-6 py-8 border-b border-gray-200">
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-2xl font-bold">{profile.displayName.charAt(0).toUpperCase()}</span>
-              </div>
+              <LogoChangeOverlay
+                src={toPublicUrl(profile.avatarPath) || ""}
+                alt={profile.displayName}
+                size={96}
+                rounded="full"
+                entity="profile"
+                entityId={profile.userId}
+                isOwner={true}
+                requestAction={requestProfileAvatarUploadAction}
+                setAction={setProfileAvatarAction}
+                clearAction={clearProfileAvatarAction}
+              />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{profile.displayName}</h1>
                 {profile.bio && <p className="text-gray-600 mt-1">{profile.bio}</p>}

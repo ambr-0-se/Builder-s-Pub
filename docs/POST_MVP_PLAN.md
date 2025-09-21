@@ -15,16 +15,14 @@ Purpose: Staged enhancements after MVP stabilizes. Each stage has clear scope an
 - Scope: YouTube/Vimeo embeds with safe allowlist; optional timestamp.
 - AC: Validated URLs render; malicious domains blocked; analytics event emitted.
 
-## Stage P4 — Advanced tags
-- Scope: synonyms/aliases, suggestions, trending.
-- AC: Searching “JS” returns “JavaScript”; admin can set aliases; trending tag list visible.
+## Stage P4 — About us (Goal, Vision, Team)
+- Scope: marketing content with CMS‑ready structure.
+- AC: SEO metadata; link in footer; < 2s LCP on mobile.
 
 ## Stage P5 — Error ops enhancements
 - Scope: dashboards, on‑call alerts, sample filters, release health.
 - AC: Error budgets/alerts configured; weekly digest; redaction verified.
 
-## Stage P6 — About us (Goal, Vision, Team)
-- Scope: marketing content with CMS‑ready structure.
-- AC: SEO metadata; link in footer; < 2s LCP on mobile.
-
-
+## Stage P6 — Advanced tags
+- Scope: synonyms/aliases, suggestions, trending.
+- AC: Searching “JS” returns “JavaScript”; admin can set aliases; trending tag list visible.

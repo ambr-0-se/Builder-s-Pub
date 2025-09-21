@@ -8,6 +8,13 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
+- Stage 15 (Logos & Avatars):
+  - Public-read buckets: `project-logos`, `collab-logos`, `profile-avatars`; DB columns `projects.logo_path`, `collaborations.logo_path`, `profiles.avatar_path`.
+  - Server actions: request/set/clear logo for projects and collaborations; request-new upload for create forms; `logoUrl` mapping via public URL.
+  - UI: reusable `LogoImage` with monogram gradient fallback; create-form dropzone (auto-upload, inline × to clear); owner-only overlay “Change” with headless picker, optimistic preview, always-visible spinner.
+  - Finalization: move-on-submit from `*/new/<userId>/…` to `<entityId>/…` on create/set; cache-busting on success.
+  - Ops: GitHub Actions daily cleanup of stale temp uploads (`.github/workflows/cleanup-new-uploads.yml`); scripts `web/scripts/cleanup-new-uploads.ts` and `web/scripts/finalize-new-logos.ts` (with dry-run).
+  - Profile avatars (Step 6a): owner-only overlay on `/profile` header (size 96, rounded full) using profile avatar actions; “Remove Avatar” exposed only on `/profile`.
 - Stage 14: Tag curation & validation
   - Case-insensitive uniqueness for tags at DB: `unique(type, lower(name))`.
   - Admin tag normalization (trim/collapse whitespace) with friendly duplicate warnings.

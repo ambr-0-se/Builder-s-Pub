@@ -5,6 +5,8 @@ import { redirect } from "next/navigation"
 import { getServerSupabase } from "@/lib/supabaseServer"
 import { profileSchema } from "./schema"
 import { trackServer } from "@/lib/analytics"
+import { getServiceSupabase } from "@/lib/supabaseService"
+import { buildObjectPath, normalizeExt, pathBelongsToId } from "@/lib/server/logo-utils"
 
 // schema is imported to keep this file exporting only async functions
 
@@ -17,7 +19,7 @@ export async function getMyProfile() {
 
   let { data, error } = await supabase
     .from("profiles")
-    .select("user_id, display_name, bio, github_url, linkedin_url, website_url, x_url, region, timezone, skills, building_now, looking_for, contact")
+    .select("user_id, display_name, bio, github_url, linkedin_url, website_url, x_url, region, timezone, skills, building_now, looking_for, contact, avatar_path")
     .eq("user_id", user.id)
     .maybeSingle()
 
@@ -61,6 +63,7 @@ export async function getMyProfile() {
       buildingNow: data.building_now || undefined,
       lookingFor: data.looking_for || undefined,
       contact: data.contact || undefined,
+      avatarPath: data.avatar_path || undefined,
     },
     isAuthenticated: true,
   }
@@ -134,6 +137,67 @@ export async function updateMyProfile(formData: FormData): Promise<UpdateProfile
   } catch {}
 
   redirect("/profile")
+}
+
+// Step 4: Profile avatar upload helpers and actions
+export async function requestProfileAvatarUpload(opts: { ext: string }): Promise<{ uploadUrl: string; path: string; maxBytes: number; mime: string[] } | { error: string }> {
+  const supabase = await getServerSupabase()
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) return { error: "unauthorized" }
+  const ext = normalizeExt(opts.ext)
+  if (!ext) return { error: "invalid_ext" }
+  const filename = `${(globalThis as any).crypto?.randomUUID?.() || require("crypto").randomUUID()}.${ext}`
+  const path = buildObjectPath("profile-avatars", auth.user.id, filename)
+  const service = getServiceSupabase()
+  const { data: signed, error: signErr } = await (service.storage as any).from("profile-avatars").createSignedUploadUrl(path.replace(/^profile-avatars\//, ""))
+  if (signErr || !signed?.signedUrl) return { error: signErr?.message || "failed_to_sign" }
+  return { uploadUrl: signed.signedUrl as string, path, maxBytes: 1_000_000, mime: ["image/png","image/jpeg","image/svg+xml"] }
+}
+
+export async function setProfileAvatar(path: string): Promise<{ ok: true } | { error: string }> {
+  const supabase = await getServerSupabase()
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) return { error: "unauthorized" }
+  if (!pathBelongsToId("profile-avatars", auth.user.id, path)) return { error: "invalid_path" }
+  const { error } = await supabase.from("profiles").update({ avatar_path: path }).eq("user_id", auth.user.id)
+  if (error) return { error: error.message }
+  revalidatePath("/profile")
+  return { ok: true }
+}
+
+export type RequestProfileAvatarUploadState = { formError?: string; uploadUrl?: string; path?: string; maxBytes?: number; mime?: string[] } | null
+export async function requestProfileAvatarUploadAction(_: RequestProfileAvatarUploadState, formData: FormData): Promise<RequestProfileAvatarUploadState> {
+  const ext = String(formData.get("ext") || "").trim()
+  if (!ext) return { formError: "missing_params" }
+  const res = await requestProfileAvatarUpload({ ext })
+  if ((res as any).error) return { formError: (res as any).error }
+  return res as any
+}
+
+export type SetProfileAvatarState = { formError?: string; ok?: true } | null
+export async function setProfileAvatarAction(_: SetProfileAvatarState, formData: FormData): Promise<SetProfileAvatarState> {
+  const path = String(formData.get("path") || "").trim()
+  if (!path) return { formError: "missing_params" }
+  const res = await setProfileAvatar(path)
+  if ((res as any).error) return { formError: (res as any).error }
+  return { ok: true }
+}
+
+export async function clearProfileAvatar(): Promise<{ ok: true } | { error: string }> {
+  const supabase = await getServerSupabase()
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) return { error: "unauthorized" }
+  const { error } = await supabase.from("profiles").update({ avatar_path: null }).eq("user_id", auth.user.id)
+  if (error) return { error: error.message }
+  revalidatePath("/profile")
+  return { ok: true }
+}
+
+export type ClearProfileAvatarState = { formError?: string; ok?: true } | null
+export async function clearProfileAvatarAction(_: ClearProfileAvatarState, _formData: FormData): Promise<ClearProfileAvatarState> {
+  const res = await clearProfileAvatar()
+  if ((res as any).error) return { formError: (res as any).error }
+  return { ok: true }
 }
 
 

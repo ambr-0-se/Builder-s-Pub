@@ -65,6 +65,32 @@ describe("createProjectSchema", () => {
 		expect(error?.issues.some((i) => String(i.message).includes("at most 5 technology"))).toBe(true)
 		expect(error?.issues.some((i) => String(i.message).includes("at most 3 category"))).toBe(true)
 	})
+
+	it("accepts optional logoPath and rejects invalid prefix", async () => {
+		const { createProjectSchema } = await import("@/app/projects/schema")
+		const ok = createProjectSchema.safeParse({
+			title: "A",
+			tagline: "B",
+			description: "C",
+			demoUrl: "https://x.com",
+			sourceUrl: "",
+			techTagIds: [1],
+			categoryTagIds: [2],
+			logoPath: "project-logos/new/u1/file.png",
+		})
+		expect(ok.success).toBe(true)
+		const bad = createProjectSchema.safeParse({
+			title: "A",
+			tagline: "B",
+			description: "C",
+			demoUrl: "https://x.com",
+			sourceUrl: "",
+			techTagIds: [1],
+			categoryTagIds: [2],
+			logoPath: "collab-logos/u1/file.png",
+		})
+		expect(bad.success).toBe(false)
+	})
 })
 
 

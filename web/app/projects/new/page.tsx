@@ -15,6 +15,8 @@ import { showToast } from "@/components/ui/toast"
 import { useTags } from "@/hooks/useTags"
 import { TagMultiSelect } from "@/components/ui/tag-multiselect"
 import { createProjectAction, type CreateProjectState } from "@/app/projects/actions"
+import { LogoUploader } from "@/components/ui/logo-uploader"
+import { requestNewProjectLogoUploadAction } from "@/app/projects/actions"
 
 export default function NewProjectPage() {
   const router = useRouter()
@@ -29,6 +31,9 @@ export default function NewProjectPage() {
     demoUrl: "",
     sourceUrl: "",
   })
+
+  const [logoPath, setLogoPath] = useState<string>("")
+  const [pendingUpload, setPendingUpload] = useState<boolean>(false)
 
   const [selectedTechTags, setSelectedTechTags] = useState<number[]>([])
   const [selectedCategoryTags, setSelectedCategoryTags] = useState<number[]>([])
@@ -86,25 +91,25 @@ export default function NewProjectPage() {
   const SubmitButton = () => {
     const { pending } = useFormStatus()
     return (
-      <Button type="submit" disabled={pending || !canSubmit} className="flex-1">
+      <Button type="submit" disabled={pending || pendingUpload || !canSubmit} className="flex-1">
         {pending ? "Creating Project..." : "Create Project"}
       </Button>
     )
   }
 
   const toggleTechTag = (tagId: number) => {
-    setSelectedTechTags((prev) => {
-      const total = (prev.includes(tagId) ? prev.filter((id) => id !== tagId).length : prev.length + 1) + selectedCategoryTags.length
+    setSelectedTechTags((prev: number[]) => {
+      const total = (prev.includes(tagId) ? prev.filter((id: number) => id !== tagId).length : prev.length + 1) + selectedCategoryTags.length
       if (!prev.includes(tagId) && total > 10) return prev
-      return prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+      return prev.includes(tagId) ? prev.filter((id: number) => id !== tagId) : [...prev, tagId]
     })
   }
 
   const toggleCategoryTag = (tagId: number) => {
-    setSelectedCategoryTags((prev) => {
-      const total = selectedTechTags.length + (prev.includes(tagId) ? prev.filter((id) => id !== tagId).length : prev.length + 1)
+    setSelectedCategoryTags((prev: number[]) => {
+      const total = selectedTechTags.length + (prev.includes(tagId) ? prev.filter((id: number) => id !== tagId).length : prev.length + 1)
       if (!prev.includes(tagId) && total > 10) return prev
-      return prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+      return prev.includes(tagId) ? prev.filter((id: number) => id !== tagId) : [...prev, tagId]
     })
   }
 
@@ -116,6 +121,8 @@ export default function NewProjectPage() {
       </div>
 
       <form action={formAction} className="space-y-6">
+        {/* ... form fields ... */}
+
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
             Project Title *
@@ -230,6 +237,21 @@ export default function NewProjectPage() {
         {selectedCategoryTags.map((id) => (
           <input key={`cat-${id}`} type="hidden" name="categoryTagIds" value={id} />
         ))}
+
+        {/* Logo uploader (Optional) — placed at bottom per spec */}
+        <div className="pt-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Logo (Optional)</label>
+          <LogoUploader
+            entity="project"
+            requestAction={requestNewProjectLogoUploadAction as any}
+            onUploadedPath={(p) => setLogoPath(p)}
+            preventReload
+            variant="dropzone"
+            onPendingChange={setPendingUpload}
+          />
+          {logoPath && <p className="text-xs text-gray-500 mt-1">Logo selected.</p>}
+          {logoPath && <input type="hidden" name="logoPath" value={logoPath} />}
+        </div>
 
         <div className="flex gap-4 pt-6">
           <SubmitButton />

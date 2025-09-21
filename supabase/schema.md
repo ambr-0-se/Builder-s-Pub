@@ -46,3 +46,12 @@ Notes (Stage 3 Profiles)
 - project_upvotes: select all; insert/delete only same user
 - collaborations: select soft_deleted=false; insert/update/delete only owner; `is_hiring` controls default list visibility
 
+Notes (Stage 15 Logos & Avatars)
+- Columns added:
+  - projects.logo_path text null
+  - collaborations.logo_path text null
+  - profiles.avatar_path text null
+- Storage buckets (public read): project-logos, collab-logos, profile-avatars
+- App-level validation: ≤1MB; mime: image/png, image/jpeg, image/svg+xml (enforced in server actions)
+- Finalization: temp uploads go under `*/new/<userId>/…` and are moved to `<entityId>/…` on create/set. A backfill script exists to migrate existing rows, and a scheduled cleanup deletes stale temp objects >24h.
+

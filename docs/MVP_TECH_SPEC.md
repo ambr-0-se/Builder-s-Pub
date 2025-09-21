@@ -84,8 +84,15 @@ Server Actions / API Contracts (shapes)
 - createCollab(input): { title, affiliatedOrg?, projectTypes[], description, stage, lookingFor[], contact, remarks?, techTagIds[], categoryTagIds[], role? } -> { id }
 - listCollabs(params): { cursor?, limit=20, q?, techTagIds?, categoryTagIds?, stages?, projectTypes?, role? } -> { items[], nextCursor? }
 - requestCollabLogoUpload(collabId): owner-only -> { uploadUrl, path, maxBytes, mime }
+- requestNewCollabLogoUpload(): auth-only -> { uploadUrl, path, maxBytes, mime } (used on create form before id exists)
+ - Rendering: server maps `logo_path` to `logoUrl` using `${NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/<path>`; clients render `logoUrl` with center-crop.
 - setCollabLogo(collabId, path): owner-only -> { ok: true }
 - getCollab(id), updateCollab(id, fields), deleteCollab(id)
+
+Operations (logos/avatars)
+- Move-on-submit: temp paths under `*/new/<userId>/…` are finalized to `<entityId>/…` on create/set.
+- Backfill: `web/scripts/finalize-new-logos.ts` migrates existing DB references and storage objects (dry-run first).
+- Scheduled cleanup: `.github/workflows/cleanup-new-uploads.yml` runs `web/scripts/cleanup-new-uploads.ts` daily (03:00 UTC) to delete temp objects older than 24h. Requires repo secrets `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
 
 - reportError(input): { message, context?, url?, userMessage? } -> { ok: true }
 
@@ -270,9 +277,17 @@ Tag Sources & Curation (Stage 14)
   - [LinkedIn — Industry codes](https://learn.microsoft.com/linkedin/shared/references/reference-tables/industry-codes)
 - Curated snapshot lives at `docs/tags/curated-tags.csv`. Seeds append with `on conflict do nothing` to avoid renames or duplicates.
 
-- Stage 15 — Logos for projects & collaborations (list display) — Planned
-  - Tasks: create storage buckets (`project-logos`, `collab-logos`) with RLS; add `request*LogoUpload` and `set*Logo` actions; UI to upload on create/edit; render logos with `next/image` in cards with fallback.
-  - Done when: owners upload ≤ 1MB images (PNG/JPEG/SVG); logos render on lists/detail; broken/missing logos fall back; tests cover RLS access.
+- Stage 15 — Logos for projects & collaborations (list/detail + owner change) — Completed (22/9/2025)
+  - Tasks: create storage buckets (`project-logos`, `collab-logos`) with RLS; add `request*LogoUpload` and `set*Logo` (+ `clear*Logo`) actions; add `requestNewProjectLogoUpload()` and `requestNewCollabLogoUpload()` for create forms; UI uses auto-upload dropzone on create; detail pages use an avatar-style overlay with a headless native file picker (no large dropzone), optimistic preview, always-visible uploading spinner, and no reload.
+  - Rendering: server maps `logo_path` → `logoUrl` (public URL). `LogoImage` renders center-cropped squares with fallback; final URL uses cache-busting query param after successful upload.
+  - Placeholder policy: When `logoUrl` is absent, `LogoImage` renders a monogram avatar with a hashed gradient background and 1–2 initials from the title; static `/placeholder-logo.svg` is a secondary fallback.
+  - Deliverables: server `logoUrl` mapping; shared `LogoImage`; homepage/search/cards/detail wired; submit gating on create; owner-only overlay with headless picker and spinner; finalize-on-submit; scheduled cleanup; backfill script; server + UI tests.
+
+Profile avatars (Step 6a)
+- UX: owner-only overlay on `/profile` header (size 96, rounded full). Change opens file picker; optimistic preview; spinner during upload; cache-busting on success. “Remove Avatar” is exposed only on `/profile` overlay.
+- Server actions: `requestProfileAvatarUploadAction`, `setProfileAvatarAction`, `clearProfileAvatarAction`.
+- Paths: `profile-avatars/<userId>/<uuid>.<ext>`; no finalize-on-submit required.
+  - Done when: owners upload ≤ 1MB images (PNG/JPEG/SVG); logos render on lists/detail; change/remove works without page reload; broken/missing logos fall back; tests cover RLS access and client validation.
 
 - Stage 16 — Collaboration by role (post + search) — Planned
   - Tasks: add optional `role` to collab schema and forms (controlled vocab or free text with suggestions); update `/search` to filter by role; analytics for role usage.

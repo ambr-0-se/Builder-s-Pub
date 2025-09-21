@@ -1,7 +1,7 @@
 # Stage X Implementation Plan: Name of Stage X
 
 **Status:** Planned  
-**Started:** Today's date 
+**Started:** [Today's date]
 **Completed:** —
 
 ## Overview
@@ -10,35 +10,56 @@ Overview of stage X
 
 ## Tasks
 
-1. Case‑insensitive uniqueness for `tags` at the database level and in Admin UI.
-2. Enforce a cap of 10 total tags (technology + category) for both projects and collaborations (project types do not count toward the collaboration cap).
-3. Light tag‑picker UX refinements in project and collaboration creation forms: filter input, suggested list, scrollable list, selection counter/guardrails.
-4. Curate and seed initial technology/category tags (additive; no renames), and review existing tags.
-5. Tests, documentation updates, and changelog entry.
-6. QA: keep build/test green and verify UX.
+### 1. Task 1
+Explanation of task 1
+
+### 2. Task 2  
+Explanation of task 2
+
 
 ## Actionable and Specific Steps
 
-### Step 1: Add case‑insensitive unique index for tags
-**Goal:** Prevent duplicates like "nlp" vs "NLP" by enforcing uniqueness on `type + lower(name)`.
+### Step 1: 
+**Goal:** 
 
-**What we are doing:** Make the database reject adding the same tag with different letter casing, so the tag list stays clean.
+**What we are doing:** 
 
 **Technical details:**
-- Create a unique index: `create unique index if not exists uq_tags_type_lower_name on tags (type, lower(name));`
-- Keep existing `unique (name, type)` (harmless alongside CI index). Document rationale in schema docs.
-- Add migration; reflect the index in `supabase/schema.sql` and `supabase/schema.md`.
 
 **Files:**
-- Add: `supabase/migrations/20250916_add_ci_unique_tags.sql`
-- Change: `supabase/schema.sql`, `supabase/schema.md`
+- Add: 
+- Add: 
+- Change:
+- Change:
+- Potentially affected:
+- Potentially affected:
 
-Tests: Apply migration; insert `NLP` then `nlp` → expect unique violation; Admin UI duplicate message shows.
+**Tests:** 
 
 **Status:** Not Started
 
 ---
 
+### Step 2: 
+**Goal:** 
+
+**What we are doing:** 
+
+**Technical details:**
+
+**Files:**
+- Add: 
+- Add: 
+- Change:
+- Change:
+- Potentially affected:
+- Potentially affected:
+
+**Tests:** 
+
+**Status:** Not Started
+
+--- 
 ### Step 2: Normalize admin tag input + friendly duplicate messaging
 **Goal:** Ensure whitespace/casing normalized before validation and show a clear error if a case‑insensitive duplicate exists.
 
@@ -55,166 +76,23 @@ Tests: Apply migration; insert `NLP` then `nlp` → expect unique violation; Adm
 - Change: `web/app/admin/tags/tag-manager.tsx` (inline notice before submit)
 - Change: `web/app/admin/tags/AdminCreateTagForm.tsx` (mirror inline notice)
 
-Tests: Unit test normalization; create "  Computer   Vision " → saved as "Computer Vision"; casing duplicate blocked.
+**Tests:** 
 
 **Status:** Not Started
 
 ---
 
-### Step 3: Enforce max 10 tags for projects (tech+category)
-**Goal:** Limit total selected tags to at most 10 across technology and category for projects.
-
-**What we are doing:** Prevent picking too many tags so project pages stay readable. Show a counter and stop at 10.
-
-**Technical details:**
-- Server validation: add `.superRefine` to `createProjectSchema` to enforce `techTagIds.length + categoryTagIds.length ≤ 10` with a single clear error message.
-- UI guardrails: show a live counter (e.g., "7/10 selected"); disable additional chips once at 10; allow deselection.
-- No changes to server actions contract beyond error message text.
-
-**Files:**
-- Change: `web/app/projects/schema.ts`
-- Change: `web/app/projects/new/page.tsx`
-- Potentially affected: `web/app/projects/actions.ts` (surface validation errors), `web/tests/projects.schema.test.ts`
-
-Tests: Schema accepts 10 tags, rejects 11; UI disables 11th chip and shows counter.
-
-**Status:** Not Started
-
----
-
-### Step 4: Enforce max 10 tags for collaborations (tech+category only)
-**Goal:** Limit total selected tags to at most 10 across technology and category for collaborations (project types are not counted).
-
-**What we are doing:** Same cap as projects, but project types (like personal, open source) don't count.
-
-**Technical details:**
-- Server validation: add `.superRefine` to `createCollabSchema` to enforce `techTagIds.length + categoryTagIds.length ≤ 10`.
-- UI guardrails: show a live counter; disable chips once the 10 limit is reached; allow deselection.
-
-**Files:**
-- Change: `web/app/collaborations/schema.ts`
-- Change: `web/app/collaborations/new/page.tsx`
-- Potentially affected: `web/app/collaborations/actions.ts`, new test file `web/tests/collabs.schema.cap.test.ts`
-
-Tests: Schema accepts 10 tags, rejects 11; project types ignored; UI disables 11th tag.
-
-**Status:** Not Started
-
----
-
-### Step 5: Light tag‑picker UX refinements (both forms)
-**Goal:** Keep forms tidy as the vocabulary grows: add a small search, suggested tags, and scrollable lists with counters.
-
-**What we are doing:** Add a tiny search box to filter tags, show a short "Suggested" list at the top, and make long lists scroll. Also show "X/10 selected" and stop selecting more when full.
-
-**Technical details:**
-- Per facet (Technology, Category):
-  - Filter input that narrows the local chip list (client‑side only).
-  - A curated "Suggested" subsection (first 8–12 curated tags per facet) above the full list.
-  - Wrap full list in a container with `max-height` and `overflow-y: auto`.
-  - Selection counter and chip disabling when at cap.
-- No API/schema changes.
-
-**Files:**
-- Change: `web/app/projects/new/page.tsx`
-- Change: `web/app/collaborations/new/page.tsx`
-
-Tests: Render test verifies filter narrows chips; suggested renders; scroll container present; manual counter/disable works.
-
-**Status:** Not Started
-
----
-
-### Step 6: Curate and seed initial tag lists; review existing
-**Goal:** Provide a generally understandable set of technology and category tags; review current tags without renaming.
-
-**What we are doing:** Use well‑known sources to draft simple tag lists people understand (e.g., NLP, Computer Vision, Education, Finance). Add them to seeds and check what we already have.
-
-**Technical details:**
-- Research references: Hugging Face Tasks, Papers with Code areas/tasks, Product Hunt Topics.
-- Draft concise lists (e.g., ~12–20 per facet). Submit for review before seeding.
-- Append to `seed_mvp.sql` with `on conflict do nothing` (non‑destructive).
-- Generate a brief report of current tags: case‑insensitive dupes and coverage gaps; include in PR description only (no renames).
-
-**Files:**
-- Change: `supabase/seed/seed_mvp.sql`
-- Add (optional): short report attached in PR description (no repo file changes required)
-
-Tests: Re-run seeds idempotently; curated tags visible in UI; existing tags unchanged; PR report lists dupes/gaps.
-
-**Status:** Not Started
-
----
-
-### Step 7: Tests
-**Goal:** Ensure validation and basic UX behavior are covered.
-
-**What we are doing:** Add tests so we don’t accidentally break the caps or tag validation later.
-
-**Technical details:**
-- Project cap tests: extend `projects.schema.test.ts` to check pass/fail around 10.
-- Collaboration cap tests: add `collabs.schema.cap.test.ts` (new) for 10‑tag limit excluding project types.
-- Tag validation tests: extend `tags.validation.test.ts` for normalization and case‑insensitive duplicate messaging (unit level).
-
-**Files:**
-- Change: `web/tests/projects.schema.test.ts`
-- Add: `web/tests/collabs.schema.cap.test.ts`
-- Change: `web/tests/tags.validation.test.ts`
-
-Tests: `pnpm test` runs new cases; they pass and fail appropriately when constraints are violated.
-
-**Status:** Not Started
-
----
-
-### Step 8: Documentation & Changelog
-**Goal:** Keep specs and schema docs accurate; add user‑visible note.
-
-**What we are doing:** Update our manuals so future devs know about the new rules and users see what changed.
-
-**Technical details:**
-- `docs/MVP_TECH_SPEC.md`: mark Stage 14 as done; document 10‑tag cap and CI uniqueness.
-- `supabase/schema.md`: add the new index and rationale.
-- `docs/SERVER_ACTIONS.md`: note validation errors for tag caps.
-- `CHANGELOG.md` under Unreleased: summarize user‑visible changes.
-
-**Files:**
-- Change: `docs/MVP_TECH_SPEC.md`, `supabase/schema.md`, `docs/SERVER_ACTIONS.md`, `CHANGELOG.md`
-
-Tests: Manual doc review; ensure caps and CI uniqueness documented; changelog entry present.
-
-**Status:** In Progress
-
----
-
-### Step 9: QA (lint/build/tests + manual smoke)
-**Goal:** Ensure everything is green and UX is smooth.
-
-**What we are doing:** Run checks and click through forms to confirm the experience feels right.
-
-**Technical details:**
-- Run `pnpm lint && pnpm test` locally; fix failures.
-- Manual: Admin adds a casing variant → UI warns; DB blocks with friendly error. Project/Collab forms show suggested tags, filter works, lists scroll, and selection caps at 10.
-
-**Files:**
-- No new files; verify changes across touched files.
-Tests: `pnpm lint && pnpm test`; manual Admin duplicate attempt; forms show filter/suggest/scroll and cap at 10.
-
-**Status:** Not Started
+Remaining steps
 
 ---
 
 ## Acceptance Criteria
 
-- Database rejects case‑insensitive duplicate tags (`unique(type, lower(name))` in place).
-- Admin tag creation warns for case‑insensitive duplicates and shows a friendly error if submitted.
-- Project and Collaboration forms:
-  - Show a "Suggested" subsection for each facet, plus a scrollable full list.
-  - Provide a filter input per facet that narrows visible tags.
-  - Display a live counter and prevent selecting more than 10 total tags (tech+category). Collaboration cap excludes project types.
-- Curated initial tag lists appended to seeds; existing tags unchanged; brief review report provided in PR.
-- Tests added/updated and passing.
-- Docs updated: MVP spec, schema overview, server actions, and changelog.
+- Acceptance criteria 1
+- Acceptance criteria 2
+  - Acceptance criteria 2.1
+  - Acceptance criteria 2.2
+
 
 ## Workflow
 
@@ -236,37 +114,16 @@ If you need help from user, give clear instructions to user on how to do it or w
 
 | Step | Status | Started | Completed | Notes |
 |------|--------|---------|-----------|-------|
-| 1. CI unique index | Not Started | — | — | Add migration + docs |
-| 2. Admin tag normalization + messaging | Not Started | — | — | Inline warning + error copy |
-| 3. Project 10‑tag cap | Not Started | — | — | Schema refine + UI counter/disable |
-| 4. Collaboration 10‑tag cap | Not Started | — | — | Exclude project types from cap |
-| 5. Tag‑picker UX (filter/suggest/scroll/counter) | Not Started | — | — | Both forms |
-| 6. Curate & seed + review existing | Not Started | — | — | Append seeds; PR review report |
-| 7. Tests | Not Started | — | — | Projects, Collabs, Tags validation |
-| 8. Docs & Changelog | Not Started | — | — | Spec, schema, actions, changelog |
-| 9. QA | Not Started | — | — | Lint/test + manual smoke |
+| 1. Step 1 | Not Started | — | — |  |
+| 2. Step 2 | Not Started | — | — |  |
+Remaining steps
 
 ## Risk Mitigation
 
-**Data integrity**
-- CI unique index prevents duplicate tags differing by case; keep existing unique (name, type) to avoid accidental removal.
-- Seeds use `on conflict do nothing` to stay idempotent.
-
-**UX regressions**
-- Keep refinements minimal (client‑side filter, small suggested list, scroll, counter) with no API changes.
-- Disable chips above cap while allowing deselection; clear inline messaging.
-
-**Compatibility**
-- No breaking changes to server action contracts; only additional validation error possible for caps.
-- Admin UI changes are additive; existing admin flows continue to work.
-
-**Testing & rollout**
-- Add unit tests for schema refinements and validation.
-- Manual smoke on forms and admin page before merging.
 
 ---
 
-**Last Updated:** 16/9/2025  
-**Next Review:** On implementation completion
+**Last Updated:** [Today's date] 
+**Next Review:** 
 
 
