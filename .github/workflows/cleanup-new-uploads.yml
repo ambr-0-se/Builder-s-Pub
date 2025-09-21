@@ -14,6 +14,10 @@ on:
         description: "Dry run (true/false)"
         required: false
         default: "false"
+      buckets:
+        description: "Comma-separated buckets (e.g., collab-logos or project-logos,collab-logos)"
+        required: false
+        default: ""
 
 jobs:
   cleanup:
@@ -50,7 +54,14 @@ jobs:
           fi
 
       - name: Run cleanup script
-        run: pnpm dlx tsx scripts/cleanup-new-uploads.ts --ttl=${{ inputs.ttl || '24' }} --dry-run=${{ inputs.dry_run || 'false' }}
+        shell: bash
+        run: |
+          CMD="pnpm dlx tsx scripts/cleanup-new-uploads.ts --ttl=${{ inputs.ttl || '24' }} --dry-run=${{ inputs.dry_run || 'false' }}"
+          if [[ -n "${{ inputs.buckets }}" ]]; then
+            CMD="$CMD --buckets=${{ inputs.buckets }}"
+          fi
+          echo "> $CMD"
+          eval "$CMD"
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL != '' && secrets.NEXT_PUBLIC_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' && secrets.SUPABASE_SERVICE_ROLE_KEY || vars.SUPABASE_SERVICE_ROLE_KEY }}
