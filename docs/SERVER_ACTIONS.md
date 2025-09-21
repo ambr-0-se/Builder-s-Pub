@@ -8,7 +8,7 @@ Conventions
 - Pagination: cursor-based where specified; default `limit=20`.
 
 Projects
-- createProject(input): `{ title, tagline, description, demoUrl, sourceUrl?, techTagIds[], categoryTagIds[] } -> { id } | validation_error`
+- createProject(input): `{ title, tagline, description, demoUrl, sourceUrl?, techTagIds[], categoryTagIds[], logoPath? } -> { id } | validation_error`
   - Rate limit: 5 per day per user (`project_create` action, 24-hour window)
 - listProjects(params): `{ cursor?, limit=20, sort='recent'|'popular', q?, techTagIds?, categoryTagIds? } -> { items[], nextCursor? }`
   - Note: when invoked via the API route (`/api/projects/list`) with a valid session, each item may include `hasUserUpvoted` based on the current user's upvotes (personalized server augmentation).
@@ -17,6 +17,13 @@ Projects
 - toggleProjectUpvote(projectId): `-> { ok: true, upvoted: boolean } | { error: 'unauthorized'|'rate_limited' }`
 - updateProject(id, fields): owner-only `-> { ok: true }`
 - deleteProject(id): owner-only `-> { ok: true }`
+
+Logos (Projects)
+- requestProjectLogoUpload(projectId, { ext }): owner-only `-> { uploadUrl, path, maxBytes, mime }`
+- requestNewProjectLogoUpload({ ext }): auth-only (used on create form before id exists) `-> { uploadUrl, path, maxBytes, mime }`
+- setProjectLogo(projectId, path): owner-only `-> { ok: true }`
+- clearProjectLogo(projectId): owner-only `-> { ok: true }`
+  - Notes: server finalizes temp paths `project-logos/new/<userId>/…` by moving to `project-logos/<projectId>/…` on create/set.
 
 Implemented (Stage 5 → updated in Stage 9)
 - createProject: Implemented. Validates inputs; inserts into `projects` with `owner_id=auth.user.id`; persists tags via `project_tags`; returns `{ id }` or `{ fieldErrors?, formError? }`.
@@ -42,7 +49,7 @@ Rate limits (server-enforced)
 - Daily limits show "Try again tomorrow" messaging; minute limits show "Please wait a bit" messaging.
 
 Collaborations
-- createCollab(input): `{ title≤160, affiliatedOrg?, projectTypes[], description 1–4000, stage, lookingFor[1..5]{ role, amount(1..99), prerequisite≤400, goodToHave≤400, description≤1200 }, contact≤200, remarks≤1000, techTagIds[], categoryTagIds[] } -> { id } | validation_error`
+- createCollab(input): `{ title≤160, affiliatedOrg?, projectTypes[], description 1–4000, stage, lookingFor[1..5]{ role, amount(1..99), prerequisite≤400, goodToHave≤400, description≤1200 }, contact≤200, remarks≤1000, techTagIds[], categoryTagIds[], logoPath? } -> { id } | validation_error`
   - Rate limit: 5 per day per user (`collab_create` action, 24-hour window)
 - listCollabs(params): `{ cursor?, limit=20, q?, techTagIds?, categoryTagIds?, stages?, projectTypes? } -> { items[], nextCursor? }` (defaults to `is_hiring=true`).
   - Each item exposes `collaboration.logoUrl` (derived) and `collaboration.logoPath` (storage key). `logoUrl` is a public URL built from `logoPath`.
@@ -53,6 +60,13 @@ Collaborations
 - toggleCollabUpvote(collaborationId): `-> { ok: true, upvoted: boolean } | { error: 'unauthorized'|'rate_limited' }`
 - addCollabComment(collaborationId, body 1–1000, parentCommentId?): `-> { id } | { error }`
 - deleteCollabComment(commentId): `-> { ok: true } | { error }`
+
+Logos (Collaborations)
+- requestCollabLogoUpload(collabId, { ext }): owner-only `-> { uploadUrl, path, maxBytes, mime }`
+- requestNewCollabLogoUpload({ ext }): auth-only (used on create form before id exists) `-> { uploadUrl, path, maxBytes, mime }`
+- setCollabLogo(collabId, path): owner-only `-> { ok: true }`
+- clearCollabLogo(collabId): owner-only `-> { ok: true }`
+  - Notes: server finalizes temp paths `collab-logos/new/<userId>/…` by moving to `collab-logos/<collabId>/…` on create/set.
 
 Errors
 
@@ -94,6 +108,11 @@ Placeholder policy
 - When `logoUrl` is absent (no uploaded logo), UI renders a monogram avatar with a deterministic gradient background and 1–2 initials derived from the item title via `LogoImage`.
 - A static `/placeholder-logo.svg` remains as a secondary fallback.
 - After successful uploads, final image URLs are cache‑busted client‑side by appending a `?v=<timestamp>` query to ensure immediate refresh.
+
+Storage cleanup & utilities
+- deleteTempLogo(path): auth-only server action to delete a user's own temp object under `*/new/<userId>/…` (best-effort), used when replacing selection pre-submit.
+- Scheduled cleanup: a GitHub Actions workflow runs daily to delete stale temp objects older than 24h; see `.github/workflows/cleanup-new-uploads.yml` and `web/scripts/cleanup-new-uploads.ts`.
+- Backfill: one-off script `web/scripts/finalize-new-logos.ts` migrates any existing temp paths referenced in DB to canonical `<entityId>/…` and updates rows; supports `--dry-run`.
 
 Profiles (Stage 3)
 - getMyProfile(): `-> { profile: { userId, displayName, bio?, githubUrl?, linkedinUrl?, websiteUrl? } | null, isAuthenticated: boolean, error? }`

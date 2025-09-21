@@ -89,6 +89,11 @@ Server Actions / API Contracts (shapes)
 - setCollabLogo(collabId, path): owner-only -> { ok: true }
 - getCollab(id), updateCollab(id, fields), deleteCollab(id)
 
+Operations (logos/avatars)
+- Move-on-submit: temp paths under `*/new/<userId>/…` are finalized to `<entityId>/…` on create/set.
+- Backfill: `web/scripts/finalize-new-logos.ts` migrates existing DB references and storage objects (dry-run first).
+- Scheduled cleanup: `.github/workflows/cleanup-new-uploads.yml` runs `web/scripts/cleanup-new-uploads.ts` daily (03:00 UTC) to delete temp objects older than 24h. Requires repo secrets `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+
 - reportError(input): { message, context?, url?, userMessage? } -> { ok: true }
 
 Validation & UX States

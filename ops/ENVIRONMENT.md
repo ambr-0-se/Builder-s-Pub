@@ -55,3 +55,11 @@ Notes
 - Verify RLS by testing: anonymous can read public content; only owners can write/delete their content.
 - Admin UI: accessible at `/admin/tags` for users listed in ADMIN_EMAILS environment variable.
 
+GitHub Actions (scheduled cleanup)
+- Workflow: `.github/workflows/cleanup-new-uploads.yml` runs daily at 03:00 UTC.
+- Purpose: delete stale temp uploads under `*/new/<userId>/…` older than 24h using `web/scripts/cleanup-new-uploads.ts`.
+- Secrets required on the repo:
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+- To verify: Actions → “Cleanup Stale Temp Uploads” → Run workflow (on `main`) and inspect logs.
+
