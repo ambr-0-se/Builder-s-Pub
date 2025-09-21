@@ -96,6 +96,11 @@ const createCollabBase = z.object({
     .or(z.literal("")),
   techTagIds: z.array(z.number()).min(1, "At least one technology tag is required"),
   categoryTagIds: z.array(z.number()).min(1, "At least one category tag is required"),
+  logoPath: z
+    .string()
+    .trim()
+    .optional()
+    .refine((p) => !p || p.startsWith("collab-logos/"), "Invalid logo path"),
 })
 
 export const createCollabSchema = createCollabBase.superRefine((value, ctx) => {

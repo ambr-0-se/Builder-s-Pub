@@ -10,6 +10,13 @@ function fileOf(type: string, size = 10) {
 }
 
 describe("LogoUploader", () => {
+  it("renders dropzone text and no Upload button (auto-upload)", async () => {
+    const { getByText, queryByText } = render(
+      <LogoUploader entity="project" requestAction={vi.fn() as any} onUploadedPath={vi.fn()} preventReload variant="dropzone" />
+    )
+    expect(getByText(/Drop your logo here, or browse/)).toBeTruthy()
+    expect(queryByText("Upload")).toBeNull()
+  })
   it("shows error for unsupported type", async () => {
     const { getByText } = render(
       <LogoUploader
@@ -23,4 +30,5 @@ describe("LogoUploader", () => {
     await fireEvent.change(input, { target: { files: [fileOf("image/gif")] } })
     expect(getByText(/Unsupported file type/)).toBeTruthy()
   })
+
 })

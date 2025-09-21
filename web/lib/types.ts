@@ -32,6 +32,7 @@ export interface Project {
   createdAt: Date
   softDeleted?: boolean
   logoPath?: string
+  logoUrl?: string
 }
 
 export interface ProjectWithRelations {
