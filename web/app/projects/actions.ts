@@ -3,10 +3,9 @@
 import { redirect } from "next/navigation"
 import { createProjectSchema } from "@/app/projects/schema"
 import { createProject } from "@/lib/server/projects"
-import { addComment, deleteComment, addReply, toggleCommentUpvote, toggleProjectUpvote } from "@/lib/server/projects"
+import { addComment, deleteComment, addReply, toggleCommentUpvote, toggleProjectUpvote, requestNewProjectLogoUpload } from "@/lib/server/projects"
 import { commentSchema } from "@/app/projects/schema"
 import { trackServer } from "@/lib/analytics"
-import { requestProjectLogoUpload, setProjectLogo } from "@/lib/server/projects"
 
 export type CreateProjectState = { fieldErrors?: Record<string, string>; formError?: string } | null
 
@@ -23,6 +22,7 @@ export async function createProjectAction(_: CreateProjectState, formData: FormD
 		sourceUrl: String(formData.get("sourceUrl") || ""),
 		techTagIds,
 		categoryTagIds,
+		logoPath: String(formData.get("logoPath") || "").trim() || undefined,
 	})
 
 	if (!parsed.success) {
@@ -135,22 +135,40 @@ export async function toggleProjectUpvoteAction(_: ToggleUpvoteState, formData: 
 	return { formError: (result as any).error || "failed_to_toggle_upvote" }
 }
 
-export type RequestProjectLogoUploadState = { formError?: string; uploadUrl?: string; path?: string; maxBytes?: number; mime?: string[] } | null
-export async function requestProjectLogoUploadAction(_: RequestProjectLogoUploadState, formData: FormData): Promise<RequestProjectLogoUploadState> {
+export type RequestProjectLogoUploadState = { formError?: string; uploadUrl?: string; path?: string; maxBytes?: number; mime?: string[] }
+export async function requestProjectLogoUploadAction(_: RequestProjectLogoUploadState | null, formData: FormData): Promise<RequestProjectLogoUploadState> {
 	const projectId = String(formData.get("projectId") || "").trim()
 	const ext = String(formData.get("ext") || "").trim()
 	if (!projectId || !ext) return { formError: "missing_params" }
-	const res = await requestProjectLogoUpload(projectId, { ext })
+	const res = await (await import("@/lib/server/projects")).requestProjectLogoUpload(projectId, { ext })
 	if ((res as any).error) return { formError: (res as any).error }
 	return res as any
 }
 
-export type SetProjectLogoState = { formError?: string; ok?: true } | null
-export async function setProjectLogoAction(_: SetProjectLogoState, formData: FormData): Promise<SetProjectLogoState> {
+export type RequestNewProjectLogoUploadState = { formError?: string; uploadUrl?: string; path?: string; maxBytes?: number; mime?: string[] } | null
+export async function requestNewProjectLogoUploadAction(_: RequestNewProjectLogoUploadState, formData: FormData): Promise<RequestNewProjectLogoUploadState> {
+	const ext = String(formData.get("ext") || "").trim()
+	if (!ext) return { formError: "missing_params" }
+	const res = await requestNewProjectLogoUpload({ ext })
+	if ((res as any).error) return { formError: (res as any).error }
+	return res as any
+}
+
+export type SetProjectLogoState = { formError?: string; ok?: true }
+export async function setProjectLogoAction(_: SetProjectLogoState | null, formData: FormData): Promise<SetProjectLogoState> {
 	const projectId = String(formData.get("projectId") || "").trim()
 	const path = String(formData.get("path") || "").trim()
 	if (!projectId || !path) return { formError: "missing_params" }
-	const res = await setProjectLogo(projectId, path)
+	const res = await (await import("@/lib/server/projects")).setProjectLogo(projectId, path)
+	if ((res as any).error) return { formError: (res as any).error }
+	return { ok: true }
+}
+
+export type ClearProjectLogoState = { formError?: string; ok?: true }
+export async function clearProjectLogoAction(_: ClearProjectLogoState | null, formData: FormData): Promise<ClearProjectLogoState> {
+	const projectId = String(formData.get("projectId") || "").trim()
+	if (!projectId) return { formError: "missing_params" }
+	const res = await (await import("@/lib/server/projects")).clearProjectLogo(projectId)
 	if ((res as any).error) return { formError: (res as any).error }
 	return { ok: true }
 }

@@ -8,6 +8,7 @@ import type { Profile, Tag } from "@/lib/types"
 import { createCollabSchema, type CreateCollabInput, updateCollabSchema, type UpdateCollabInput, collabCommentSchema } from "@/app/collaborations/schema"
 import { getServiceSupabase } from "@/lib/supabaseService"
 import { buildObjectPath, normalizeExt, pathBelongsToId } from "@/lib/server/logo-utils"
+import { toPublicUrl } from "@/lib/server/logo-public-url"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
@@ -51,6 +52,7 @@ export interface CollaborationWithRelations {
     remarks?: string
     createdAt: Date
     logoPath?: string
+    logoUrl?: string
   }
   tags: { technology: Tag[]; category: Tag[] }
   upvoteCount: number
@@ -94,22 +96,26 @@ export async function createCollab(input: CreateCollabInput): Promise<{ id: stri
     remarks,
     techTagIds,
     categoryTagIds,
+    logoPath,
   } = parsed.data
+
+  const insertPayload: any = {
+    owner_id: auth.user.id,
+    title,
+    kind: "ongoing",
+    description,
+    affiliated_org: affiliatedOrg || null,
+    project_types: (projectTypes as any) || null,
+    stage,
+    looking_for: lookingFor as any,
+    contact,
+    remarks: remarks || null,
+  }
+  if (typeof logoPath === "string" && logoPath.trim().length > 0) insertPayload.logo_path = logoPath.trim()
 
   const { data: row, error } = await supabase
     .from("collaborations")
-    .insert({
-      owner_id: auth.user.id,
-      title,
-      kind: "ongoing",
-      description,
-      affiliated_org: affiliatedOrg || null,
-      project_types: (projectTypes as any) || null,
-      stage,
-      looking_for: lookingFor as any,
-      contact,
-      remarks: remarks || null,
-    })
+    .insert(insertPayload)
     .select("id")
     .single()
 
@@ -475,6 +481,20 @@ export async function requestCollabLogoUpload(collabId: string, opts: { ext: str
   return { uploadUrl: signed.signedUrl as string, path, maxBytes: 1_000_000, mime: ["image/png","image/jpeg","image/svg+xml"] }
 }
 
+export async function requestNewCollabLogoUpload(opts: { ext: string }): Promise<{ uploadUrl: string; path: string; maxBytes: number; mime: string[] } | { error: string }> {
+  const supabase = await getServerSupabase()
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) return { error: "unauthorized" }
+  const ext = normalizeExt(opts.ext)
+  if (!ext) return { error: "invalid_ext" }
+  const filename = `${(globalThis as any).crypto?.randomUUID?.() || require("crypto").randomUUID()}.${ext}`
+  const path = `collab-logos/new/${auth.user.id}/${filename}`
+  const service = getServiceSupabase()
+  const { data: signed, error: signErr } = await (service.storage as any).from("collab-logos").createSignedUploadUrl(path.replace(/^collab-logos\//, ""))
+  if (signErr || !signed?.signedUrl) return { error: signErr?.message || "failed_to_sign" }
+  return { uploadUrl: signed.signedUrl as string, path, maxBytes: 1_000_000, mime: ["image/png","image/jpeg","image/svg+xml"] }
+}
+
 export async function setCollabLogo(collabId: string, path: string): Promise<{ ok: true } | { error: string }> {
   const supabase = await getServerSupabase()
   const { data: auth } = await supabase.auth.getUser()
@@ -486,6 +506,41 @@ export async function setCollabLogo(collabId: string, path: string): Promise<{ o
   if (!pathBelongsToId("collab-logos", collabId, path)) return { error: "invalid_path" }
   const { error: updErr } = await supabase.from("collaborations").update({ logo_path: path }).eq("id", collabId)
   if (updErr) return { error: updErr.message }
+  return { ok: true }
+}
+
+export async function clearCollabLogo(collabId: string): Promise<{ ok: true } | { error: string }> {
+  const supabase = await getServerSupabase()
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) return { error: "unauthorized" }
+
+  // Verify ownership and get current logo path
+  const { data: collab, error: fetchError } = await supabase
+    .from("collaborations")
+    .select("owner_id, logo_path")
+    .eq("id", collabId)
+    .single()
+
+  if (fetchError || !collab) return { error: "collaboration_not_found" }
+  if (collab.owner_id !== auth.user.id) return { error: "unauthorized" }
+
+  // Update database to clear logo_path
+  const { error: updateError } = await supabase
+    .from("collaborations")
+    .update({ logo_path: null })
+    .eq("id", collabId)
+
+  if (updateError) {
+    console.error("Failed to clear collaboration logo_path:", updateError)
+    return { error: "failed_to_clear_logo" }
+  }
+
+  // Optional: Delete the old file from storage (best effort)
+  if (collab.logo_path) {
+    const { deleteStorageObject } = await import("@/lib/server/logo-public-url")
+    await deleteStorageObject("collab-logos", collab.logo_path)
+  }
+
   return { ok: true }
 }
 
@@ -522,6 +577,7 @@ function toCollabWithRelations(
       remarks: row.remarks || undefined,
       createdAt: new Date(row.created_at),
       logoPath: (row as any).logo_path || undefined,
+      logoUrl: toPublicUrl((row as any).logo_path || undefined),
     },
     tags,
     upvoteCount,

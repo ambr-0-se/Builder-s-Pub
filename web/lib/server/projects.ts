@@ -10,6 +10,7 @@ import { trackServer } from "@/lib/analytics"
 import { commentSchema } from "@/app/projects/schema"
 import { getServiceSupabase } from "@/lib/supabaseService"
 import { buildObjectPath, normalizeExt, pathBelongsToId } from "@/lib/server/logo-utils"
+import { toPublicUrl } from "@/lib/server/logo-public-url"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
@@ -42,19 +43,22 @@ export async function createProject(input: CreateProjectInput): Promise<{ id: st
 		return { fieldErrors }
 	}
 
-	const { title, tagline, description, demoUrl, sourceUrl, techTagIds, categoryTagIds } = parsed.data
+	const { title, tagline, description, demoUrl, sourceUrl, techTagIds, categoryTagIds, logoPath } = parsed.data as any
 
 	// Insert project
+	const insertPayload: any = {
+		owner_id: auth.user.id,
+		title,
+		tagline,
+		description,
+		demo_url: demoUrl,
+		source_url: sourceUrl || null,
+	}
+	if (typeof logoPath === "string" && logoPath.trim().length > 0) insertPayload.logo_path = logoPath.trim()
+
 	const { data: projectRow, error: insertError } = await supabase
 		.from("projects")
-		.insert({
-			owner_id: auth.user.id,
-			title,
-			tagline,
-			description,
-			demo_url: demoUrl,
-			source_url: sourceUrl || null,
-		})
+		.insert(insertPayload)
 		.select("id")
 		.single()
 
@@ -327,6 +331,7 @@ function toProjectWithRelations(
 			demoUrl: row.demo_url,
 			sourceUrl: row.source_url || undefined,
 			logoPath: row.logo_path || undefined,
+			logoUrl: toPublicUrl(row.logo_path) || undefined,
 			createdAt: new Date(row.created_at),
 			softDeleted: undefined,
 		},
@@ -717,6 +722,20 @@ export async function requestProjectLogoUpload(projectId: string, opts: { ext: s
 	return { uploadUrl: signed.signedUrl as string, path, maxBytes: 1_000_000, mime: ["image/png","image/jpeg","image/svg+xml"] }
 }
 
+export async function requestNewProjectLogoUpload(opts: { ext: string }): Promise<{ uploadUrl: string; path: string; maxBytes: number; mime: string[] } | { error: string }> {
+	const supabase = await getServerSupabase()
+	const { data: auth } = await supabase.auth.getUser()
+	if (!auth.user) return { error: "unauthorized" }
+	const ext = normalizeExt(opts.ext)
+	if (!ext) return { error: "invalid_ext" }
+	const filename = `${(globalThis as any).crypto?.randomUUID?.() || require("crypto").randomUUID()}.${ext}`
+	const path = `project-logos/new/${auth.user.id}/${filename}`
+	const service = getServiceSupabase()
+	const { data: signed, error: signErr } = await (service.storage as any).from("project-logos").createSignedUploadUrl(path.replace(/^project-logos\//, ""))
+	if (signErr || !signed?.signedUrl) return { error: signErr?.message || "failed_to_sign" }
+	return { uploadUrl: signed.signedUrl as string, path, maxBytes: 1_000_000, mime: ["image/png","image/jpeg","image/svg+xml"] }
+}
+
 export async function setProjectLogo(projectId: string, path: string): Promise<{ ok: true } | { error: string }> {
 	const supabase = await getServerSupabase()
 	const { data: auth } = await supabase.auth.getUser()
@@ -731,6 +750,41 @@ export async function setProjectLogo(projectId: string, path: string): Promise<{
 	// Optional: fetch metadata (size/mime). Supabase Storage metadata API may vary; we assume upload was signed and validated client-side.
 	const { error: updErr } = await supabase.from("projects").update({ logo_path: path }).eq("id", projectId)
 	if (updErr) return { error: updErr.message }
+	return { ok: true }
+}
+
+export async function clearProjectLogo(projectId: string): Promise<{ ok: true } | { error: string }> {
+	const supabase = await getServerSupabase()
+	const { data: auth } = await supabase.auth.getUser()
+	if (!auth.user) return { error: "unauthorized" }
+
+	// Verify ownership and get current logo path
+	const { data: project, error: fetchError } = await supabase
+		.from("projects")
+		.select("owner_id, logo_path")
+		.eq("id", projectId)
+		.single()
+
+	if (fetchError || !project) return { error: "project_not_found" }
+	if (project.owner_id !== auth.user.id) return { error: "unauthorized" }
+
+	// Update database to clear logo_path
+	const { error: updateError } = await supabase
+		.from("projects")
+		.update({ logo_path: null })
+		.eq("id", projectId)
+
+	if (updateError) {
+		console.error("Failed to clear project logo_path:", updateError)
+		return { error: "failed_to_clear_logo" }
+	}
+
+	// Optional: Delete the old file from storage (best effort)
+	if (project.logo_path) {
+		const { deleteStorageObject } = await import("@/lib/server/logo-public-url")
+		await deleteStorageObject("project-logos", project.logo_path)
+	}
+
 	return { ok: true }
 }
 

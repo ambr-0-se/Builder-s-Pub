@@ -15,6 +15,8 @@ import { createCollabAction, type CreateCollabState } from "@/app/collaborations
 import { COLLAB_KIND_OPTIONS, PROJECT_TYPE_OPTIONS, STAGE_OPTIONS } from "@/lib/collabs/options"
 import { TagMultiSelect } from "@/components/ui/tag-multiselect"
 import { showToast } from "@/components/ui/toast"
+import { LogoUploader } from "@/components/ui/logo-uploader"
+import { requestNewCollabLogoUploadAction } from "@/app/collaborations/actions"
 
 export default function NewCollaborationPage() {
   const router = useRouter()
@@ -33,6 +35,9 @@ export default function NewCollaborationPage() {
     contact: "",
     remarks: "",
   })
+
+  const [logoPath, setLogoPath] = useState<string>("")
+  const [pendingUpload, setPendingUpload] = useState<boolean>(false)
 
   const [lookingFor, setLookingFor] = useState<Array<{ role: string; amount?: number; prerequisite: string; goodToHave: string; description: string }>>([
     { role: "", amount: 1, prerequisite: "", goodToHave: "", description: "" },
@@ -89,7 +94,7 @@ export default function NewCollaborationPage() {
   const SubmitButton = () => {
     const { pending } = useFormStatus()
     return (
-      <Button type="submit" disabled={pending || !canSubmit} className="flex-1">
+      <Button type="submit" disabled={pending || pendingUpload || !canSubmit} className="flex-1">
         {pending ? "Posting..." : "Post Collaboration"}
       </Button>
     )
@@ -128,6 +133,8 @@ export default function NewCollaborationPage() {
       </div>
 
       <form action={formAction} className="space-y-6">
+        {/* ... rest of fields ... */}
+
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
             Title *
@@ -356,6 +363,14 @@ export default function NewCollaborationPage() {
         {selectedCategoryTags.map((id) => (
           <input key={`cat-${id}`} type="hidden" name="categoryTagIds" value={id} />
         ))}
+
+        {/* Logo uploader (Optional) — placed at bottom per spec */}
+        <div className="pt-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Logo (Optional)</label>
+          <LogoUploader entity="collab" requestAction={requestNewCollabLogoUploadAction as any} onUploadedPath={(p) => setLogoPath(p)} preventReload variant="dropzone" onPendingChange={setPendingUpload} />
+          {logoPath && <p className="text-xs text-gray-500 mt-1">Logo selected.</p>}
+          {logoPath && <input type="hidden" name="logoPath" value={logoPath} />}
+        </div>
 
         <div className="flex gap-4 pt-6">
           <SubmitButton />

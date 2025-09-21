@@ -1,10 +1,13 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
+import Image from "next/image"
+import { LogoImage } from "@/components/ui/logo-image"
+import { LogoChangeOverlay } from "@/components/ui/logo-change-overlay"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { getCollab } from "@/lib/server/collabs"
 import { getServerSupabase } from "@/lib/supabaseServer"
-import { toggleCollabUpvoteAction, addCollabCommentAction, deleteCollabCommentAction } from "@/app/collaborations/actions"
+import { toggleCollabUpvoteAction, addCollabCommentAction, deleteCollabCommentAction, requestCollabLogoUploadAction, setCollabLogoAction, clearCollabLogoAction } from "@/app/collaborations/actions"
 import { CollabUpvoteButton } from "@/components/features/collaborations/collab-upvote-button"
 import { CollabCommentForm } from "@/components/features/collaborations/collab-comment-form"
 import { CollabCommentList } from "@/components/features/collaborations/collab-comment-list"
@@ -44,6 +47,7 @@ export default async function CollabDetailPage({ params }: CollabDetailPageProps
   const supabase = await getServerSupabase()
   const { data: auth } = await supabase.auth.getUser()
   const isOwner = !!auth.user && auth.user.id === item.collaboration.ownerId
+  const logoSrc = (item.collaboration as any).logoUrl || ""
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -51,36 +55,49 @@ export default async function CollabDetailPage({ params }: CollabDetailPageProps
         {/* Header */}
         <div className="px-6 py-8 border-b border-gray-200">
           <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-sm text-gray-500">Posted by {item.owner.displayName} on {item.collaboration.createdAt.toLocaleDateString?.() || new Date(item.collaboration.createdAt as any).toLocaleDateString()}</span>
-              </div>
+            <div className="flex-1 flex gap-4 items-start">
+              <LogoChangeOverlay 
+                src={logoSrc} 
+                alt={item.collaboration.title} 
+                size={96} 
+                entity="collab"
+                entityId={item.collaboration.id}
+                isOwner={isOwner}
+                requestAction={requestCollabLogoUploadAction}
+                setAction={setCollabLogoAction}
+                clearAction={clearCollabLogoAction}
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-sm text-gray-500">Posted by {item.owner.displayName} on {item.collaboration.createdAt.toLocaleDateString?.() || new Date(item.collaboration.createdAt as any).toLocaleDateString()}</span>
+                </div>
 
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">{item.collaboration.title}</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-4">{item.collaboration.title}</h1>
 
-              <div className="space-y-2 text-sm">
-                {item.collaboration.affiliatedOrg && (
-                  <div className="flex items-baseline gap-2 overflow-hidden">
-                    <span className="font-medium text-gray-700 whitespace-nowrap">Affiliated Organisation:</span>
-                    <span className="text-gray-600 truncate min-w-0">{item.collaboration.affiliatedOrg.replace(/\s+/g, " ")}</span>
-                  </div>
-                )}
-                {Array.isArray((item.collaboration as any).projectTypes) && (item.collaboration as any).projectTypes!.length > 0 && (
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="font-medium text-gray-700 whitespace-nowrap">Project Types:</span>
-                    <div className="flex flex-wrap gap-2">
-                      {(item.collaboration as any).projectTypes.map((pt: string, i: number) => (
-                        <Badge key={`pt-${i}`} variant="outline" className="capitalize">{formatProjectType(pt as any)}</Badge>
-                      ))}
+                <div className="space-y-2 text-sm">
+                  {item.collaboration.affiliatedOrg && (
+                    <div className="flex items-baseline gap-2 overflow-hidden">
+                      <span className="font-medium text-gray-700 whitespace-nowrap">Affiliated Organisation:</span>
+                      <span className="text-gray-600 truncate min-w-0">{item.collaboration.affiliatedOrg.replace(/\s+/g, " ")}</span>
                     </div>
-                  </div>
-                )}
-                {item.collaboration.stage && (
-                  <div className="flex items-baseline gap-2 overflow-hidden">
-                    <span className="font-medium text-gray-700 whitespace-nowrap">Stage:</span>
-                    <span className="text-gray-600 truncate min-w-0">{formatStage(item.collaboration.stage as any)}</span>
-                  </div>
-                )}
+                  )}
+                  {Array.isArray((item.collaboration as any).projectTypes) && (item.collaboration as any).projectTypes!.length > 0 && (
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span className="font-medium text-gray-700 whitespace-nowrap">Project Types:</span>
+                      <div className="flex flex-wrap gap-2">
+                        {(item.collaboration as any).projectTypes.map((pt: string, i: number) => (
+                          <Badge key={`pt-${i}`} variant="outline" className="capitalize">{formatProjectType(pt as any)}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {item.collaboration.stage && (
+                    <div className="flex items-baseline gap-2 overflow-hidden">
+                      <span className="font-medium text-gray-700 whitespace-nowrap">Stage:</span>
+                      <span className="text-gray-600 truncate min-w-0">{formatStage(item.collaboration.stage as any)}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex gap-3 items-center">

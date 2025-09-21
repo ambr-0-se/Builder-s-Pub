@@ -1,15 +1,20 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import Image from "next/image"
+import { LogoImage } from "@/components/ui/logo-image"
+import { LogoChangeOverlay } from "@/components/ui/logo-change-overlay"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { getProject } from "@/lib/server/projects"
+import { getServerSupabase } from "@/lib/supabaseServer"
 import { DemoEmbed } from "@/components/features/projects/demo-embed"
 import { CommentCta } from "@/components/features/projects/comment-cta"
 import { CommentList } from "@/components/features/projects/comment-list"
 import { UpvoteButton } from "@/components/features/projects/upvote-button"
 import { CreatedToastOnce } from "@/app/projects/[id]/created-toast"
 import { ProjectViewTracker } from "@/app/projects/[id]/ProjectViewTracker"
+import { requestProjectLogoUploadAction, setProjectLogoAction, clearProjectLogoAction } from "@/app/projects/actions"
 
 interface ProjectDetailPageProps {
   params: { id: string }
@@ -55,6 +60,12 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
     notFound()
   }
 
+  const supabase = await getServerSupabase()
+  const { data: auth } = await supabase.auth.getUser()
+  const isOwner = !!auth.user && auth.user.id === project.project.ownerId
+
+  const logoSrc = project.project.logoUrl || ""
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Analytics: debounced project view */}
@@ -68,29 +79,42 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
         {/* Header */}
         <div className="px-6 py-8 border-b border-gray-200">
           <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{project.project.title}</h1>
-              <p className="text-xl text-gray-600 mb-4">{project.project.tagline}</p>
+            <div className="flex-1 flex gap-4 items-start">
+              <LogoChangeOverlay 
+                src={logoSrc} 
+                alt={project.project.title} 
+                size={96} 
+                entity="project"
+                entityId={project.project.id}
+                isOwner={isOwner}
+                requestAction={requestProjectLogoUploadAction}
+                setAction={setProjectLogoAction}
+                clearAction={clearProjectLogoAction}
+              />
+              <div className="flex-1">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">{project.project.title}</h1>
+                <p className="text-xl text-gray-600 mb-4">{project.project.tagline}</p>
 
-              <div className="flex items-center space-x-4 text-sm text-gray-500 mb-4">
-                <span>by {project.owner.displayName}</span>
-                <span>•</span>
-                <span>{project.project.createdAt.toLocaleDateString()}</span>
-                <span>•</span>
-                <span>{project.upvoteCount} upvotes</span>
-              </div>
+                <div className="flex items-center space-x-4 text-sm text-gray-500 mb-4">
+                  <span>by {project.owner.displayName}</span>
+                  <span>•</span>
+                  <span>{project.project.createdAt.toLocaleDateString()}</span>
+                  <span>•</span>
+                  <span>{project.upvoteCount} upvotes</span>
+                </div>
 
-              <div className="flex flex-wrap gap-2 mb-6">
-                {project.tags.technology.map((tag) => (
-                  <Badge key={tag.id} variant="default">
-                    {tag.name}
-                  </Badge>
-                ))}
-                {project.tags.category.map((tag) => (
-                  <Badge key={tag.id} variant="secondary">
-                    {tag.name}
-                  </Badge>
-                ))}
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {project.tags.technology.map((tag) => (
+                    <Badge key={tag.id} variant="default">
+                      {tag.name}
+                    </Badge>
+                  ))}
+                  {project.tags.category.map((tag) => (
+                    <Badge key={tag.id} variant="secondary">
+                      {tag.name}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
 

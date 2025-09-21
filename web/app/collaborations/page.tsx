@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import Image from "next/image"
+import { LogoImage } from "@/components/ui/logo-image"
 import { listCollabs } from "@/lib/server/collabs"
 import { Badge } from "@/components/ui/badge"
 import { formatProjectType } from "@/lib/collabs/options"
@@ -45,18 +47,23 @@ export default async function CollaborationsPage({ searchParams }: PageProps) {
           {items.map((item) => (
             <div key={item.collaboration.id} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-sm text-gray-500">by {item.owner.displayName}</span>
+                <div className="flex-1 flex items-start gap-3">
+                  <div className="shrink-0">
+                    <LogoImage src={(item.collaboration as any).logoUrl || ""} alt={item.collaboration.title} size={40} />
                   </div>
-                  <Link href={`/collaborations/${item.collaboration.id}`} className="group">
-                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 mb-2">{item.collaboration.title}</h3>
-                  </Link>
-                  <p className="text-gray-600 mb-3 line-clamp-2">{item.collaboration.description}</p>
-                  <div className="flex items-center text-sm text-gray-500 space-x-4">
-                    <span>📅 {item.collaboration.createdAt.toLocaleDateString?.() || new Date(item.collaboration.createdAt as any).toLocaleDateString()}</span>
-                    {typeof item.commentCount === "number" && <span>💬 {item.commentCount}</span>}
-                    <span>⬆️ {item.upvoteCount}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-sm text-gray-500">by {item.owner.displayName}</span>
+                    </div>
+                    <Link href={`/collaborations/${item.collaboration.id}`} className="group">
+                      <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 mb-2">{item.collaboration.title}</h3>
+                    </Link>
+                    <p className="text-gray-600 mb-3 line-clamp-2">{item.collaboration.description}</p>
+                    <div className="flex items-center text-sm text-gray-500 space-x-4">
+                      <span>📅 {item.collaboration.createdAt.toLocaleDateString?.() || new Date(item.collaboration.createdAt as any).toLocaleDateString()}</span>
+                      {typeof item.commentCount === "number" && <span>💬 {item.commentCount}</span>}
+                      <span>⬆️ {item.upvoteCount}</span>
+                    </div>
                   </div>
                 </div>
               </div>
