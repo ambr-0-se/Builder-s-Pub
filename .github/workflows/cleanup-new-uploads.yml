@@ -36,10 +36,31 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
+      - name: Resolve env (secrets or variables)
+        shell: bash
+        run: |
+          # Prefer Secrets; fall back to Variables
+          if [[ -n "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" ]]; then
+            echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> "$GITHUB_ENV"
+          elif [[ -n "${{ vars.NEXT_PUBLIC_SUPABASE_URL }}" ]]; then
+            echo "NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}" >> "$GITHUB_ENV"
+          fi
+
+          if [[ -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]]; then
+            echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> "$GITHUB_ENV"
+          elif [[ -n "${{ vars.SUPABASE_SERVICE_ROLE_KEY }}" ]]; then
+            echo "SUPABASE_SERVICE_ROLE_KEY=${{ vars.SUPABASE_SERVICE_ROLE_KEY }}" >> "$GITHUB_ENV"
+          fi
+
+          # Fail fast with a clear message if missing
+          if [[ -z "$NEXT_PUBLIC_SUPABASE_URL" ]]; then
+            echo "::error::NEXT_PUBLIC_SUPABASE_URL is not set as a Secret or Variable" && exit 1
+          fi
+          if [[ -z "$SUPABASE_SERVICE_ROLE_KEY" ]]; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY is not set as a Secret or Variable" && exit 1
+          fi
+
       - name: Run cleanup script
         run: pnpm dlx tsx scripts/cleanup-new-uploads.ts --ttl=${{ inputs.ttl || '24' }} --dry-run=${{ inputs.dry_run || 'false' }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || vars.SUPABASE_SERVICE_ROLE_KEY }}
 
 
