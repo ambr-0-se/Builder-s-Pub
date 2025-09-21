@@ -70,6 +70,29 @@ create policy upvotes_insert_auth on project_upvotes for insert with check (auth
 drop policy if exists upvotes_delete_own on project_upvotes;
 create policy upvotes_delete_own on project_upvotes for delete using (auth.uid() = user_id);
 
+-- Project Tags (join table)
+alter table if exists project_tags enable row level security;
+
+drop policy if exists project_tags_select_public on project_tags;
+create policy project_tags_select_public on project_tags for select using (true);
+
+-- Only the owner of the project can modify its tags
+drop policy if exists project_tags_insert_owner on project_tags;
+create policy project_tags_insert_owner on project_tags for insert with check (
+  exists (
+    select 1 from projects p
+    where p.id = project_id and p.owner_id = auth.uid()
+  )
+);
+
+drop policy if exists project_tags_delete_owner on project_tags;
+create policy project_tags_delete_owner on project_tags for delete using (
+  exists (
+    select 1 from projects p
+    where p.id = project_id and p.owner_id = auth.uid()
+  )
+);
+
 -- Rate limits (per-user counters for throttling)
 alter table if exists rate_limits enable row level security;
 
