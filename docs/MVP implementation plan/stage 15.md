@@ -226,9 +226,10 @@ Add server tests (authorization, path, size/mime), component tests (fallback ren
   - Change: `web/lib/server/projects.ts` (finalize temp path in `createProject` and in `setProjectLogo`)
   - Change: `web/lib/server/collabs.ts` (finalize temp path in `createCollab` and in `setCollabLogo`)
   - Add: `web/scripts/finalize-new-logos.ts` (one‑off backfill tool: find rows with `logo_path like '*/new/%'`, move to canonical `<entityId>/…`, update row; supports dry‑run)
+  - Add: `.github/workflows/cleanup-new-uploads.yml` + `web/scripts/cleanup-new-uploads.ts` (scheduled 24h cleanup of stale temps under `*/new/<userId>/…`)
 - Tests:
-  - Server: set‑logo with temp path moves under entity id and updates DB; create with temp path finalizes post‑insert; reject temp paths that don’t belong to the current user.
-- Status: Planned
+  - Server: set‑logo with temp path moves under entity id and updates DB; create with temp path finalizes post‑insert; reject temp paths that don’t belong to the current user. Implemented basic coverage in `web/tests/logos.server.test.ts`.
+- Status: ✅ Completed
 
 **Sub‑step 6.2: Project Create Page (dropzone at bottom)**
 - UX (Option A): dashed, rounded dropzone card labeled "Drop your logo here, or browse"; requirement text below ("PNG, JPEG, or SVG — max 1MB"). Click or drop opens selection and auto-uploads immediately.
@@ -272,7 +273,7 @@ Add server tests (authorization, path, size/mime), component tests (fallback ren
 - Schema: `logoPath` optional; invalid prefixes rejected (projects/collabs).
 - Server: `logo_path` set on create when provided and valid.
 
-**Status:** In Progress
+**Status:** ✅ Completed (22/9/2025)
 
 ---
 
@@ -359,9 +360,9 @@ At each step in 'Actionable and specific steps':
 | 3. Server: project/collab logos | ✅ Completed | 18/9/2025 | 18/9/2025 | request*/set* helpers + actions added |
 | 4. Profile avatars | ✅ Completed | 18/9/2025 | 18/9/2025 | request/set + actions implemented |
 | 5. LogoUploader component | ✅ Completed | 18/9/2025 | 18/9/2025 | reusable uploader + tests |
-| 6. UI integration (lists/detail/forms) | In progress | 18/9/2025 | — | Code complete (lists, detail, create, owner change UI). Pending: tests (server/ui) and temp upload cleanup. |
+| 6. UI integration (lists/detail/forms) | ✅ Completed | 18/9/2025 | 22/9/2025 | Lists/detail/create wired; owner overlay done; submit gating; public URL mapping; monogram fallback; server+UI tests added; temp cleanup + cron; finalize-on-submit + backfill in place. |
 | 6a. Profile avatar UI integration | Not Started | — | — |  |
-| 7. Tests & Docs | Not Started | — | — |  |
+| 7. Tests & Docs | In Progress | 21/9/2025 | — | Server tests (owner/path/ext) and overlay UI tests added; docs updated (Server Actions, Tech Spec, Schema, Ops, Changelog). |
 
 ## Risk Mitigation
 
