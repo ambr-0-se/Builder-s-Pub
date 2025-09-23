@@ -455,8 +455,8 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 6. Server: list + ranking | Completed | 23/9/2025 | 23/9/2025 | mode/role ranking; tests/build green |
 | 7. API & client plumb | Completed | 23/9/2025 | 23/9/2025 | API route + client serialize mode/role |
 | 8. Validation: duplicate roles | Completed | 23/9/2025 | 23/9/2025 | Zod duplicate role prevention; tests/build green |
-| 9. /collaborations shell | Not Started | — | — |  |
-| 10. Filters + single search | Not Started | — | — |  |
+| 9. /collaborations shell | Completed | 23/9/2025 | 23/9/2025 | Added client shell with initial fetch |
+| 10. Filters + single search | In Progress | 23/9/2025 | — | Client shell ready; filters next |
 | 11. Analytics (project mode) | Not Started | — | — |  |
 | 12. Roles suggestions API | Not Started | — | — |  |
 | 13. Role suggestions in search | Not Started | — | — |  |
