@@ -17,6 +17,7 @@ import { TagMultiSelect } from "@/components/ui/tag-multiselect"
 import { showToast } from "@/components/ui/toast"
 import { LogoUploader } from "@/components/ui/logo-uploader"
 import { requestNewCollabLogoUploadAction } from "@/app/collaborations/actions"
+import ComboboxCreatable from "@/components/ui/combobox-creatable"
 
 export default function NewCollaborationPage() {
   const router = useRouter()
@@ -42,11 +43,45 @@ export default function NewCollaborationPage() {
   const [lookingFor, setLookingFor] = useState<Array<{ role: string; amount?: number; prerequisite: string; goodToHave: string; description: string }>>([
     { role: "", amount: 1, prerequisite: "", goodToHave: "", description: "" },
   ])
+  const [roleOptions, setRoleOptions] = useState<string[]>([])
+  const [roleErrors, setRoleErrors] = useState<string | null>(null)
   const [selectedTechTags, setSelectedTechTags] = useState<number[]>([])
   const [selectedCategoryTags, setSelectedCategoryTags] = useState<number[]>([])
   // filters handled within TagMultiSelect
 
   const errors = state?.fieldErrors || {}
+  useEffect(() => {
+    // Load curated roles for suggestions
+    let active = true
+    ;(async () => {
+      try {
+        const res = await fetch("/api/roles/list")
+        const json = await res.json()
+        const roles = Array.isArray(json) ? json : (Array.isArray(json.roles) ? json.roles : [])
+        if (active) setRoleOptions(roles)
+      } catch {
+        if (active) setRoleOptions([])
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  // Client-side duplicate-role prevention (case-insensitive) with inline error
+  useEffect(() => {
+    const seen = new Set<string>()
+    for (const r of lookingFor) {
+      const key = (r.role || "").trim().toLowerCase()
+      if (!key) continue
+      if (seen.has(key)) {
+        setRoleErrors("Duplicate roles are not allowed (case-insensitive).")
+        return
+      }
+      seen.add(key)
+    }
+    setRoleErrors(null)
+  }, [lookingFor])
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -227,14 +262,17 @@ export default function NewCollaborationPage() {
                 {/* Header row: Role + Amount */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
                   <div className="md:col-span-3">
-                    <Input
-                      id={`lf_role_${idx}`}
-                      name="lf_role"
-                      placeholder="Role (e.g., Frontend Engineer)"
+                    {/* Headless creatable combobox for role */}
+                    <ComboboxCreatable
                       value={row.role}
-                      onChange={(e) => updateRole(idx, "role", e.target.value)}
-                      error={errors.lookingFor}
+                      onChange={(next) => updateRole(idx, "role", next)}
+                      options={roleOptions}
+                      placeholder="Role (e.g., Frontend Engineer)"
+                      maxLength={80}
                     />
+                    {/* Hidden input to submit role value */}
+                    <input type="hidden" name="lf_role" value={row.role} />
+                    {roleErrors && <p className="text-xs text-red-600 mt-1">{roleErrors}</p>}
                   </div>
                   <Input
                     id={`lf_amount_${idx}`}
