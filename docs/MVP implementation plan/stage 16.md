@@ -250,7 +250,7 @@ Instrument `search_performed`/`filter_apply` with `search_mode`, add server/UI t
 
 **Tests:** None (covered by existing analytics mock; manual verification acceptable).
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 
@@ -457,7 +457,7 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 8. Validation: duplicate roles | Completed | 23/9/2025 | 23/9/2025 | Zod duplicate role prevention; tests/build green |
 | 9. /collaborations shell | Completed | 23/9/2025 | 23/9/2025 | Added client shell with initial fetch |
 | 10. Filters + single search | Completed | 23/9/2025 | 23/9/2025 | Reused FilterBar; unified search box wired to listCollabs |
-| 11. Analytics (project mode) | Not Started | — | — |  |
+| 11. Analytics (project mode) | Completed | 23/9/2025 | 23/9/2025 | Emits search_performed/filter_apply with search_mode=project |
 | 12. Roles suggestions API | Not Started | — | — |  |
 | 13. Role suggestions in search | Not Started | — | — |  |
 | 14. Split view UI | Not Started | — | — |  |

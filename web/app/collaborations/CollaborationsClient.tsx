@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { listCollabs as listCollabsClient } from "@/lib/api/collabs"
 import { LogoImage } from "@/components/ui/logo-image"
@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { formatProjectType } from "@/lib/collabs/options"
 import { Input } from "@/components/ui/input"
 import { FilterBar } from "@/components/features/projects/filter-bar"
+import { useAnalytics } from "@/lib/analytics"
 
 export default function CollaborationsClient() {
   const [items, setItems] = useState<any[]>([])
@@ -19,6 +20,8 @@ export default function CollaborationsClient() {
   const [selectedCategoryTags, setSelectedCategoryTags] = useState<number[]>([])
   const [selectedStages, setSelectedStages] = useState<string[]>([])
   const [selectedProjectTypes, setSelectedProjectTypes] = useState<string[]>([])
+  const lastFiltersSig = useRef<string | null>(null)
+  const { track } = useAnalytics()
 
   useEffect(() => {
     let mounted = true
@@ -49,7 +52,48 @@ export default function CollaborationsClient() {
     })
     setItems(items)
     setLoading(false)
+
+    // Analytics: search_performed (project mode)
+    try {
+      track("search_performed", {
+        type: "collabs",
+        search_mode: "project",
+        query: q.trim(),
+        techTagIds: selectedTechTags,
+        categoryTagIds: selectedCategoryTags,
+        stages: selectedStages,
+        projectTypes: selectedProjectTypes,
+        resultCount: items.length,
+      })
+    } catch {}
   }
+
+  // Analytics: filter_apply when filters change after an initial search
+  useEffect(() => {
+    if (!hasSearched) return
+    const signature = JSON.stringify({
+      techTagIds: selectedTechTags,
+      categoryTagIds: selectedCategoryTags,
+      stages: selectedStages,
+      projectTypes: selectedProjectTypes,
+    })
+    if (lastFiltersSig.current === signature) return
+    lastFiltersSig.current = signature
+    try {
+      track("filter_apply", {
+        type: "collabs",
+        search_mode: "project",
+        techTagIds: selectedTechTags,
+        categoryTagIds: selectedCategoryTags,
+        stages: selectedStages,
+        projectTypes: selectedProjectTypes,
+        triggeredBy: "filters",
+      })
+    } catch {}
+    // Optionally re-run search on filter change
+    performSearch()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTechTags, selectedCategoryTags, selectedStages, selectedProjectTypes])
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
