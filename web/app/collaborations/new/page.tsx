@@ -112,9 +112,10 @@ export default function NewCollaborationPage() {
       selectedCategoryTags.length > 0 &&
       tagsTotal <= 10 &&
       roles.length >= 1 &&
-      roles.length <= 5
+      roles.length <= 5 &&
+      !roleErrors
     )
-  }, [formData, selectedTechTags, selectedCategoryTags, lookingFor])
+  }, [formData, selectedTechTags, selectedCategoryTags, lookingFor, roleErrors])
 
   if (!isAuthenticated) {
     return (

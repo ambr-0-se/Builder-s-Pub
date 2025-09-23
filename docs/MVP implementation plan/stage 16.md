@@ -360,7 +360,7 @@ Instrument `search_performed`/`filter_apply` with `search_mode`, add server/UI t
 
 **Tests:** UI smoke (combobox shows suggestions; free text; duplicate disables submit) to be added in Step 16 tests.
 
-**Status:** In Progress
+**Status:** Completed
 
 ---
 
@@ -476,7 +476,7 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 13. Role suggestions in search | Completed | 23/9/2025 | 23/9/2025 | Input shows suggestions in role mode; keyboard selection |
 | 14. Split view UI | Completed | 23/9/2025 | 23/9/2025 | Toggle + split view + selected deep-link + highlight + role-mode ranking fallback + analytics; suggestions dismissible; ARIA added; scroll preserved; deep-link test |
 | 15. Headless combobox | Completed | 23/9/2025 | 23/9/2025 | Component + unit tests added |
-| 16. Form replace + dedupe check | In Progress | 23/9/2025 | — | Wired combobox; client duplicate warning; submit guard next |
+| 16. Form replace + dedupe check | Completed | 23/9/2025 | 23/9/2025 | Combobox integrated; hidden field mirrors value; client duplicate warning and submit disabled on dupes |
 | 17. Tests: server sync & ranking | Not Started | — | — |  |
 | 18. Tests: schema | Not Started | — | — |  |
 | 19. Analytics + docs + changelog | Not Started | — | — |  |
