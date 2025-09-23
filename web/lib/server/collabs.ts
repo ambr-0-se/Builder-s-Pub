@@ -418,6 +418,41 @@ export async function updateCollab(id: string, fields: UpdateCollabInput): Promi
 
   const { error } = await supabase.from("collaborations").update(update).eq("id", id)
   if (error) return { formError: error.message }
+  
+  // If roles were updated, refresh the collaboration_roles index (best-effort; non-fatal)
+  if (parsed.data.lookingFor !== undefined) {
+    try {
+      // Delete existing role rows for this collaboration id
+      await supabase.from("collaboration_roles").delete().eq("collaboration_id", id)
+      // Build new deduped roles set from lookingFor
+      const rolesRaw: string[] = Array.isArray(parsed.data.lookingFor)
+        ? (parsed.data.lookingFor as any[]).map((it) => String(it?.role || ""))
+        : []
+      const rolesClean = rolesRaw
+        .map((r) => r.trim().replace(/\s+/g, " "))
+        .filter((r) => r.length > 0)
+      if (rolesClean.length > 0) {
+        const seen = new Set<string>()
+        const dedup: string[] = []
+        for (const r of rolesClean) {
+          const k = r.toLowerCase()
+          if (!seen.has(k)) {
+            seen.add(k)
+            dedup.push(r)
+          }
+        }
+        if (dedup.length > 0) {
+          await supabase
+            .from("collaboration_roles")
+            .insert(dedup.map((role) => ({ collaboration_id: id, role })))
+        }
+      }
+    } catch (e: any) {
+      if (!(/relation .* does not exist/i.test(String(e?.message || "")) || e?.code === "42P01")) {
+        console.warn("refresh collaboration_roles on update failed", e)
+      }
+    }
+  }
   return { ok: true }
 }
 

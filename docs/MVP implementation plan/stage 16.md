@@ -450,8 +450,8 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 1. DB: trgm + collaboration_roles | Completed | 23/9/2025 | 23/9/2025 | Migration 20250923163755 added |
 | 2. DB: roles_catalog + seed | Completed | 23/9/2025 | 23/9/2025 | Migration 20250923164504 added |
 | 3. Contracts & types | Completed | 23/9/2025 | 23/9/2025 | types.ts + SERVER_ACTIONS.md updated |
-| 4. Server: sync on create | Completed | 23/9/2025 | 23/9/2025 | roles synced to collaboration_roles on create |
-| 5. Server: sync on update | Not Started | — | — |  |
+| 4. Server: sync on create | Completed | 23/9/2025 | 23/9/2025 | roles synced to collaboration_roles on create; tests green |
+| 5. Server: sync on update | Completed | 23/9/2025 | 23/9/2025 | roles re-synced to collaboration_roles on update; build green |
 | 6. Server: list + ranking | Not Started | — | — |  |
 | 7. API & client plumb | Not Started | — | — |  |
 | 8. Validation: duplicate roles | Not Started | — | — |  |
