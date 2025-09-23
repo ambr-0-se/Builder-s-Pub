@@ -157,7 +157,7 @@ Instrument `search_performed`/`filter_apply` with `search_mode`, add server/UI t
 
 **Tests:** Ranking test fixtures for both modes and `is_hiring` filtering.
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 
@@ -481,7 +481,7 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 17. Tests: server sync & ranking | Not Started | — | — |  |
 | 17. Tests: server sync & ranking | Completed | 23/9/2025 | 23/9/2025 | Added `collabs.role-sync.test.ts` and `collabs.role-search.test.ts` |
 | 18. Tests: schema | Completed | 23/9/2025 | 23/9/2025 | Added `schema/collabs.schema.test.ts` for dup + length |
-| 19. Analytics + docs + changelog | Not Started | — | — |  |
+| 19. Analytics + docs + changelog | Completed | 23/9/2025 | 23/9/2025 | ANALYTICS.md updated (search_mode, role, search_mode_change) |
 
 
 ## Risk Mitigation
