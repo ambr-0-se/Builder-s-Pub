@@ -155,6 +155,35 @@ create policy collab_upvotes_insert_auth on collaboration_upvotes for insert wit
 drop policy if exists collab_upvotes_delete_own on collaboration_upvotes;
 create policy collab_upvotes_delete_own on collaboration_upvotes for delete using (auth.uid() = user_id);
 
+-- Collaboration Roles (join table for roles search)
+alter table if exists collaboration_roles enable row level security;
+
+drop policy if exists collaboration_roles_select_all on collaboration_roles;
+create policy collaboration_roles_select_all on collaboration_roles for select using (true);
+
+-- Only the owner of the collaboration can modify its roles index
+drop policy if exists collaboration_roles_insert_owner on collaboration_roles;
+create policy collaboration_roles_insert_owner on collaboration_roles for insert with check (
+  exists (
+    select 1 from collaborations c
+    where c.id = collaboration_id and c.owner_id = auth.uid()
+  )
+);
+
+drop policy if exists collaboration_roles_delete_owner on collaboration_roles;
+create policy collaboration_roles_delete_owner on collaboration_roles for delete using (
+  exists (
+    select 1 from collaborations c
+    where c.id = collaboration_id and c.owner_id = auth.uid()
+  )
+);
+
+-- Roles Catalog (read-only; curated)
+alter table if exists roles_catalog enable row level security;
+
+drop policy if exists roles_catalog_select_all on roles_catalog;
+create policy roles_catalog_select_all on roles_catalog for select using (true);
+
 -- Collaboration Comments (top-level only for MVP)
 alter table if exists collab_comments enable row level security;
 
