@@ -373,8 +373,8 @@ export default function CollaborationsClient() {
           action={<Button asChild><Link href="/collaborations/new">Post Collaboration</Link></Button>}
         />
       ) : mode === "role" ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="space-y-3 md:col-span-1">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:h-[calc(100vh-160px)] md:overflow-hidden">
+          <div className="space-y-3 md:col-span-1 md:overflow-auto md:h-full md:pr-2">
             {items.map((item) => (
               <button
                 key={item.collaboration.id}
@@ -407,7 +407,7 @@ export default function CollaborationsClient() {
               </button>
             ))}
           </div>
-          <div className="md:col-span-2">
+          <div className="md:col-span-3 md:overflow-auto md:h-full md:pl-2">
             {!selectedId ? (
               <div className="text-gray-500 py-8">Select a role item on the left to view details.</div>
             ) : !detail ? (

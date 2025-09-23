@@ -15,12 +15,14 @@ export interface CollabDetailPanelProps {
 export function CollabDetailPanel({ item }: CollabDetailPanelProps) {
   const logoSrc = (item.collaboration as any).logoUrl || ""
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 overflow-auto max-h-[calc(100vh-280px)]">
+    <div className="bg-white rounded-lg border border-gray-200 p-6">
       <div className="flex items-start gap-3 mb-3">
         <LogoImage src={logoSrc} alt={item.collaboration.title} size={48} />
         <div>
           <h2 className="text-xl font-semibold text-gray-900">{item.collaboration.title}</h2>
-          <div className="text-sm text-gray-500">by {item.owner.displayName}</div>
+          <div className="text-sm text-gray-500">
+            Posted by {item.owner.displayName} on {item.collaboration.createdAt.toLocaleDateString?.() || new Date(item.collaboration.createdAt as any).toLocaleDateString()}
+          </div>
         </div>
       </div>
 
@@ -84,6 +86,10 @@ export function CollabDetailPanel({ item }: CollabDetailPanelProps) {
       <div className="mt-4">
         <h3 className="text-base font-semibold text-gray-900 mb-2">Contact</h3>
         <Contact value={item.collaboration.contact} />
+      </div>
+
+      <div className="mt-6 p-3 border border-yellow-300 bg-yellow-50 rounded-md text-sm text-yellow-900">
+        Warning: Posts are user-submitted and not verified. Beware of scams/risks, avoid suspicious links, and you are responsible for your actions.
       </div>
 
       <div className="mt-6">
