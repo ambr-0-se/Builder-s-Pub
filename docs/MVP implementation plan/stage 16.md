@@ -265,9 +265,9 @@ Instrument `search_performed`/`filter_apply` with `search_mode`, add server/UI t
 **Files:**
 - Add: `web/app/api/roles/list/route.ts`
 
-**Tests:** None (simple select); exercised by UI.
+**Tests:** API route unit test verifies shape and ordering.
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 
@@ -282,9 +282,9 @@ Instrument `search_performed`/`filter_apply` with `search_mode`, add server/UI t
 **Files:**
 - Change: `web/app/collaborations/CollaborationsClient.tsx`
 
-**Tests:** UI smoke (dropdown appears; Enter selects; free text allowed).
+**Tests:** UI tests verify suggestions appear, filter by input, and Enter selects.
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 
@@ -458,8 +458,8 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 9. /collaborations shell | Completed | 23/9/2025 | 23/9/2025 | Added client shell with initial fetch |
 | 10. Filters + single search | Completed | 23/9/2025 | 23/9/2025 | Reused FilterBar; unified search box wired to listCollabs |
 | 11. Analytics (project mode) | Completed | 23/9/2025 | 23/9/2025 | Emits search_performed/filter_apply with search_mode=project |
-| 12. Roles suggestions API | Not Started | — | — |  |
-| 13. Role suggestions in search | Not Started | — | — |  |
+| 12. Roles suggestions API | Completed | 23/9/2025 | 23/9/2025 | GET /api/roles/list returns alphabetized names |
+| 13. Role suggestions in search | Completed | 23/9/2025 | 23/9/2025 | Input shows suggestions in role mode; keyboard selection |
 | 14. Split view UI | Not Started | — | — |  |
 | 15. Headless combobox | Not Started | — | — |  |
 | 16. Form replace + dedupe check | Not Started | — | — |  |

@@ -3,6 +3,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, cleanup } from "@testing-library/react"
 import React from "react"
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(""),
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+}))
+
 vi.mock("@/lib/api/collabs", () => {
   return {
     listCollabs: vi.fn(async () => {

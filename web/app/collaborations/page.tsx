@@ -1,9 +1,14 @@
 import CollaborationsClient from "./CollaborationsClient"
+import { Suspense } from "react"
 
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
 export default function CollaborationsPage() {
-  return <CollaborationsClient />
+  return (
+    <Suspense>
+      <CollaborationsClient />
+    </Suspense>
+  )
 }
