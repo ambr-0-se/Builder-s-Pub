@@ -51,7 +51,7 @@ Rate limits (server-enforced)
 Collaborations
 - createCollab(input): `{ title≤160, affiliatedOrg?, projectTypes[], description 1–4000, stage, lookingFor[1..5]{ role, amount(1..99), prerequisite≤400, goodToHave≤400, description≤1200 }, contact≤200, remarks≤1000, techTagIds[], categoryTagIds[], logoPath? } -> { id } | validation_error`
   - Rate limit: 5 per day per user (`collab_create` action, 24-hour window)
-- listCollabs(params): `{ cursor?, limit=20, q?, techTagIds?, categoryTagIds?, stages?, projectTypes? } -> { items[], nextCursor? }` (defaults to `is_hiring=true`).
+- listCollabs(params): `{ cursor?, limit=20, q?, techTagIds?, categoryTagIds?, stages?, projectTypes?, mode?, role? } -> { items[], nextCursor? }` (defaults to `is_hiring=true`).
   - Each item exposes `collaboration.logoUrl` (derived) and `collaboration.logoPath` (storage key). `logoUrl` is a public URL built from `logoPath`.
   - Empty or absent filters are ignored. Tag filters are AND across types, OR within a type. `stages?` is an array (OR inside stage facet).
 - getCollab(id): `-> { collaboration, tags, owner, upvoteCount, hasUserUpvoted, comments }`
@@ -96,7 +96,10 @@ Conventions (Search)
 - Case-insensitive substring matching for `q`.
 - Ranking:
   - Projects: prioritize title > tagline > description; tie-break by upvotes desc, then created_at desc.
-  - Collaborations: prioritize title/description (and optionally roles text if present); tie-break by created_at desc. Filters for `stages[]`, `projectTypes[]`, `techTagIds`, `categoryTagIds` apply; empty filters are ignored.
+  - Collaborations:
+    - mode='role': prioritize role match > title > description; tie-break by created_at desc; `is_hiring=false` excluded by default.
+    - mode='project' (default): prioritize title > description > role match; tie-break by created_at desc.
+  - Filters for `stages[]`, `projectTypes[]`, `techTagIds`, `categoryTagIds` apply; empty filters are ignored.
 - Facet “All” chip: selecting “All” for any facet is equivalent to no selection for that facet.
 
 References

@@ -40,6 +40,7 @@ describe("analytics search events (schema-level)", () => {
     const { track } = useAnalytics()
     track("search_performed", {
       type: "projects",
+      search_mode: "project",
       query: "test",
       techTagIds: [1],
       categoryTagIds: [2],
@@ -48,6 +49,44 @@ describe("analytics search events (schema-level)", () => {
     await new Promise((r) => setTimeout(r, 0))
     const rows = log.mock.calls.map((a) => String(a[0]))
     expect(rows.some((s) => s.includes("search_performed"))).toBe(true)
+    log.mockRestore()
+  })
+
+  it("emits search_performed in role mode including role property", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {})
+    const { track } = useAnalytics()
+    track("search_performed", {
+      type: "collabs",
+      search_mode: "role",
+      role: "AI Engineer",
+      query: "AI Engineer",
+      techTagIds: [],
+      categoryTagIds: [],
+      stages: [],
+      projectTypes: [],
+      resultCount: 3,
+    })
+    await new Promise((r) => setTimeout(r, 0))
+    const rows = log.mock.calls.map((a) => String(a[0]))
+    expect(rows.some((s) => s.includes("search_performed"))).toBe(true)
+    log.mockRestore()
+  })
+
+  it("emits search_mode_change with from/to and current facets", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {})
+    const { track } = useAnalytics()
+    track("search_mode_change", {
+      type: "collabs",
+      from: "project",
+      to: "role",
+      techTagIds: [1,2],
+      categoryTagIds: [10],
+      stages: ["mvp_development"],
+      projectTypes: ["open_source"],
+    })
+    await new Promise((r) => setTimeout(r, 0))
+    const rows = log.mock.calls.map((a) => String(a[0]))
+    expect(rows.some((s) => s.includes("search_mode_change"))).toBe(true)
     log.mockRestore()
   })
 })

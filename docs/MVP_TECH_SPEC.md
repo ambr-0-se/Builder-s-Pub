@@ -81,8 +81,8 @@ Server Actions / API Contracts (shapes)
 - updateProject(id, fields): owner-only -> { ok: true }
 - deleteProject(id): owner-only (soft delete) -> { ok: true }
 
-- createCollab(input): { title, affiliatedOrg?, projectTypes[], description, stage, lookingFor[], contact, remarks?, techTagIds[], categoryTagIds[], role? } -> { id }
-- listCollabs(params): { cursor?, limit=20, q?, techTagIds?, categoryTagIds?, stages?, projectTypes?, role? } -> { items[], nextCursor? }
+- createCollab(input): { title, affiliatedOrg?, projectTypes[], description, stage, lookingFor[], contact, remarks?, techTagIds[], categoryTagIds[] } -> { id }
+- listCollabs(params): { cursor?, limit=20, q?, techTagIds?, categoryTagIds?, stages?, projectTypes?, mode?, role? } -> { items[], nextCursor? }
 - requestCollabLogoUpload(collabId): owner-only -> { uploadUrl, path, maxBytes, mime }
 - requestNewCollabLogoUpload(): auth-only -> { uploadUrl, path, maxBytes, mime } (used on create form before id exists)
  - Rendering: server maps `logo_path` to `logoUrl` using `${NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/<path>`; clients render `logoUrl` with center-crop.
@@ -110,9 +110,11 @@ Tag Governance
 Search & Trending
 - Search (MVP algorithm):
   - Projects: case-insensitive substring over title, tagline, description.
-  - Collaborations: case-insensitive substring over title, description, and skills list.
+  - Collaborations: case-insensitive substring over title, description, and roles (derived from `collaboration_roles`).
   - Ranking (projects): title match > tagline match > description match; tie-break by upvotes desc, then created_at desc.
-  - Ranking (collabs): title/description/skills match; tie-break by created_at desc.
+  - Ranking (collabs):
+    - mode='role': role match > title match > description match; tie-break by created_at desc.
+    - mode='project' (default): title match > description match > role match; tie-break by created_at desc.
 - Trending: order by upvotes desc, then created_at desc (simple MVP).
 
 Rate Limits (Implemented - Aligned Strategy)
@@ -134,7 +136,10 @@ References
 - Schema: `supabase/schema.sql` and `supabase/schema.md`
 -  - Additions for MVP:
 -    - Projects/Collabs: `logo_path text null`, `deleted_at timestamptz null` (soft delete)
--    - Collaborations: `role text null` (simple field; consider normalization later)
+-    - Stage 16: Normalized roles via `collaboration_roles (collaboration_id uuid, role text)` with unique `(collaboration_id, lower(role))` and trigram index on `lower(role)`; curated `roles_catalog (id serial, name text unique)` for suggestions.
+  - RLS (Stage 16 additions):
+    - `collaboration_roles`: public select; insert/delete only when `auth.uid()` owns the parent collaboration (validated via join in RLS policy).
+    - `roles_catalog`: public select (read-only; curated via migrations/admin).
 - RLS: `supabase/rls_policies.sql`
 - NFRs: `docs/NFR.md`
 - Analytics: `docs/ANALYTICS.md`
@@ -289,9 +294,15 @@ Profile avatars (Step 6a)
 - Paths: `profile-avatars/<userId>/<uuid>.<ext>`; no finalize-on-submit required.
   - Done when: owners upload ≤ 1MB images (PNG/JPEG/SVG); logos render on lists/detail; change/remove works without page reload; broken/missing logos fall back; tests cover RLS access and client validation.
 
-- Stage 16 — Collaboration by role (post + search) — Planned
-  - Tasks: add optional `role` to collab schema and forms (controlled vocab or free text with suggestions); update `/search` to filter by role; analytics for role usage.
-  - Done when: users can set role on create/edit; search filters by role; indexing present; validation enforced.
+- Stage 16 — Collaboration by role (post + search) — In Progress
+  - Tasks:
+    - DB: add `collaboration_roles` join table; add trigram index on `lower(role)`; add `roles_catalog` with curated roles.
+    - Server: sync `collaboration_roles` from `looking_for[].role` on create/update; extend `listCollabs(params)` with `mode?: 'project'|'role'` and `role?: string`; enforce `is_hiring !== false` in role results; implement mode‑aware ranking.
+    - UI: `/collaborations` supports two modes with one search box; in By role mode, show split view (left: logo, role, project title; right: full detail) and suggest roles from `roles_catalog` while allowing free text. Form uses a headless “creatable” combobox for each role; prevent duplicate roles.
+  - UX details: Mode toggle is a compact, inline segmented control adjacent to the search. Role suggestions dropdown supports keyboard (↑/↓/Enter), Escape-to-close, outside-click-to-close, and a “Hide” button.
+  - Form UX: role fields use a headless creatable combobox with curated suggestions; case-insensitive duplicate roles blocked client-side (inline error + disabled submit) and server-side via Zod; each role capped at 80 chars.
+    - Analytics: include `search_mode` (role|project) and `role` when applicable in `search_performed` and `filter_apply`.
+  - Done when: role search and split view work with correct ranking; closed posts excluded from role results; form uses combobox with duplicate prevention; indexes present; docs/tests updated.
 
 - Stage 17 — Collaboration visibility (auth-only) — Planned
   - Tasks: gate `/collaborations` and `/collaborations/[id]` behind authentication; anonymous users are redirected to sign-in or see a friendly login-required screen; update navbar/links to hide collaboration entry points for non-auth users; enforce RLS to deny `select` on collaboration tables for anon; update tests and docs accordingly.

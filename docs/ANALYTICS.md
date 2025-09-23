@@ -25,22 +25,41 @@ Core Events
 - collab_create
 - search_performed
 - filter_apply
- - external_link_disclaimer_shown
- - external_link_proceed
+- external_link_disclaimer_shown
+- external_link_proceed
+- search_mode_change
 
 Event Properties (by context)
 - Common: userId (anon or authed), sessionId, ts
 - project_*: projectId, techTags, categoryTags
 - comments: commentId, parentCommentId?, projectId
 - upvote_toggled: target (project|comment|collaboration), targetId, upvoted (boolean), limited? (boolean), retryAfterSec?
-- search_performed: type ('projects'|'collabs'), query, techTagIds, categoryTagIds, resultCount, stages? (collabs), projectTypes? (collabs)
+- search_performed: 
+  - type ('projects'|'collabs')
+  - search_mode ('project'|'role')
+  - query (string)
+  - role? (string; present when search_mode='role')
+  - techTagIds (number[])
+  - categoryTagIds (number[])
+  - stages? (string[]; collabs only)
+  - projectTypes? (string[]; collabs only)
+  - resultCount (number)
 - filter_apply (unified schema):
   - type: 'projects'|'collabs'
+  - search_mode ('project'|'role')
   - techTagIds: number[]
   - categoryTagIds: number[]
   - stages?: string[] (collabs only)
   - projectTypes?: string[] (collabs only)
   - triggeredBy?: 'filters'
+- search_mode_change:
+  - type: 'collabs'
+  - from: 'project'|'role'
+  - to: 'project'|'role'
+  - techTagIds: number[]
+  - categoryTagIds: number[]
+  - stages?: string[]
+  - projectTypes?: string[]
 - collab_*: collabId, kind
 
 Funnels
@@ -54,13 +73,11 @@ Implementation Notes
   - upvote_toggled (project|comment) with upvoted, limited?, retryAfterSec?
 - Derive trending with upvotes and recency in backend; no client-side ranking.
 - Respect user privacy; do not log PII in event properties.
- - External links: the disclaimer component emits `external_link_disclaimer_shown` and `external_link_proceed` with `{ href, host }` (no PII). The click itself opens with `noopener,noreferrer`.
+- External links: the disclaimer component emits `external_link_disclaimer_shown` and `external_link_proceed` with `{ href, host }` (no PII). The click itself opens with `noopener,noreferrer`.
 
 Verification (MVP mock)
 - Open the terminal running `pnpm dev` to see lines prefixed with `[Analytics]` when you add/delete comments, add replies, or toggle upvotes.
 - Browser DevTools will not show these mock logs unless additional client-side mirroring is added.
-
----
 
 Configuration & Verification (PostHog)
 
@@ -87,7 +104,8 @@ Manual verification checklist
 2) Interact to trigger client events:
    - Project view: open a project detail page; after ~1s, expect a request to PostHog (`/e/` endpoint) and the event `project_view` in the dashboard’s Live Events.
    - Apply filters on `/projects`: expect `filter_apply` (normalized from legacy `filters_applied`).
-   - Perform a search on `/search` for both tabs: expect `search_performed` with properties.
+   - Perform a search on `/collaborations` in both modes: expect `search_performed` with properties (`search_mode` and `role` when in role mode).
+   - Toggle mode on `/collaborations`: expect `search_mode_change` with from/to and current facet arrays.
 3) Check PostHog → Events/Live: confirm events appear with expected properties (no PII).
 4) Server events: check terminal running `pnpm dev` for `[Analytics][server] ...` lines:
    - `project_create` after successful create.

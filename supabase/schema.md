@@ -14,6 +14,8 @@ Tables
  - comment_upvotes(comment_id FK, user_id FK, created_at) — PK(comment_id, user_id)
  - rate_limits(action, user_id, window_start, count) — simple per-user windowed counter
 - collaborations(id PK, owner_id FK, kind, title, description, affiliated_org, project_types text[], stage, looking_for jsonb, contact, remarks, is_hiring boolean, soft_deleted, created_at)
+ - collaboration_roles(collaboration_id FK, role text) — unique(collaboration_id, lower(role))
+ - roles_catalog(id PK, name text unique)
 
 Relationships
 - profiles 1:1 auth.users
@@ -33,6 +35,8 @@ Indexes (key)
 - tags(type, name)
 - uq_tags_type_lower_name unique(type, lower(name)) — prevents case-insensitive duplicates (e.g., 'nlp' vs 'NLP')
 - project_tags(tag_id, project_id)
+ - uq_collab_roles_ci unique(collaboration_id, lower(role))
+ - idx_collab_roles_role_trgm gin(lower(role) gin_trgm_ops) — fast ILIKE for roles
 
 RLS Summary
 - profiles: select all; insert/update only self
@@ -45,6 +49,8 @@ Notes (Stage 3 Profiles)
 - comments: select soft_deleted=false; insert only author; delete only author
 - project_upvotes: select all; insert/delete only same user
 - collaborations: select soft_deleted=false; insert/update/delete only owner; `is_hiring` controls default list visibility
+ - collaboration_roles: public select; insert/delete only by collaboration owner (enforced via join to collaborations)
+ - roles_catalog: public select (curated read-only)
 
 Notes (Stage 15 Logos & Avatars)
 - Columns added:

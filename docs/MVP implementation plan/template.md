@@ -98,15 +98,12 @@ Remaining steps
 
 At each step in 'Actionable and specific steps':
 
-- Explain clearly on what you are doing and the rationale behind with layman's term, and add detailed explanation if technical term is used. 
-- Inspect relevant code, documents, and ‘.cursorrules’ before making change.
-- Code the changes, and make sure codes are robust, reusable and modular. 
-- Identidy the files that the code would affect and prevent any bug.
-- Add testcases for the change. Then, make sure all testcases are passed.
-- Guide user to review the code changes and functionality change in UI.
-- After user's review and approval, update progress tracking and other relevant documents.
-- Lastly, commit and push changes to Github.
-- ONLY when everything above is done, proceed to the next step in ‘Actionable and specific steps’
+- Explain clearly what we are doing and why (layman’s terms), add technical details when terms are used.
+- Inspect relevant code, documents, and `.cursorrules` before making changes.
+- Implement minimal, robust, reusable code; identify all affected files to prevent regressions.
+- Add/adjust tests; ensure all tests pass and build is green.
+- Guide user to review code/UI; after approval, update progress tracking and docs.
+- AFTER user's approval, commit with Conventional Commits and push. ONLY then proceed to the next step.
 
 If you need help from user, give clear instructions to user on how to do it or what needs to be decided on.
 

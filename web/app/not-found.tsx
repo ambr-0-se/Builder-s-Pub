@@ -1,4 +1,3 @@
-"use client"
 import Link from "next/link"
 
 export default function NotFound() {
@@ -9,12 +8,6 @@ export default function NotFound() {
         The page you’re looking for doesn’t exist or may have been moved.
       </p>
       <div className="mt-6 flex items-center justify-center gap-3">
-        <button
-          onClick={() => (typeof window !== "undefined" ? window.history.back() : null)}
-          className="inline-flex items-center rounded-md bg-gray-100 px-4 py-2 text-gray-800 hover:bg-gray-200"
-        >
-          Go back
-        </button>
         <Link
           href="/"
           className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"

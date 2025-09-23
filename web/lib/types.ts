@@ -93,6 +93,9 @@ export interface ListCollabsParams {
   // Additional filters (ignore when empty/undefined)
   stages?: string[]
   projectTypes?: string[]
+  // Stage 16: mode-aware ranking and role search
+  mode?: "project" | "role"
+  role?: string
   cursor?: string
   limit?: number
 }

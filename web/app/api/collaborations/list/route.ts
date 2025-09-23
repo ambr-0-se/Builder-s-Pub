@@ -6,6 +6,8 @@ export async function GET(req: Request) {
   const limit = Number(searchParams.get("limit") || "20")
   const q = searchParams.get("q") || undefined
   const cursor = searchParams.get("cursor") || undefined
+  const modeParam = searchParams.get("mode") || undefined
+  const roleParam = searchParams.get("role") || undefined
   const stagesParam = searchParams.getAll("stages").flatMap((v) => v.split(",").filter(Boolean))
   const projectTypesParam = searchParams.getAll("projectTypes").flatMap((v) => v.split(",").filter(Boolean))
   const projectTypes = projectTypesParam.length ? projectTypesParam : undefined
@@ -17,6 +19,8 @@ export async function GET(req: Request) {
       limit: Number.isFinite(limit) ? limit : 20,
       q,
       cursor,
+      mode: modeParam as any,
+      role: roleParam || undefined,
       stages: stagesParam.length ? stagesParam : undefined,
       projectTypes,
       techTagIds: tech.length ? tech : undefined,

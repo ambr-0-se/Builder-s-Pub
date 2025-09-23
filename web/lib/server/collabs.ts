@@ -133,6 +133,37 @@ export async function createCollab(input: CreateCollabInput): Promise<{ id: stri
     }
   }
 
+  // Sync roles index (collaboration_roles) from looking_for[].role (best-effort; non-fatal)
+  try {
+    const rolesRaw: string[] = Array.isArray(lookingFor)
+      ? (lookingFor as any[]).map((it) => String(it?.role || ""))
+      : []
+    const rolesClean = rolesRaw
+      .map((r) => r.trim().replace(/\s+/g, " "))
+      .filter((r) => r.length > 0)
+    if (rolesClean.length > 0) {
+      const seen = new Set<string>()
+      const dedup: string[] = []
+      for (const r of rolesClean) {
+        const k = r.toLowerCase()
+        if (!seen.has(k)) {
+          seen.add(k)
+          dedup.push(r)
+        }
+      }
+      if (dedup.length > 0) {
+        await supabase
+          .from("collaboration_roles")
+          .insert(dedup.map((role) => ({ collaboration_id: collabId, role })))
+      }
+    }
+  } catch (e: any) {
+    // Tolerate environments where migration hasn't run yet
+    if (!(/relation .* does not exist/i.test(String(e?.message || "")) || e?.code === "42P01")) {
+      console.warn("sync collaboration_roles failed", e)
+    }
+  }
+
   // Finalize temp logo path after insert
   try {
     if (typeof (input as any).logoPath === "string" && (input as any).logoPath.startsWith("collab-logos/new/") && isTempPathForUser((input as any).logoPath, auth.user.id, "collab-logos")) {
@@ -159,6 +190,8 @@ export interface ListCollabsParams {
   stages?: string[]
   projectTypes?: string[]
   includeClosed?: boolean
+  mode?: "project" | "role"
+  role?: string
 }
 
 export async function listCollabs(params: ListCollabsParams = {}): Promise<{ items: CollaborationWithRelations[]; nextCursor?: string }> {
@@ -166,6 +199,8 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
   const limit = params.limit && params.limit > 0 ? params.limit : 20
   const hasQuery = typeof params.q === "string" && params.q.trim() !== ""
   const q = hasQuery ? params.q!.trim() : ""
+  const hasRoleQuery = typeof params.role === "string" && params.role.trim() !== ""
+  const roleNeedle = hasRoleQuery ? params.role!.trim() : ""
 
   // Decode cursor if present
   let cursor: any = null
@@ -251,31 +286,73 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
     filtered = filtered.filter((r: any) => r.is_hiring !== false)
   }
 
-  // Ranking for q: title match > description match; boost if any looking_for text matches
+  // Role-aware ranking: prefetch role matches map for scoring (best-effort)
+  let roleMatchSet: Set<string> | null = null
+  if (hasRoleQuery) {
+    try {
+      const { data: roleRows } = await anon
+        .from("collaboration_roles")
+        .select("collaboration_id")
+        .ilike("role", `%${roleNeedle}%`)
+      roleMatchSet = new Set<string>((roleRows || []).map((r: any) => r.collaboration_id as string))
+    } catch (e: any) {
+      if (!(/relation .* does not exist/i.test(String(e?.message || "")) || e?.code === "42P01")) throw e
+    }
+  }
+
+  // Ranking for q and/or role
   let itemsRanked: { row: any; s: number }[] | null = null
-  if (hasQuery) {
-    const needle = q.toLowerCase()
-    const match = (t: string | null | undefined, w: number) => (t && String(t).toLowerCase().includes(needle) ? w : 0)
-    itemsRanked = filtered.map((r: any) => {
-      const sTitle = match(r.title, 2)
-      const sDesc = match(r.description, 1)
-      let sRole = 0
-      const arr: any[] = Array.isArray(r.looking_for) ? r.looking_for : []
-      for (const it of arr) {
-        if (match(it?.role, 1) || match(it?.prerequisite, 1) || match(it?.goodToHave, 1) || match(it?.description, 1)) {
-          sRole = 1
-          break
+  if (hasQuery || hasRoleQuery) {
+    const needleQ = q.toLowerCase()
+    const matchQ = (t: string | null | undefined) => (t && String(t).toLowerCase().includes(needleQ) ? 1 : 0)
+    const needleRole = roleNeedle.toLowerCase()
+    const matchRole = (t: string | null | undefined) => (t && String(t).toLowerCase().includes(needleRole) ? 1 : 0)
+    const weight = (key: "title" | "desc" | "role") => {
+      const isRoleMode = params.mode === "role"
+      if (isRoleMode) return key === "role" ? 3 : key === "title" ? 2 : 1
+      return key === "title" ? 3 : key === "desc" ? 2 : 1
+    }
+    itemsRanked = filtered
+      .map((r: any) => {
+        const sTitle = hasQuery ? matchQ(r.title) * weight("title") : 0
+        const sDesc = hasQuery ? matchQ(r.description) * weight("desc") : 0
+        // Role match from explicit role param using join table
+        const sRoleParam = hasRoleQuery && roleMatchSet ? (roleMatchSet.has(r.id) ? weight("role") : 0) : 0
+        // Role match from looking_for[] fallback: if hasQuery (legacy) OR hasRoleQuery (role mode), scan JSON
+        let sRoleQ = 0
+        const arr: any[] = Array.isArray(r.looking_for) ? r.looking_for : []
+        if (hasQuery || hasRoleQuery) {
+          for (const it of arr) {
+            const roleText = String(it?.role || "")
+            const preText = String(it?.prerequisite || "")
+            const goodText = String(it?.goodToHave || "")
+            const descText = String(it?.description || "")
+            const hit = hasQuery
+              ? (matchQ(roleText) || matchQ(preText) || matchQ(goodText) || matchQ(descText))
+              : (matchRole(roleText) || matchRole(preText) || matchRole(goodText) || matchRole(descText))
+            if (hit) {
+              sRoleQ = weight("role")
+              break
+            }
+          }
         }
-      }
-      return { row: r, s: sTitle + sDesc + sRole }
-    }).filter(({ s }) => s > 0)
+        const sRole = Math.max(sRoleParam, sRoleQ)
+        return { row: r, s: sTitle + sDesc + sRole }
+      })
+      .filter(({ s }) => s > 0)
     itemsRanked.sort((a, b) => {
       if (b.s !== a.s) return b.s - a.s
       return new Date(b.row.created_at).getTime() - new Date(a.row.created_at).getTime()
     })
-    if (cursor && cursor.mode === "q" && cursor.q === q && cursor.lastId) {
-      const idx = itemsRanked.findIndex(({ row }) => row.id === cursor.lastId)
-      if (idx >= 0) itemsRanked = itemsRanked.slice(idx + 1)
+    // Cursor slicing for role or q ranked results
+    if (cursor && itemsRanked.length > 0) {
+      if (cursor.mode === "q" && hasQuery && cursor.q === q && cursor.lastId) {
+        const idx = itemsRanked.findIndex(({ row }) => row.id === cursor.lastId)
+        if (idx >= 0) itemsRanked = itemsRanked.slice(idx + 1)
+      } else if (cursor.mode === "role" && hasRoleQuery && cursor.role === roleNeedle && cursor.lastId) {
+        const idx = itemsRanked.findIndex(({ row }) => row.id === cursor.lastId)
+        if (idx >= 0) itemsRanked = itemsRanked.slice(idx + 1)
+      }
     }
     filtered = itemsRanked.map(({ row }) => row)
   }
@@ -297,10 +374,12 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
   })
 
   // Build nextCursor
-  if (hasQuery) {
+  if (hasQuery || hasRoleQuery) {
     if ((itemsRanked || []).length > limit) {
       const last = items[items.length - 1]
-      const payload = { mode: "q", q, lastId: last.collaboration.id, createdAt: last.collaboration.createdAt.toISOString() }
+      const payload = hasQuery
+        ? { mode: "q", q, lastId: last.collaboration.id, createdAt: last.collaboration.createdAt.toISOString() }
+        : { mode: "role", role: roleNeedle, lastId: last.collaboration.id, createdAt: last.collaboration.createdAt.toISOString() }
       return { items, nextCursor: Buffer.from(JSON.stringify(payload), "utf8").toString("base64") }
     }
     return { items }
@@ -387,6 +466,41 @@ export async function updateCollab(id: string, fields: UpdateCollabInput): Promi
 
   const { error } = await supabase.from("collaborations").update(update).eq("id", id)
   if (error) return { formError: error.message }
+  
+  // If roles were updated, refresh the collaboration_roles index (best-effort; non-fatal)
+  if (parsed.data.lookingFor !== undefined) {
+    try {
+      // Delete existing role rows for this collaboration id
+      await supabase.from("collaboration_roles").delete().eq("collaboration_id", id)
+      // Build new deduped roles set from lookingFor
+      const rolesRaw: string[] = Array.isArray(parsed.data.lookingFor)
+        ? (parsed.data.lookingFor as any[]).map((it) => String(it?.role || ""))
+        : []
+      const rolesClean = rolesRaw
+        .map((r) => r.trim().replace(/\s+/g, " "))
+        .filter((r) => r.length > 0)
+      if (rolesClean.length > 0) {
+        const seen = new Set<string>()
+        const dedup: string[] = []
+        for (const r of rolesClean) {
+          const k = r.toLowerCase()
+          if (!seen.has(k)) {
+            seen.add(k)
+            dedup.push(r)
+          }
+        }
+        if (dedup.length > 0) {
+          await supabase
+            .from("collaboration_roles")
+            .insert(dedup.map((role) => ({ collaboration_id: id, role })))
+        }
+      }
+    } catch (e: any) {
+      if (!(/relation .* does not exist/i.test(String(e?.message || "")) || e?.code === "42P01")) {
+        console.warn("refresh collaboration_roles on update failed", e)
+      }
+    }
+  }
   return { ok: true }
 }
 
