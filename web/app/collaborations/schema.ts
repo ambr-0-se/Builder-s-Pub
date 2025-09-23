@@ -106,6 +106,16 @@ const createCollabBase = z.object({
 export const createCollabSchema = createCollabBase.superRefine((value, ctx) => {
     const techCount = value.techTagIds?.length || 0
     const catCount = value.categoryTagIds?.length || 0
+    // Enforce case-insensitive uniqueness for roles within a collaboration
+    const roles = Array.isArray(value.lookingFor)
+      ? value.lookingFor.map((r) => String(r.role || "").trim().toLowerCase()).filter(Boolean)
+      : []
+    if (roles.length > 0) {
+      const set = new Set(roles)
+      if (set.size !== roles.length) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Duplicate roles are not allowed", path: ["lookingFor"] })
+      }
+    }
     if (techCount > 5) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

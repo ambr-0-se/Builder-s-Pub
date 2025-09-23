@@ -133,7 +133,7 @@ Instrument `search_performed`/`filter_apply` with `search_mode`, add server/UI t
 
 **Tests:** Server test will assert replacement semantics (old rows removed, new rows present).
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 
@@ -436,7 +436,7 @@ At each step in 'Actionable and specific steps':
 - Explain clearly what we are doing and why (layman’s terms), add technical details when terms are used.
 - Inspect relevant code, documents, and `.cursorrules` before making changes.
 - Implement minimal, robust, reusable code; identify all affected files to prevent regressions.
-- Add/adjust tests; ensure all tests pass.
+- Add/adjust tests; ensure all tests pass and build is green.
 - Guide user to review code/UI; after approval, update progress tracking and docs.
 - AFTER user's approval, commit with Conventional Commits and push. ONLY then proceed to the next step.
 
@@ -454,7 +454,7 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 5. Server: sync on update | Completed | 23/9/2025 | 23/9/2025 | roles re-synced to collaboration_roles on update; build green |
 | 6. Server: list + ranking | Completed | 23/9/2025 | 23/9/2025 | mode/role ranking; tests/build green |
 | 7. API & client plumb | Completed | 23/9/2025 | 23/9/2025 | API route + client serialize mode/role |
-| 8. Validation: duplicate roles | Not Started | — | — |  |
+| 8. Validation: duplicate roles | Completed | 23/9/2025 | 23/9/2025 | Zod duplicate role prevention; tests/build green |
 | 9. /collaborations shell | Not Started | — | — |  |
 | 10. Filters + single search | Not Started | — | — |  |
 | 11. Analytics (project mode) | Not Started | — | — |  |

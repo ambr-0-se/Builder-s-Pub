@@ -101,7 +101,7 @@ At each step in 'Actionable and specific steps':
 - Explain clearly what we are doing and why (layman’s terms), add technical details when terms are used.
 - Inspect relevant code, documents, and `.cursorrules` before making changes.
 - Implement minimal, robust, reusable code; identify all affected files to prevent regressions.
-- Add/adjust tests; ensure all tests pass.
+- Add/adjust tests; ensure all tests pass and build is green.
 - Guide user to review code/UI; after approval, update progress tracking and docs.
 - AFTER user's approval, commit with Conventional Commits and push. ONLY then proceed to the next step.
 
