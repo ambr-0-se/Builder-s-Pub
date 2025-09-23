@@ -31,11 +31,25 @@ export default function CollaborationsClient() {
   const [roleOptions, setRoleOptions] = useState<string[]>([])
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false)
   const [activeIndex, setActiveIndex] = useState<number>(-1)
+  const dropdownRef = useRef<HTMLDivElement | null>(null)
   const filteredRoles = useMemo(() => {
     const needle = q.trim().toLowerCase()
     if (!needle) return roleOptions
     return roleOptions.filter((r) => r.toLowerCase().includes(needle))
   }, [q, roleOptions])
+
+  useEffect(() => {
+    function onDocMouseDown(e: MouseEvent) {
+      if (!showSuggestions) return
+      const el = dropdownRef.current
+      if (el && e.target instanceof Node && !el.contains(e.target)) {
+        setShowSuggestions(false)
+        setActiveIndex(-1)
+      }
+    }
+    document.addEventListener("mousedown", onDocMouseDown)
+    return () => document.removeEventListener("mousedown", onDocMouseDown)
+  }, [showSuggestions])
 
   // Split view selection (Step 14)
   const [selectedId, setSelectedId] = useState<string | null>(() => {
@@ -207,53 +221,7 @@ export default function CollaborationsClient() {
           <h1 className="text-3xl font-bold text-gray-900">Collaborations</h1>
           <p className="text-gray-600 mt-2">Find collaborators and join exciting projects</p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="hidden sm:flex gap-2">
-            <Button
-              variant={mode === "project" ? "default" : "outline"}
-              onClick={() => {
-                const sp = new URLSearchParams(searchParams as any)
-                sp.set("mode", "project")
-                setSelectedId(null)
-                sp.delete("selected")
-                try {
-                  track("search_mode_change", {
-                    from: mode,
-                    to: "project",
-                    techTagIds: selectedTechTags,
-                    categoryTagIds: selectedCategoryTags,
-                    stages: selectedStages,
-                    projectTypes: selectedProjectTypes,
-                  })
-                } catch {}
-                router.replace(`/collaborations?${sp.toString()}`)
-              }}
-            >
-              By project
-            </Button>
-            <Button
-              variant={mode === "role" ? "default" : "outline"}
-              onClick={() => {
-                const sp = new URLSearchParams(searchParams as any)
-                sp.set("mode", "role")
-                setSelectedId(null)
-                sp.delete("selected")
-                try {
-                  track("search_mode_change", {
-                    from: mode,
-                    to: "role",
-                    techTagIds: selectedTechTags,
-                    categoryTagIds: selectedCategoryTags,
-                    stages: selectedStages,
-                    projectTypes: selectedProjectTypes,
-                  })
-                } catch {}
-                router.replace(`/collaborations?${sp.toString()}`)
-              }}
-            >
-              By role
-            </Button>
-          </div>
+        <div className="flex justify-end">
           <Button asChild>
             <Link href="/collaborations/new">Post Collaboration</Link>
           </Button>
@@ -268,6 +236,63 @@ export default function CollaborationsClient() {
           }}
           className="flex gap-3 items-center"
         >
+          {/* Compact mode segmented control */}
+          <div data-testid="mode-toggle" className="flex items-center gap-1 rounded-full bg-gray-50 border border-gray-200 p-0.5">
+            <Button
+              type="button"
+              size="sm"
+              variant={mode === "project" ? "default" : "ghost"}
+              aria-pressed={mode === "project"}
+              onClick={() => {
+                const sp = new URLSearchParams(searchParams as any)
+                sp.set("mode", "project")
+                sp.delete("selected")
+                setSelectedId(null)
+                try {
+                  track("search_mode_change", {
+                    from: mode,
+                    to: "project",
+                    type: "collabs",
+                    techTagIds: selectedTechTags,
+                    categoryTagIds: selectedCategoryTags,
+                    stages: selectedStages,
+                    projectTypes: selectedProjectTypes,
+                  })
+                } catch {}
+                router.replace(`/collaborations?${sp.toString()}`)
+              }}
+              className="rounded-full px-3 py-1 text-xs font-medium"
+            >
+              By project
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={mode === "role" ? "default" : "ghost"}
+              aria-pressed={mode === "role"}
+              onClick={() => {
+                const sp = new URLSearchParams(searchParams as any)
+                sp.set("mode", "role")
+                sp.delete("selected")
+                setSelectedId(null)
+                try {
+                  track("search_mode_change", {
+                    from: mode,
+                    to: "role",
+                    type: "collabs",
+                    techTagIds: selectedTechTags,
+                    categoryTagIds: selectedCategoryTags,
+                    stages: selectedStages,
+                    projectTypes: selectedProjectTypes,
+                  })
+                } catch {}
+                router.replace(`/collaborations?${sp.toString()}`)
+              }}
+              className="rounded-full px-3 py-1 text-xs font-medium"
+            >
+              By role
+            </Button>
+          </div>
           <Input
             type="search"
             placeholder={mode === "role" ? "Search roles..." : "Search collaborations..."}
@@ -292,7 +317,11 @@ export default function CollaborationsClient() {
           <Button type="submit" disabled={loading}>{loading ? "Searching..." : "Search"}</Button>
         </form>
         {mode === "role" && showSuggestions && filteredRoles.length > 0 && (
-          <div className="mt-2 border border-gray-200 rounded-md bg-white shadow-sm max-w-2xl">
+          <div ref={dropdownRef} className="mt-2 border border-gray-200 rounded-md bg-white shadow-sm max-w-2xl">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
+              <span className="text-xs text-gray-500">Suggestions</span>
+              <Button size="sm" variant="ghost" onClick={() => setShowSuggestions(false)}>Hide</Button>
+            </div>
             <ul className="max-h-60 overflow-auto">
               {filteredRoles.slice(0, 10).map((name, idx) => (
                 <li

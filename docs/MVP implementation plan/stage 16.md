@@ -298,6 +298,8 @@ Instrument `search_performed`/`filter_apply` with `search_mode`, add server/UI t
 - Left item: use `LogoImage`; display first role (or matched role when available), project title; click sets `selected` in URL and state.
 - Right panel: render the same content as `collaborations/[id]` by calling existing server helper via a small API (`/api/collaborations/get?id=...`) or extracting a shared detail component.
 - Fetch list with `mode='role'` and `role=q`; hide `is_hiring=false`.
+- Mode toggle: compact segmented control inline with the search input (selected segment filled, unselected neutral) to clearly separate mode from the primary CTA.
+- Suggestions dropdown: in role mode, suggestions are dismissible via Escape, outside click, and a "Hide" button in the dropdown header; keyboard navigation (↑/↓/Enter) supported.
 
 **Files:**
 - Change: `web/app/collaborations/CollaborationsClient.tsx`
@@ -311,7 +313,7 @@ Instrument `search_performed`/`filter_apply` with `search_mode`, add server/UI t
 - Added in-page mode toggle (By project | By role) with URL sync (`mode`).
 - Implemented split view: left list (logo, matched role highlighted, title); right panel loads detail via `/api/collaborations/get?id=…`.
 - Persist selection in URL as `selected=<id>`; restore on load for deep-link.
-- Role suggestions dropdown and keyboard selection in role mode.
+- Role suggestions dropdown and keyboard selection in role mode; dropdown is dismissible via outside click/Escape/Hide button.
 - Ranking robustness: role mode also scans `looking_for[]` in addition to `collaboration_roles` map.
 - Analytics: track `search_mode_change` with from/to and current filters.
 **Next:** Optional: matched-role highlighting from join-map; deep-link restoration tests; UI polish.

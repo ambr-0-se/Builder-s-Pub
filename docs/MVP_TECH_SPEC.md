@@ -299,6 +299,7 @@ Profile avatars (Step 6a)
     - DB: add `collaboration_roles` join table; add trigram index on `lower(role)`; add `roles_catalog` with curated roles.
     - Server: sync `collaboration_roles` from `looking_for[].role` on create/update; extend `listCollabs(params)` with `mode?: 'project'|'role'` and `role?: string`; enforce `is_hiring !== false` in role results; implement mode‑aware ranking.
     - UI: `/collaborations` supports two modes with one search box; in By role mode, show split view (left: logo, role, project title; right: full detail) and suggest roles from `roles_catalog` while allowing free text. Form uses a headless “creatable” combobox for each role; prevent duplicate roles.
+  - UX details: Mode toggle is a compact, inline segmented control adjacent to the search. Role suggestions dropdown supports keyboard (↑/↓/Enter), Escape-to-close, outside-click-to-close, and a “Hide” button.
     - Analytics: include `search_mode` (role|project) and `role` when applicable in `search_performed` and `filter_apply`.
   - Done when: role search and split view work with correct ranking; closed posts excluded from role results; form uses combobox with duplicate prevention; indexes present; docs/tests updated.
 

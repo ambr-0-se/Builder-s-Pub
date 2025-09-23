@@ -67,6 +67,25 @@ describe("CollaborationsClient role suggestions", () => {
     fireEvent.keyDown(input, { key: "Enter" })
     expect((input as HTMLInputElement).value.length).toBeGreaterThan(0)
   })
+
+  it("closes suggestions when clicking outside", async () => {
+    render(<CollaborationsClient />)
+    const input = screen.getByPlaceholderText("Search roles...")
+    fireEvent.focus(input)
+    await screen.findByText("AI Engineer")
+    fireEvent.mouseDown(document.body)
+    expect(screen.queryByText("AI Engineer")).toBeNull()
+  })
+
+  it("closes suggestions when clicking Hide button", async () => {
+    render(<CollaborationsClient />)
+    const input = screen.getByPlaceholderText("Search roles...")
+    fireEvent.focus(input)
+    await screen.findByText("AI Engineer")
+    const hideBtn = screen.getByText("Hide")
+    fireEvent.click(hideBtn)
+    expect(screen.queryByText("AI Engineer")).toBeNull()
+  })
 })
 
 
