@@ -38,8 +38,17 @@ export default function CollaborationsClient() {
   }, [q, roleOptions])
 
   // Split view selection (Step 14)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(() => {
+    return (mode === "role" ? (searchParams.get("selected") as string | null) : null) || null
+  })
   const [detail, setDetail] = useState<any | null>(null)
+  useEffect(() => {
+    if (mode !== "role") return
+    const param = searchParams.get("selected")
+    if (param && param !== selectedId) setSelectedId(param)
+    if (!param && selectedId) setSelectedId(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, mode])
   useEffect(() => {
     let active = true
     if (mode !== "role" || !selectedId) {
@@ -206,6 +215,17 @@ export default function CollaborationsClient() {
                 const sp = new URLSearchParams(searchParams as any)
                 sp.set("mode", "project")
                 setSelectedId(null)
+                sp.delete("selected")
+                try {
+                  track("search_mode_change", {
+                    from: mode,
+                    to: "project",
+                    techTagIds: selectedTechTags,
+                    categoryTagIds: selectedCategoryTags,
+                    stages: selectedStages,
+                    projectTypes: selectedProjectTypes,
+                  })
+                } catch {}
                 router.replace(`/collaborations?${sp.toString()}`)
               }}
             >
@@ -217,6 +237,17 @@ export default function CollaborationsClient() {
                 const sp = new URLSearchParams(searchParams as any)
                 sp.set("mode", "role")
                 setSelectedId(null)
+                sp.delete("selected")
+                try {
+                  track("search_mode_change", {
+                    from: mode,
+                    to: "role",
+                    techTagIds: selectedTechTags,
+                    categoryTagIds: selectedCategoryTags,
+                    stages: selectedStages,
+                    projectTypes: selectedProjectTypes,
+                  })
+                } catch {}
                 router.replace(`/collaborations?${sp.toString()}`)
               }}
             >
@@ -316,7 +347,13 @@ export default function CollaborationsClient() {
               <button
                 key={item.collaboration.id}
                 className={`w-full text-left bg-white rounded-lg border p-4 hover:shadow ${selectedId === item.collaboration.id ? "border-blue-500" : "border-gray-200"}`}
-                onClick={() => setSelectedId(item.collaboration.id)}
+                onClick={() => {
+                  setSelectedId(item.collaboration.id)
+                  const sp = new URLSearchParams(searchParams as any)
+                  sp.set("mode", "role")
+                  sp.set("selected", item.collaboration.id)
+                  router.replace(`/collaborations?${sp.toString()}`)
+                }}
               >
                 <div className="flex items-center gap-3">
                   <LogoImage src={(item.collaboration as any).logoUrl || ""} alt={item.collaboration.title} size={32} />

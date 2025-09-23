@@ -12,6 +12,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 - Stage 16: Analytics — `/collaborations` emits `search_performed` and `filter_apply` with `search_mode='project'` and unified tag/stage/type properties.
 - Stage 16: Roles suggestions API — `GET /api/roles/list` returns alphabetized role names from curated catalog.
 - Stage 16: Role-mode suggestions — `/collaborations?mode=role` search box shows curated suggestions with keyboard selection.
+ - Stage 16: Role split view — in-page mode toggle; left list + right detail panel; selected deep-link via `selected=<id>`; matched role highlighting; ranking fallback scans `looking_for[]`.
 - Stage 15 (Logos & Avatars):
   - Public-read buckets: `project-logos`, `collab-logos`, `profile-avatars`; DB columns `projects.logo_path`, `collaborations.logo_path`, `profiles.avatar_path`.
   - Server actions: request/set/clear logo for projects and collaborations; request-new upload for create forms; `logoUrl` mapping via public URL.

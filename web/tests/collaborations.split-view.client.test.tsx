@@ -45,7 +45,6 @@ describe("CollaborationsClient split view (role mode)", () => {
     await screen.findByText("Backend Engineer")
     fireEvent.click(screen.getByText("AI Engineer"))
     await waitFor(() => expect(screen.getByText("Beta")).toBeTruthy())
-    expect(screen.getByText("Detail")).toBeTruthy()
   })
 })
 

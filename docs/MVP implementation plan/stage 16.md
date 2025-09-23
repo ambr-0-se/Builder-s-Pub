@@ -307,6 +307,14 @@ Instrument `search_performed`/`filter_apply` with `search_mode`, add server/UI t
 **Tests:** UI smoke (selection updates panel; deep link restores selection).
 
 **Status:** In Progress
+**Progress:**
+- Added in-page mode toggle (By project | By role) with URL sync (`mode`).
+- Implemented split view: left list (logo, matched role highlighted, title); right panel loads detail via `/api/collaborations/get?id=…`.
+- Persist selection in URL as `selected=<id>`; restore on load for deep-link.
+- Role suggestions dropdown and keyboard selection in role mode.
+- Ranking robustness: role mode also scans `looking_for[]` in addition to `collaboration_roles` map.
+- Analytics: track `search_mode_change` with from/to and current filters.
+**Next:** Optional: matched-role highlighting from join-map; deep-link restoration tests; UI polish.
 
 ---
 
@@ -460,7 +468,7 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 11. Analytics (project mode) | Completed | 23/9/2025 | 23/9/2025 | Emits search_performed/filter_apply with search_mode=project |
 | 12. Roles suggestions API | Completed | 23/9/2025 | 23/9/2025 | GET /api/roles/list returns alphabetized names |
 | 13. Role suggestions in search | Completed | 23/9/2025 | 23/9/2025 | Input shows suggestions in role mode; keyboard selection |
-| 14. Split view UI | In Progress | 23/9/2025 | — |  |
+| 14. Split view UI | In Progress | 23/9/2025 | — | Toggle + split view + selected deep-link + highlight + role-mode ranking fallback + analytics |
 | 15. Headless combobox | Not Started | — | — |  |
 | 16. Form replace + dedupe check | Not Started | — | — |  |
 | 17. Tests: server sync & ranking | Not Started | — | — |  |

@@ -37,6 +37,26 @@ describe("CollaborationsClient mode toggle", () => {
     const url = String(replaceMock.mock.calls[0][0])
     expect(url).toContain("mode=role")
   })
+
+  it("clicking a left item persists selected in URL when in role mode", async () => {
+    ;(global.fetch as any) = vi.fn(async () => ({ ok: true, json: async () => ({ item: { collaboration: { id: "c1", title: "T" }, owner: { displayName: "U" } } }) }))
+    // Re-mock to return items
+    const api = await import("@/lib/api/collabs")
+    ;(api as any).listCollabs.mockResolvedValueOnce({
+      items: [
+        { collaboration: { id: "c1", title: "Alpha", description: "", createdAt: new Date(), lookingFor: [{ role: "R" }] }, owner: { displayName: "A" }, upvoteCount: 0 },
+      ],
+    })
+    // Pretend role mode
+    ;(await import("next/navigation")).useSearchParams = () => new URLSearchParams("mode=role") as any
+    render(<CollaborationsClient />)
+    await screen.findByText("R")
+    fireEvent.click(screen.getByText("R"))
+    await waitFor(() => expect(replaceMock).toHaveBeenCalled())
+    const url = String(replaceMock.mock.calls.pop()?.[0] || "")
+    expect(url).toContain("mode=role")
+    expect(url).toContain("selected=c1")
+  })
 })
 
 
