@@ -7,10 +7,18 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
 import { formatProjectType } from "@/lib/collabs/options"
+import { Input } from "@/components/ui/input"
+import { FilterBar } from "@/components/features/projects/filter-bar"
 
 export default function CollaborationsClient() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState<boolean>(true)
+  const [q, setQ] = useState<string>("")
+  const [hasSearched, setHasSearched] = useState<boolean>(false)
+  const [selectedTechTags, setSelectedTechTags] = useState<number[]>([])
+  const [selectedCategoryTags, setSelectedCategoryTags] = useState<number[]>([])
+  const [selectedStages, setSelectedStages] = useState<string[]>([])
+  const [selectedProjectTypes, setSelectedProjectTypes] = useState<string[]>([])
 
   useEffect(() => {
     let mounted = true
@@ -27,6 +35,22 @@ export default function CollaborationsClient() {
     }
   }, [])
 
+  async function performSearch() {
+    setLoading(true)
+    setHasSearched(true)
+    const { items } = await listCollabsClient({
+      q: q.trim() || undefined,
+      techTagIds: selectedTechTags.length ? selectedTechTags : undefined,
+      categoryTagIds: selectedCategoryTags.length ? selectedCategoryTags : undefined,
+      stages: selectedStages.length ? selectedStages : undefined,
+      projectTypes: selectedProjectTypes.length ? selectedProjectTypes : undefined,
+      limit: 20,
+      mode: "project",
+    })
+    setItems(items)
+    setLoading(false)
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between mb-8">
@@ -40,7 +64,41 @@ export default function CollaborationsClient() {
       </div>
 
       <div className="mb-6">
-        <p className="text-sm text-gray-600">{loading ? "Loading..." : `${items.length} collaborations found`}</p>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            performSearch()
+          }}
+          className="flex gap-3 items-center"
+        >
+          <Input
+            type="search"
+            placeholder="Search collaborations..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="flex-1"
+          />
+          <Button type="submit" disabled={loading}>{loading ? "Searching..." : "Search"}</Button>
+        </form>
+        <div className="mt-4">
+          <FilterBar
+            selectedTechTags={selectedTechTags}
+            selectedCategoryTags={selectedCategoryTags}
+            onTechTagsChange={setSelectedTechTags}
+            onCategoryTagsChange={setSelectedCategoryTags}
+            selectedStages={selectedStages}
+            onStagesChange={setSelectedStages}
+            selectedProjectTypes={selectedProjectTypes}
+            onProjectTypesChange={setSelectedProjectTypes}
+            onClear={() => {
+              setSelectedTechTags([])
+              setSelectedCategoryTags([])
+              setSelectedStages([])
+              setSelectedProjectTypes([])
+            }}
+          />
+        </div>
+        <p className="text-sm text-gray-600 mt-2">{loading ? "Loading..." : `${items.length} collaborations found`}</p>
       </div>
 
       {loading ? (

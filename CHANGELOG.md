@@ -8,6 +8,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
+- Stage 16: Collaborations — unified search box and reusable FilterBar on `/collaborations` (project mode). Client shell in place to enable role mode split view next.
 - Stage 15 (Logos & Avatars):
   - Public-read buckets: `project-logos`, `collab-logos`, `profile-avatars`; DB columns `projects.logo_path`, `collaborations.logo_path`, `profiles.avatar_path`.
   - Server actions: request/set/clear logo for projects and collaborations; request-new upload for create forms; `logoUrl` mapping via public URL.

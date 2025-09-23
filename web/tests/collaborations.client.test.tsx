@@ -38,6 +38,32 @@ vi.mock("@/components/ui/logo-image", () => {
   }
 })
 
+// Avoid real Supabase fetch in FilterBar/useTags
+vi.mock("@/hooks/useTags", () => {
+  return {
+    useTags: () => ({ technology: [], category: [], loading: false, error: null }),
+  }
+})
+
+vi.mock("@/components/features/projects/filter-bar", () => {
+  return {
+    FilterBar: ({ onClear }: any) => (
+      <div>
+        <button onClick={() => onClear && onClear()}>Clear All</button>
+      </div>
+    ),
+  }
+})
+
+// Mock Input to avoid forwardRef/React import issues in jsdom
+vi.mock("@/components/ui/input", () => {
+  return {
+    Input: ({ value, onChange, placeholder, className, type = "text" }: any) => (
+      <input type={type} value={value} onChange={onChange} placeholder={placeholder} className={className} />
+    ),
+  }
+})
+
 import CollaborationsClient from "@/app/collaborations/CollaborationsClient"
 
 describe("CollaborationsClient", () => {
