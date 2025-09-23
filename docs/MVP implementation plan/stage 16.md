@@ -452,8 +452,8 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 3. Contracts & types | Completed | 23/9/2025 | 23/9/2025 | types.ts + SERVER_ACTIONS.md updated |
 | 4. Server: sync on create | Completed | 23/9/2025 | 23/9/2025 | roles synced to collaboration_roles on create; tests green |
 | 5. Server: sync on update | Completed | 23/9/2025 | 23/9/2025 | roles re-synced to collaboration_roles on update; build green |
-| 6. Server: list + ranking | Not Started | — | — |  |
-| 7. API & client plumb | Not Started | — | — |  |
+| 6. Server: list + ranking | Completed | 23/9/2025 | 23/9/2025 | mode/role ranking; tests/build green |
+| 7. API & client plumb | Completed | 23/9/2025 | 23/9/2025 | API route + client serialize mode/role |
 | 8. Validation: duplicate roles | Not Started | — | — |  |
 | 9. /collaborations shell | Not Started | — | — |  |
 | 10. Filters + single search | Not Started | — | — |  |

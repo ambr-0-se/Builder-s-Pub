@@ -190,6 +190,8 @@ export interface ListCollabsParams {
   stages?: string[]
   projectTypes?: string[]
   includeClosed?: boolean
+  mode?: "project" | "role"
+  role?: string
 }
 
 export async function listCollabs(params: ListCollabsParams = {}): Promise<{ items: CollaborationWithRelations[]; nextCursor?: string }> {
@@ -197,6 +199,8 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
   const limit = params.limit && params.limit > 0 ? params.limit : 20
   const hasQuery = typeof params.q === "string" && params.q.trim() !== ""
   const q = hasQuery ? params.q!.trim() : ""
+  const hasRoleQuery = typeof params.role === "string" && params.role.trim() !== ""
+  const roleNeedle = hasRoleQuery ? params.role!.trim() : ""
 
   // Decode cursor if present
   let cursor: any = null
@@ -282,31 +286,69 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
     filtered = filtered.filter((r: any) => r.is_hiring !== false)
   }
 
-  // Ranking for q: title match > description match; boost if any looking_for text matches
+  // Role-aware ranking: prefetch role matches map for scoring (best-effort)
+  let roleMatchSet: Set<string> | null = null
+  if (hasRoleQuery) {
+    try {
+      const { data: roleRows } = await anon
+        .from("collaboration_roles")
+        .select("collaboration_id")
+        .ilike("role", `%${roleNeedle}%`)
+      roleMatchSet = new Set<string>((roleRows || []).map((r: any) => r.collaboration_id as string))
+    } catch (e: any) {
+      if (!(/relation .* does not exist/i.test(String(e?.message || "")) || e?.code === "42P01")) throw e
+    }
+  }
+
+  // Ranking for q and/or role
   let itemsRanked: { row: any; s: number }[] | null = null
-  if (hasQuery) {
-    const needle = q.toLowerCase()
-    const match = (t: string | null | undefined, w: number) => (t && String(t).toLowerCase().includes(needle) ? w : 0)
-    itemsRanked = filtered.map((r: any) => {
-      const sTitle = match(r.title, 2)
-      const sDesc = match(r.description, 1)
-      let sRole = 0
-      const arr: any[] = Array.isArray(r.looking_for) ? r.looking_for : []
-      for (const it of arr) {
-        if (match(it?.role, 1) || match(it?.prerequisite, 1) || match(it?.goodToHave, 1) || match(it?.description, 1)) {
-          sRole = 1
-          break
+  if (hasQuery || hasRoleQuery) {
+    const needleQ = q.toLowerCase()
+    const matchQ = (t: string | null | undefined) => (t && String(t).toLowerCase().includes(needleQ) ? 1 : 0)
+    const weight = (key: "title" | "desc" | "role") => {
+      const isRoleMode = params.mode === "role"
+      if (isRoleMode) return key === "role" ? 3 : key === "title" ? 2 : 1
+      return key === "title" ? 3 : key === "desc" ? 2 : 1
+    }
+    itemsRanked = filtered
+      .map((r: any) => {
+        const sTitle = hasQuery ? matchQ(r.title) * weight("title") : 0
+        const sDesc = hasQuery ? matchQ(r.description) * weight("desc") : 0
+        // Role match from explicit role param using join table
+        const sRoleParam = hasRoleQuery && roleMatchSet ? (roleMatchSet.has(r.id) ? weight("role") : 0) : 0
+        // Role match from q over looking_for[] (legacy behavior; minor boost in project mode)
+        let sRoleQ = 0
+        if (hasQuery) {
+          const arr: any[] = Array.isArray(r.looking_for) ? r.looking_for : []
+          for (const it of arr) {
+            if (
+              matchQ(String(it?.role || "")) ||
+              matchQ(String(it?.prerequisite || "")) ||
+              matchQ(String(it?.goodToHave || "")) ||
+              matchQ(String(it?.description || ""))
+            ) {
+              sRoleQ = weight("role")
+              break
+            }
+          }
         }
-      }
-      return { row: r, s: sTitle + sDesc + sRole }
-    }).filter(({ s }) => s > 0)
+        const sRole = Math.max(sRoleParam, sRoleQ)
+        return { row: r, s: sTitle + sDesc + sRole }
+      })
+      .filter(({ s }) => s > 0)
     itemsRanked.sort((a, b) => {
       if (b.s !== a.s) return b.s - a.s
       return new Date(b.row.created_at).getTime() - new Date(a.row.created_at).getTime()
     })
-    if (cursor && cursor.mode === "q" && cursor.q === q && cursor.lastId) {
-      const idx = itemsRanked.findIndex(({ row }) => row.id === cursor.lastId)
-      if (idx >= 0) itemsRanked = itemsRanked.slice(idx + 1)
+    // Cursor slicing for role or q ranked results
+    if (cursor && itemsRanked.length > 0) {
+      if (cursor.mode === "q" && hasQuery && cursor.q === q && cursor.lastId) {
+        const idx = itemsRanked.findIndex(({ row }) => row.id === cursor.lastId)
+        if (idx >= 0) itemsRanked = itemsRanked.slice(idx + 1)
+      } else if (cursor.mode === "role" && hasRoleQuery && cursor.role === roleNeedle && cursor.lastId) {
+        const idx = itemsRanked.findIndex(({ row }) => row.id === cursor.lastId)
+        if (idx >= 0) itemsRanked = itemsRanked.slice(idx + 1)
+      }
     }
     filtered = itemsRanked.map(({ row }) => row)
   }
@@ -328,10 +370,12 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
   })
 
   // Build nextCursor
-  if (hasQuery) {
+  if (hasQuery || hasRoleQuery) {
     if ((itemsRanked || []).length > limit) {
       const last = items[items.length - 1]
-      const payload = { mode: "q", q, lastId: last.collaboration.id, createdAt: last.collaboration.createdAt.toISOString() }
+      const payload = hasQuery
+        ? { mode: "q", q, lastId: last.collaboration.id, createdAt: last.collaboration.createdAt.toISOString() }
+        : { mode: "role", role: roleNeedle, lastId: last.collaboration.id, createdAt: last.collaboration.createdAt.toISOString() }
       return { items, nextCursor: Buffer.from(JSON.stringify(payload), "utf8").toString("base64") }
     }
     return { items }

@@ -6,6 +6,8 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
   if (params.limit) sp.set("limit", String(params.limit))
   if (params.q) sp.set("q", params.q)
   if (params.cursor) sp.set("cursor", params.cursor)
+  if (params.mode) sp.set("mode", params.mode)
+  if (params.role) sp.set("role", params.role)
   if (params.stages && params.stages.length) sp.append("stages", params.stages.join(","))
   if (params.projectTypes && params.projectTypes.length) sp.append("projectTypes", params.projectTypes.join(","))
   if (params.techTagIds && params.techTagIds.length) sp.append("techTagIds", params.techTagIds.join(","))
