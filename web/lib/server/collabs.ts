@@ -305,6 +305,8 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
   if (hasQuery || hasRoleQuery) {
     const needleQ = q.toLowerCase()
     const matchQ = (t: string | null | undefined) => (t && String(t).toLowerCase().includes(needleQ) ? 1 : 0)
+    const needleRole = roleNeedle.toLowerCase()
+    const matchRole = (t: string | null | undefined) => (t && String(t).toLowerCase().includes(needleRole) ? 1 : 0)
     const weight = (key: "title" | "desc" | "role") => {
       const isRoleMode = params.mode === "role"
       if (isRoleMode) return key === "role" ? 3 : key === "title" ? 2 : 1
@@ -316,17 +318,19 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
         const sDesc = hasQuery ? matchQ(r.description) * weight("desc") : 0
         // Role match from explicit role param using join table
         const sRoleParam = hasRoleQuery && roleMatchSet ? (roleMatchSet.has(r.id) ? weight("role") : 0) : 0
-        // Role match from q over looking_for[] (legacy behavior; minor boost in project mode)
+        // Role match from looking_for[] fallback: if hasQuery (legacy) OR hasRoleQuery (role mode), scan JSON
         let sRoleQ = 0
-        if (hasQuery) {
-          const arr: any[] = Array.isArray(r.looking_for) ? r.looking_for : []
+        const arr: any[] = Array.isArray(r.looking_for) ? r.looking_for : []
+        if (hasQuery || hasRoleQuery) {
           for (const it of arr) {
-            if (
-              matchQ(String(it?.role || "")) ||
-              matchQ(String(it?.prerequisite || "")) ||
-              matchQ(String(it?.goodToHave || "")) ||
-              matchQ(String(it?.description || ""))
-            ) {
+            const roleText = String(it?.role || "")
+            const preText = String(it?.prerequisite || "")
+            const goodText = String(it?.goodToHave || "")
+            const descText = String(it?.description || "")
+            const hit = hasQuery
+              ? (matchQ(roleText) || matchQ(preText) || matchQ(goodText) || matchQ(descText))
+              : (matchRole(roleText) || matchRole(preText) || matchRole(goodText) || matchRole(descText))
+            if (hit) {
               sRoleQ = weight("role")
               break
             }

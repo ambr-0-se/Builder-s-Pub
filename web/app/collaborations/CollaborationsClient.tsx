@@ -37,6 +37,51 @@ export default function CollaborationsClient() {
     return roleOptions.filter((r) => r.toLowerCase().includes(needle))
   }, [q, roleOptions])
 
+  // Split view selection (Step 14)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [detail, setDetail] = useState<any | null>(null)
+  useEffect(() => {
+    let active = true
+    if (mode !== "role" || !selectedId) {
+      setDetail(null)
+      return
+    }
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/collaborations/get?id=${encodeURIComponent(selectedId)}`)
+        if (!active) return
+        if (res.ok) {
+          const json = await res.json()
+          setDetail(json.item)
+        } else {
+          setDetail(null)
+        }
+      } catch {
+        if (active) setDetail(null)
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [mode, selectedId])
+
+  function highlight(text: string, needle: string) {
+    const ql = (needle || "").trim().toLowerCase()
+    if (!ql) return text
+    const idx = text.toLowerCase().indexOf(ql)
+    if (idx === -1) return text
+    const before = text.slice(0, idx)
+    const mid = text.slice(idx, idx + ql.length)
+    const after = text.slice(idx + ql.length)
+    return (
+      <>
+        {before}
+        <mark className="bg-yellow-100">{mid}</mark>
+        {after}
+      </>
+    )
+  }
+
   useEffect(() => {
     let mounted = true
     ;(async () => {
@@ -153,9 +198,35 @@ export default function CollaborationsClient() {
           <h1 className="text-3xl font-bold text-gray-900">Collaborations</h1>
           <p className="text-gray-600 mt-2">Find collaborators and join exciting projects</p>
         </div>
-        <Button asChild>
-          <Link href="/collaborations/new">Post Collaboration</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="hidden sm:flex gap-2">
+            <Button
+              variant={mode === "project" ? "default" : "outline"}
+              onClick={() => {
+                const sp = new URLSearchParams(searchParams as any)
+                sp.set("mode", "project")
+                setSelectedId(null)
+                router.replace(`/collaborations?${sp.toString()}`)
+              }}
+            >
+              By project
+            </Button>
+            <Button
+              variant={mode === "role" ? "default" : "outline"}
+              onClick={() => {
+                const sp = new URLSearchParams(searchParams as any)
+                sp.set("mode", "role")
+                setSelectedId(null)
+                router.replace(`/collaborations?${sp.toString()}`)
+              }}
+            >
+              By role
+            </Button>
+          </div>
+          <Button asChild>
+            <Link href="/collaborations/new">Post Collaboration</Link>
+          </Button>
+        </div>
       </div>
 
       <div className="mb-6">
@@ -238,6 +309,64 @@ export default function CollaborationsClient() {
           description="Be the first to post a collaboration opportunity!"
           action={<Button asChild><Link href="/collaborations/new">Post Collaboration</Link></Button>}
         />
+      ) : mode === "role" ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-3 md:col-span-1">
+            {items.map((item) => (
+              <button
+                key={item.collaboration.id}
+                className={`w-full text-left bg-white rounded-lg border p-4 hover:shadow ${selectedId === item.collaboration.id ? "border-blue-500" : "border-gray-200"}`}
+                onClick={() => setSelectedId(item.collaboration.id)}
+              >
+                <div className="flex items-center gap-3">
+                  <LogoImage src={(item.collaboration as any).logoUrl || ""} alt={item.collaboration.title} size={32} />
+                  <div className="min-w-0">
+                    <div className="text-sm text-gray-500 truncate">{item.collaboration.title}</div>
+                    <div className="text-sm font-medium text-gray-900 truncate">
+                      {(() => {
+                        const roles: string[] = Array.isArray(item.collaboration.lookingFor)
+                          ? item.collaboration.lookingFor.map((r: any) => String(r.role || "")).filter(Boolean)
+                          : []
+                        const needle = q.trim().toLowerCase()
+                        let matched = roles.find((r) => r.toLowerCase().includes(needle))
+                        const display = matched || roles[0] || "Role"
+                        return highlight(display, q)
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+          <div className="md:col-span-2">
+            {!selectedId ? (
+              <div className="text-gray-500 py-8">Select a role item on the left to view details.</div>
+            ) : !detail ? (
+              <div className="text-gray-500 py-8">Loading details...</div>
+            ) : (
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-start gap-3 mb-3">
+                  <LogoImage src={(detail.collaboration as any).logoUrl || ""} alt={detail.collaboration.title} size={48} />
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">{detail.collaboration.title}</h2>
+                    <div className="text-sm text-gray-500">by {detail.owner.displayName}</div>
+                  </div>
+                </div>
+                <p className="text-gray-700 mb-3 whitespace-pre-wrap">{detail.collaboration.description}</p>
+                {detail.collaboration.lookingFor?.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {detail.collaboration.lookingFor.map((r: any, idx: number) => (
+                      <Badge key={idx} variant="secondary">{r.role}</Badge>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-4">
+                  <Link href={`/collaborations/${detail.collaboration.id}`} className="text-blue-600 hover:underline">Open full page →</Link>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       ) : (
         <div className="space-y-6">
           {items.map((item) => (

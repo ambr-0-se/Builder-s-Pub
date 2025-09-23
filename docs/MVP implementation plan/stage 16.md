@@ -306,7 +306,7 @@ Instrument `search_performed`/`filter_apply` with `search_mode`, add server/UI t
 
 **Tests:** UI smoke (selection updates panel; deep link restores selection).
 
-**Status:** Not Started
+**Status:** In Progress
 
 ---
 
@@ -460,7 +460,7 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 11. Analytics (project mode) | Completed | 23/9/2025 | 23/9/2025 | Emits search_performed/filter_apply with search_mode=project |
 | 12. Roles suggestions API | Completed | 23/9/2025 | 23/9/2025 | GET /api/roles/list returns alphabetized names |
 | 13. Role suggestions in search | Completed | 23/9/2025 | 23/9/2025 | Input shows suggestions in role mode; keyboard selection |
-| 14. Split view UI | Not Started | — | — |  |
+| 14. Split view UI | In Progress | 23/9/2025 | — |  |
 | 15. Headless combobox | Not Started | — | — |  |
 | 16. Form replace + dedupe check | Not Started | — | — |  |
 | 17. Tests: server sync & ranking | Not Started | — | — |  |

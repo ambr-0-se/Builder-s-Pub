@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
-import { supabase } from "@/lib/supabaseClient"
+import { getServerSupabase } from "@/lib/supabaseServer"
 
 export async function GET() {
+  const supabase = await getServerSupabase()
   const { data, error } = await supabase
     .from("roles_catalog")
     .select("name")

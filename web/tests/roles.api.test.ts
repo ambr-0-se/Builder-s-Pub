@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from "vitest"
 
-vi.mock("@/lib/supabaseClient", () => ({
-  supabase: {
+vi.mock("@/lib/supabaseServer", () => ({
+  getServerSupabase: vi.fn(async () => ({
     from: () => ({
       select: () => ({ order: async () => ({ data: [{ name: "AI Engineer" }, { name: "Backend Engineer" }], error: null }) }),
     }),
-  },
+  })),
 }))
 
 describe("/api/roles/list", () => {
