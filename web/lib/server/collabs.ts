@@ -133,6 +133,37 @@ export async function createCollab(input: CreateCollabInput): Promise<{ id: stri
     }
   }
 
+  // Sync roles index (collaboration_roles) from looking_for[].role (best-effort; non-fatal)
+  try {
+    const rolesRaw: string[] = Array.isArray(lookingFor)
+      ? (lookingFor as any[]).map((it) => String(it?.role || ""))
+      : []
+    const rolesClean = rolesRaw
+      .map((r) => r.trim().replace(/\s+/g, " "))
+      .filter((r) => r.length > 0)
+    if (rolesClean.length > 0) {
+      const seen = new Set<string>()
+      const dedup: string[] = []
+      for (const r of rolesClean) {
+        const k = r.toLowerCase()
+        if (!seen.has(k)) {
+          seen.add(k)
+          dedup.push(r)
+        }
+      }
+      if (dedup.length > 0) {
+        await supabase
+          .from("collaboration_roles")
+          .insert(dedup.map((role) => ({ collaboration_id: collabId, role })))
+      }
+    }
+  } catch (e: any) {
+    // Tolerate environments where migration hasn't run yet
+    if (!(/relation .* does not exist/i.test(String(e?.message || "")) || e?.code === "42P01")) {
+      console.warn("sync collaboration_roles failed", e)
+    }
+  }
+
   // Finalize temp logo path after insert
   try {
     if (typeof (input as any).logoPath === "string" && (input as any).logoPath.startsWith("collab-logos/new/") && isTempPathForUser((input as any).logoPath, auth.user.id, "collab-logos")) {
