@@ -398,7 +398,8 @@ Instrument `search_performed`/`filter_apply` with `search_mode`, add server/UI t
 
 **Tests:** As above.
 
-**Status:** Not Started
+**Status:** Completed
+**Notes:** Added tests to ensure duplicate roles (case-insensitive) are rejected and role length >80 fails.
 
 ---
 
@@ -479,7 +480,7 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 16. Form replace + dedupe check | Completed | 23/9/2025 | 23/9/2025 | Combobox integrated; hidden field mirrors value; client duplicate warning and submit disabled on dupes |
 | 17. Tests: server sync & ranking | Not Started | — | — |  |
 | 17. Tests: server sync & ranking | Completed | 23/9/2025 | 23/9/2025 | Added `collabs.role-sync.test.ts` and `collabs.role-search.test.ts` |
-| 18. Tests: schema | Not Started | — | — |  |
+| 18. Tests: schema | Completed | 23/9/2025 | 23/9/2025 | Added `schema/collabs.schema.test.ts` for dup + length |
 | 19. Analytics + docs + changelog | Not Started | — | — |  |
 
 
