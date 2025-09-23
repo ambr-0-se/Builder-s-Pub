@@ -46,6 +46,18 @@ describe("CollaborationsClient split view (role mode)", () => {
     fireEvent.click(screen.getByText("AI Engineer"))
     await waitFor(() => expect(screen.getByText("Beta")).toBeTruthy())
   })
+
+  it("restores selected detail via deep link on initial load", async () => {
+    // Override useSearchParams to include selected=c2
+    const nav = await import("next/navigation")
+    vi.spyOn(nav, "useSearchParams").mockReturnValue(new URLSearchParams("mode=role&selected=c2") as any)
+    render(<CollaborationsClient />)
+    // Should load detail for c2 without interaction (assert on detail header)
+    await waitFor(() => expect(screen.getAllByText("Beta").length).toBeGreaterThan(0))
+    // Verify the detail area contains the title element
+    const headers = screen.getAllByRole("heading", { name: "Beta" })
+    expect(headers.length).toBeGreaterThan(0)
+  })
 })
 
 

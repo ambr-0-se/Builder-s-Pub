@@ -317,16 +317,18 @@ export default function CollaborationsClient() {
           <Button type="submit" disabled={loading}>{loading ? "Searching..." : "Search"}</Button>
         </form>
         {mode === "role" && showSuggestions && filteredRoles.length > 0 && (
-          <div ref={dropdownRef} className="mt-2 border border-gray-200 rounded-md bg-white shadow-sm max-w-2xl">
+          <div ref={dropdownRef} className="mt-2 border border-gray-200 rounded-md bg-white shadow-sm max-w-2xl" role="dialog" aria-label="Role suggestions">
             <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
               <span className="text-xs text-gray-500">Suggestions</span>
               <Button size="sm" variant="ghost" onClick={() => setShowSuggestions(false)}>Hide</Button>
             </div>
-            <ul className="max-h-60 overflow-auto">
+            <ul className="max-h-60 overflow-auto" role="listbox" aria-label="Suggested roles">
               {filteredRoles.slice(0, 10).map((name, idx) => (
                 <li
                   key={name}
                   className={`px-3 py-2 cursor-pointer ${idx === activeIndex ? "bg-gray-100" : ""}`}
+                  role="option"
+                  aria-selected={idx === activeIndex}
                   onMouseEnter={() => setActiveIndex(idx)}
                   onMouseDown={(e) => {
                     e.preventDefault()
@@ -381,7 +383,7 @@ export default function CollaborationsClient() {
                   const sp = new URLSearchParams(searchParams as any)
                   sp.set("mode", "role")
                   sp.set("selected", item.collaboration.id)
-                  router.replace(`/collaborations?${sp.toString()}`)
+                  router.replace(`/collaborations?${sp.toString()}`, { scroll: false })
                 }}
               >
                 <div className="flex items-center gap-3">
