@@ -9,7 +9,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 
 ### Added
 - Stage 16: Collaborations — unified search box and reusable FilterBar on `/collaborations` (project mode). Client shell in place to enable role mode split view next.
-- Stage 16: Analytics — `/collaborations` emits `search_performed` and `filter_apply` with `search_mode='project'` and unified tag/stage/type properties.
+- Stage 16: Analytics — `/collaborations` emits `search_performed` and `filter_apply` with `search_mode` (project|role), `role` in role mode, and unified tag/stage/type properties. Added `search_mode_change` event when toggling modes.
 - Stage 16: Roles suggestions API — `GET /api/roles/list` returns alphabetized role names from curated catalog.
 - Stage 16: Role-mode suggestions — `/collaborations?mode=role` search box shows curated suggestions with keyboard selection.
 - Stage 16: Role split view — in-page mode toggle; left list + right detail panel; selected deep-link via `selected=<id>`; matched role highlighting; ranking fallback scans `looking_for[]`.
