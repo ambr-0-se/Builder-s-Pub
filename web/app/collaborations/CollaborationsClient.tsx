@@ -7,6 +7,7 @@ import { LogoImage } from "@/components/ui/logo-image"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
+import CollabDetailPanel from "@/components/features/collaborations/CollabDetailPanel"
 import { formatProjectType } from "@/lib/collabs/options"
 import { Input } from "@/components/ui/input"
 import { FilterBar } from "@/components/features/projects/filter-bar"
@@ -412,26 +413,7 @@ export default function CollaborationsClient() {
             ) : !detail ? (
               <div className="text-gray-500 py-8">Loading details...</div>
             ) : (
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <div className="flex items-start gap-3 mb-3">
-                  <LogoImage src={(detail.collaboration as any).logoUrl || ""} alt={detail.collaboration.title} size={48} />
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">{detail.collaboration.title}</h2>
-                    <div className="text-sm text-gray-500">by {detail.owner.displayName}</div>
-                  </div>
-                </div>
-                <p className="text-gray-700 mb-3 whitespace-pre-wrap">{detail.collaboration.description}</p>
-                {detail.collaboration.lookingFor?.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {detail.collaboration.lookingFor.map((r: any, idx: number) => (
-                      <Badge key={idx} variant="secondary">{r.role}</Badge>
-                    ))}
-                  </div>
-                )}
-                <div className="mt-4">
-                  <Link href={`/collaborations/${detail.collaboration.id}`} className="text-blue-600 hover:underline">Open full page →</Link>
-                </div>
-              </div>
+              <CollabDetailPanel item={detail} />
             )}
           </div>
         </div>
