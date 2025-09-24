@@ -53,6 +53,7 @@ Collaborations
   - Rate limit: 5 per day per user (`collab_create` action, 24-hour window)
 - listCollabs(params): `{ cursor?, limit=20, q?, techTagIds?, categoryTagIds?, stages?, projectTypes?, mode?, role? } -> { items[], nextCursor? }` (defaults to `is_hiring=true`).
   - Auth-only (Stage 17): Requires an authenticated server session. Anonymous requests receive 401 at API routes; DB RLS denies anonymous selects.
+  - UI note: On `/search`, switching to Collaborations while anonymous shows a login-required card and skips the API call.
   - Each item exposes `collaboration.logoUrl` (derived) and `collaboration.logoPath` (storage key). `logoUrl` is a public URL built from `logoPath`.
   - Empty or absent filters are ignored. Tag filters are AND across types, OR within a type. `stages?` is an array (OR inside stage facet).
 - getCollab(id): `-> { collaboration, tags, owner, upvoteCount, hasUserUpvoted, comments }`

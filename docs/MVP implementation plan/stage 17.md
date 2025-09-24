@@ -178,7 +178,7 @@ Add/adjust tests for RLS, redirects, API 401s, and UI visibility. Update docs an
 
 **Technical details:**
 - File: `web/app/search/page.tsx`
-  - On server, check session; if anon, do not call `listRealCollabs`; conditionally render a login-required card for the collaborations section/tab.
+  - On tab switch to Collaborations: if anon, immediately show a login‑required card and skip `listRealCollabs` (no API call needed). If authed, clear the projects placeholder so the copy reads “Search for Collaborations”.
   - If the page currently renders a unified view, guard the collab half only.
 
 **Files:**
@@ -186,7 +186,7 @@ Add/adjust tests for RLS, redirects, API 401s, and UI visibility. Update docs an
 
 **Tests:** Add a render test verifying no collab fetch for anon and that a login-required message is shown.
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 

@@ -13,6 +13,7 @@ import { listProjects as listRealProjects } from "@/lib/api/projects"
 import { listCollabs as listRealCollabs } from "@/lib/api/collabs"
 import type { ProjectWithRelations } from "@/lib/types"
 import { useAnalytics } from "@/lib/analytics"
+import { useAuth } from "@/lib/api/auth"
 import { useTags } from "@/hooks/useTags"
 import { STAGE_OPTIONS, PROJECT_TYPE_OPTIONS } from "@/lib/collabs/options"
 import Link from "next/link"
@@ -25,6 +26,7 @@ export default function SearchPage() {
   const router = useRouter()
   const { track } = useAnalytics()
   const { technology, category } = useTags()
+  const { isAuthenticated } = useAuth()
 
   const [query, setQuery] = useState(searchParams.get("q") || "")
   const [tab, setTab] = useState<"projects" | "collabs">((searchParams.get("type") as any) || "projects")
@@ -102,6 +104,12 @@ export default function SearchPage() {
           resultCount: items.length,
         })
       } else {
+        if (!isAuthenticated) {
+          // Anon users: prompt to sign in instead of calling collab search API
+          setCollabs([])
+          setLoading(false)
+          return
+        }
         const { items, nextCursor } = await listRealCollabs({
           q: query.trim() || undefined,
           techTagIds: selectedTechTags.length > 0 ? selectedTechTags : undefined,
@@ -144,6 +152,29 @@ export default function SearchPage() {
     router.replace(`/search?${sp.toString()}`)
     performSearch()
   }
+
+  // When switching tabs, immediately reflect correct UX:
+  // - If switching to collaborations and user is not signed in, show login-required state immediately
+  // - Ensure placeholder section copy matches current tab
+  useEffect(() => {
+    // Reset pagination when tab changes
+    setNextCursor(undefined)
+    if (tab === "collabs") {
+      if (!isAuthenticated) {
+        // Show the login-required empty state right away without waiting for a search submit
+        setHasSearched(true)
+        setLoading(false)
+        setCollabs([])
+      } else {
+        // Authenticated: clear previous results placeholder for collabs
+        setHasSearched(false)
+      }
+    } else {
+      // Back to projects tab: show default placeholder until search
+      setHasSearched(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, isAuthenticated])
 
   const handleClearFilters = () => {
     setSelectedTechTags([])
@@ -259,15 +290,15 @@ export default function SearchPage() {
               />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Search for Projects</h3>
-          <p className="text-gray-600">Enter a search term or use the filters to discover amazing projects</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{tab === "projects" ? "Search for Projects" : "Search for Collaborations"}</h3>
+          <p className="text-gray-600">{tab === "projects" ? "Enter a search term or use the filters to discover amazing projects" : "Enter a role or use the filters to discover collaboration opportunities"}</p>
         </div>
       ) : loading ? (
         tab === "projects" ? <ProjectGrid projects={[]} loading={true} /> : <div className="py-12 text-center text-gray-500">Loading...</div>
       ) : (tab === "projects" ? projects.length === 0 : collabs.length === 0) ? (
         <EmptyState
-          title={tab === "projects" ? "No projects found" : "No collaborations found"}
-          description="Try adjusting your search terms or filters to find what you're looking for."
+          title={tab === "projects" ? "No projects found" : (isAuthenticated ? "No collaborations found" : "Sign in to search collaborations")}
+          description={tab === "projects" ? "Try adjusting your search terms or filters to find what you're looking for." : (isAuthenticated ? "Try adjusting your search terms or filters to find what you're looking for." : "")}
           icon={
             <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -278,6 +309,7 @@ export default function SearchPage() {
               />
             </svg>
           }
+          action={!isAuthenticated && tab === "collabs" ? (<Button asChild><Link href="/auth/sign-in?redirectTo=/search?type=collabs">Sign in to search collaborators</Link></Button>) : undefined}
         />
       ) : (
         <>
