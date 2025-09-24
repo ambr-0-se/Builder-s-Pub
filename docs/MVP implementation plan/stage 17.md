@@ -167,7 +167,7 @@ Add/adjust tests for RLS, redirects, API 401s, and UI visibility. Update docs an
 
 **Tests:** Add a server-render test snapshot for anon showing the sign-in prompt instead of collab previews.
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 
@@ -318,7 +318,7 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 3. API routes auth | Completed | 24/9/2025 | 24/9/2025 | 401 for anon on list/get |
 | 4. Route gating (pages) | Completed | 24/9/2025 | 24/9/2025 | `/collaborations` + `[id]` show login‑required screens when anon |
 | 5. UI visibility (nav/footer/CTAs) | Completed | 24/9/2025 | 24/9/2025 | Navbar link always shown; page gates |
-| 6. Landing page gating | Not Started | — | — |  |
+| 6. Landing page gating | Completed | 24/9/2025 | 24/9/2025 | CTA shown for anon; no collab fetch |
 | 7. Search page gating | Not Started | — | — |  |
 | 8. Sitemap changes | Not Started | — | — |  |
 | 9. Tests (auth-only behavior) | Not Started | — | — |  |

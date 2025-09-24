@@ -6,6 +6,7 @@ import { LogoImage } from "@/components/ui/logo-image"
 import { listProjects } from "@/lib/server/projects"
 import { UpvoteButton } from "@/components/features/projects/upvote-button"
 import { listCollabs } from "@/lib/server/collabs"
+import { getServerSupabase } from "@/lib/supabaseServer"
 import { getAllTagsServer } from "@/lib/server/tags"
 import type { Tag } from "@/lib/types"
 
@@ -15,6 +16,8 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
+  const supabase = await getServerSupabase()
+  const { data: auth } = await supabase.auth.getUser()
   // Fetch featured content (robust: safe fallbacks)
   let recentProjects: any[] = []
   let popularProjects: any[] = []
@@ -31,17 +34,19 @@ export default async function HomePage() {
     popularProjects = []
   }
   let collaborations: Array<{ id: string; title: string; kind: string; roles: number; logoUrl: string }> = []
-  try {
-    const { items } = await listCollabs({ limit: 3 })
-    collaborations = (items || []).map((it: any) => ({
-      id: String(it?.collaboration?.id || ""),
-      title: String(it?.collaboration?.title || "Untitled"),
-      kind: String(it?.collaboration?.kind || "ongoing"),
-      roles: Array.isArray(it?.collaboration?.lookingFor) ? it.collaboration.lookingFor.length : 0,
-      logoUrl: String(it?.collaboration?.logoUrl || ""),
-    }))
-  } catch (_) {
-    collaborations = []
+  if (auth.user) {
+    try {
+      const { items } = await listCollabs({ limit: 3 })
+      collaborations = (items || []).map((it: any) => ({
+        id: String(it?.collaboration?.id || ""),
+        title: String(it?.collaboration?.title || "Untitled"),
+        kind: String(it?.collaboration?.kind || "ongoing"),
+        roles: Array.isArray(it?.collaboration?.lookingFor) ? it.collaboration.lookingFor.length : 0,
+        logoUrl: String(it?.collaboration?.logoUrl || ""),
+      }))
+    } catch (_) {
+      collaborations = []
+    }
   }
   // Load tags from DB with fallback for errors
   let popularTags: Array<{ id: number; name: string; type: string }> = []
@@ -164,22 +169,31 @@ export default async function HomePage() {
                 <Link href="/collaborations">View All</Link>
               </Button>
             </div>
-            <div className="space-y-3">
-              {collaborations.map((c) => (
-                <div key={c.id || Math.random().toString(36).slice(2)} className="flex items-start gap-3">
-                  <LogoImage src={c.logoUrl} alt={c.title} size={32} />
-                  <div className="flex-1 min-w-0">
-                    <Link href={c.id ? `/collaborations/${c.id}` : "/collaborations"} className="group">
-                      <h3 className="font-medium text-gray-900 group-hover:text-blue-600 text-sm mb-1">{c.title}</h3>
-                    </Link>
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="text-xs">{c.kind}</Badge>
-                      <span className="text-xs text-gray-500">{c.roles} roles</span>
+            {auth.user ? (
+              <div className="space-y-3">
+                {collaborations.map((c) => (
+                  <div key={c.id || Math.random().toString(36).slice(2)} className="flex items-start gap-3">
+                    <LogoImage src={c.logoUrl} alt={c.title} size={32} />
+                    <div className="flex-1 min-w-0">
+                      <Link href={c.id ? `/collaborations/${c.id}` : "/collaborations"} className="group">
+                        <h3 className="font-medium text-gray-900 group-hover:text-blue-600 text-sm mb-1">{c.title}</h3>
+                      </Link>
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-xs">{c.kind}</Badge>
+                        <span className="text-xs text-gray-500">{c.roles} roles</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center">
+                <p className="text-gray-600 mb-4">Sign in to find collaborators and see highlights here.</p>
+                <Button asChild size="sm">
+                  <Link href="/auth/sign-in?redirectTo=/collaborations">Sign in to find collaborators</Link>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
