@@ -48,8 +48,8 @@ Notes (Stage 3 Profiles)
 - projects: select soft_deleted=false; insert/update/delete only owner
 - comments: select soft_deleted=false; insert only author; delete only author
 - project_upvotes: select all; insert/delete only same user
-- collaborations: select soft_deleted=false AND auth required; insert/update/delete only owner; `is_hiring` controls default list visibility
- - collaboration_roles: auth-only select; insert/delete only by collaboration owner (enforced via join to collaborations)
+- collaborations: select soft_deleted=false AND auth required (Stage 17); insert/update/delete only owner; `is_hiring` controls default list visibility
+ - collaboration_roles: auth-only select (Stage 17); insert/delete only by collaboration owner (enforced via join to collaborations)
  - roles_catalog: public select (curated read-only)
 
 Notes (Stage 15 Logos & Avatars)

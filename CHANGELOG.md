@@ -8,7 +8,11 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
-- Stage 17: RLS — collaborations are now auth-only for reads (DB enforced). Added migration and restructured `supabase/rls_policies.sql`; added policy assertion test.
+- Stage 17: Collaboration visibility (auth-only)
+  - RLS: collaborations, tags, upvotes, roles, and comments are auth-only for SELECT; `roles_catalog` remains public. Policy assertions updated.
+  - Server/API: `listCollabs`/`getCollab` require session; `/api/collaborations/list` and `/get` return 401 for anonymous.
+  - UI: `/collaborations` and `/collaborations/[id]` show login-required screen when anonymous; navbar always shows Collaborations link; landing hides collab previews for anon and shows sign-in CTA; `/search` shows login-required card on collab tab for anon.
+  - SEO: `sitemap.xml` excludes collaborations.
 - Stage 16: Collaborations — unified search box and reusable FilterBar on `/collaborations` (project mode). Client shell in place to enable role mode split view next.
 - Stage 16: Analytics — `/collaborations` emits `search_performed` and `filter_apply` with `search_mode` (project|role), `role` in role mode, and unified tag/stage/type properties. Added `search_mode_change` event when toggling modes.
 - Stage 16: Roles suggestions API — `GET /api/roles/list` returns alphabetized role names from curated catalog.

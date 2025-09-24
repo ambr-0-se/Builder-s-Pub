@@ -43,6 +43,9 @@ Collaboration visibility (Stage 17)
 - Reads for collaborations are auth-only (RLS enforced; server list/get require session; API returns 401 for anon).
 - `/collaborations` when anonymous renders a login-required screen with a Sign in button linking to `/auth/sign-in?redirectTo=/collaborations`.
 - Navbar continues to link to `/collaborations`; gating happens on the page.
+ - `/collaborations/[id]` shows a login-required screen for anonymous users.
+ - Landing page (`/`) does not fetch collaboration previews for anonymous users and shows a compact sign-in CTA instead.
+ - Search (`/search`): switching to the Collaborations tab while anonymous immediately shows a login-required card and skips the API call; placeholder text changes to “Search for Collaborations” when authenticated.
 
 Cookie sync for server actions (Profiles)
 - After the callback sets the session, the app calls `/api/profile/ensure`.

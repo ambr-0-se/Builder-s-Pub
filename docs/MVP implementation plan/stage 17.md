@@ -207,7 +207,7 @@ Add/adjust tests for RLS, redirects, API 401s, and UI visibility. Update docs an
 
 **Tests:** Adjust existing sitemap test to ensure collab URLs are absent.
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 
@@ -319,8 +319,8 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 4. Route gating (pages) | Completed | 24/9/2025 | 24/9/2025 | `/collaborations` + `[id]` show login‑required screens when anon |
 | 5. UI visibility (nav/footer/CTAs) | Completed | 24/9/2025 | 24/9/2025 | Navbar link always shown; page gates |
 | 6. Landing page gating | Completed | 24/9/2025 | 24/9/2025 | CTA shown for anon; no collab fetch |
-| 7. Search page gating | Not Started | — | — |  |
-| 8. Sitemap changes | Not Started | — | — |  |
+| 7. Search page gating | Completed | 24/9/2025 | 24/9/2025 | Immediate login prompt; no API call when anon |
+| 8. Sitemap changes | Completed | 24/9/2025 | 24/9/2025 | Collab URLs excluded; tests updated |
 | 9. Tests (auth-only behavior) | Not Started | — | — |  |
 | 10. Docs & changelog | Not Started | — | — |  |
 | 11. Quality gate | Not Started | — | — |  |
