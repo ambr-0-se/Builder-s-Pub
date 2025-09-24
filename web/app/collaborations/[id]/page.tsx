@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
+import Link from "next/link"
 import Image from "next/image"
 import { LogoImage } from "@/components/ui/logo-image"
 import { LogoChangeOverlay } from "@/components/ui/logo-change-overlay"
@@ -38,14 +39,24 @@ export async function generateMetadata({ params }: CollabDetailPageProps): Promi
 
 export default async function CollabDetailPage({ params }: CollabDetailPageProps) {
   const p = await params
+  // Stage 17: Gate detail page for anonymous users with a login-required screen
+  const supabase = await getServerSupabase()
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">Sign in to view this collaboration</h1>
+        <p className="text-gray-600 mb-8">Join the community to browse details and connect with teams.</p>
+        <Link href={`/auth/sign-in?redirectTo=/collaborations/${encodeURIComponent(p.id)}`} className="inline-flex items-center px-4 py-2 rounded-md bg-black text-white hover:bg-gray-900">Sign in to view</Link>
+      </div>
+    )
+  }
   const item = await getCollab(p.id)
 
   if (!item) {
     notFound()
   }
 
-  const supabase = await getServerSupabase()
-  const { data: auth } = await supabase.auth.getUser()
   const isOwner = !!auth.user && auth.user.id === item.collaboration.ownerId
   const logoSrc = (item.collaboration as any).logoUrl || ""
 
