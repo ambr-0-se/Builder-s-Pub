@@ -1,6 +1,6 @@
 # Stage 17 Implementation Plan: Collaboration visibility (auth-only)
 
-**Status:** Planned  
+**Status:** In Progress  
 **Started:** 24/9/2025
 **Completed:** —
 
@@ -58,7 +58,7 @@ Add/adjust tests for RLS, redirects, API 401s, and UI visibility. Update docs an
 
 **Tests:** Add server integration tests to assert anon select is denied (expect errors/empty) and authed select succeeds.
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 

@@ -8,6 +8,7 @@ and this project adheres to Semantic Versioning (https://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
+- Stage 17: RLS — collaborations are now auth-only for reads (DB enforced). Added migration and restructured `supabase/rls_policies.sql`; added policy assertion test.
 - Stage 16: Collaborations — unified search box and reusable FilterBar on `/collaborations` (project mode). Client shell in place to enable role mode split view next.
 - Stage 16: Analytics — `/collaborations` emits `search_performed` and `filter_apply` with `search_mode` (project|role), `role` in role mode, and unified tag/stage/type properties. Added `search_mode_change` event when toggling modes.
 - Stage 16: Roles suggestions API — `GET /api/roles/list` returns alphabetized role names from curated catalog.

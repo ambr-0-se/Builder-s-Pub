@@ -52,9 +52,11 @@ Collaborations
 - createCollab(input): `{ title≤160, affiliatedOrg?, projectTypes[], description 1–4000, stage, lookingFor[1..5]{ role, amount(1..99), prerequisite≤400, goodToHave≤400, description≤1200 }, contact≤200, remarks≤1000, techTagIds[], categoryTagIds[], logoPath? } -> { id } | validation_error`
   - Rate limit: 5 per day per user (`collab_create` action, 24-hour window)
 - listCollabs(params): `{ cursor?, limit=20, q?, techTagIds?, categoryTagIds?, stages?, projectTypes?, mode?, role? } -> { items[], nextCursor? }` (defaults to `is_hiring=true`).
+  - Auth-only (Stage 17): Requires an authenticated server session. Anonymous requests receive 401 at API routes; DB RLS denies anonymous selects.
   - Each item exposes `collaboration.logoUrl` (derived) and `collaboration.logoPath` (storage key). `logoUrl` is a public URL built from `logoPath`.
   - Empty or absent filters are ignored. Tag filters are AND across types, OR within a type. `stages?` is an array (OR inside stage facet).
 - getCollab(id): `-> { collaboration, tags, owner, upvoteCount, hasUserUpvoted, comments }`
+  - Auth-only (Stage 17): Requires an authenticated server session. Anonymous requests receive 401 at API routes; DB RLS denies anonymous selects.
 - updateCollab(id, fields): owner-only, fields optional: `{ title?, affiliatedOrg?, description?, stage?, lookingFor?, contact?, remarks?, isHiring? } -> { ok: true } | validation_error`
 - deleteCollab(id): owner-only `-> { ok: true }`
 - toggleCollabUpvote(collaborationId): `-> { ok: true, upvoted: boolean } | { error: 'unauthorized'|'rate_limited' }`
