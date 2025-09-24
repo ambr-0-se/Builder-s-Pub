@@ -44,8 +44,28 @@ describe("collaborations list (role-mode search & ranking)", () => {
       })),
     }))
 
+    // Auth required in Stage 17; provide a fake user and a server client with from() matching the mocked tables above
     vi.mock("@/lib/supabaseServer", () => ({
-      getServerSupabase: vi.fn(async () => ({ auth: { getUser: async () => ({ data: { user: null } }) } })),
+      getServerSupabase: vi.fn(async () => ({
+        auth: { getUser: async () => ({ data: { user: { id: "u1" } } }) },
+        from: (table: string) => {
+          if (table === "collaborations") {
+            const rows = [
+              { id: "c1", owner_id: "u1", kind: "ongoing", title: "Alpha", description: "desc", looking_for: [{ role: "AI Engineer" }], created_at: new Date().toISOString(), soft_deleted: false, is_hiring: true },
+              { id: "c2", owner_id: "u1", kind: "ongoing", title: "Beta AI", description: "desc", looking_for: [{ role: "Designer" }], created_at: new Date().toISOString(), soft_deleted: false, is_hiring: true },
+              { id: "c3", owner_id: "u1", kind: "ongoing", title: "Gamma", description: "AI tools", looking_for: [{ role: "PM" }], created_at: new Date().toISOString(), soft_deleted: false, is_hiring: false },
+            ]
+            return { select: vi.fn(() => buildSelectChain(rows)) }
+          }
+          if (table === "collaboration_roles") {
+            return { select: vi.fn(() => ({ ilike: vi.fn(async () => ({ data: [{ collaboration_id: "c1" }], error: null })) })) }
+          }
+          if (table === "collaboration_tags" || table === "profiles" || table === "tags" || table === "collaboration_upvotes" || table === "collab_comments") {
+            return { select: vi.fn(() => buildSelectChain([])), in: vi.fn(() => buildSelectChain([])) }
+          }
+          return { select: vi.fn(() => buildSelectChain([])) }
+        },
+      })),
     }))
 
     const { listCollabs } = await import("@/lib/server/collabs")

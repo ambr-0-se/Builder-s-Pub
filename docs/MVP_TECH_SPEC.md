@@ -304,8 +304,10 @@ Profile avatars (Step 6a)
     - Analytics: include `search_mode` (role|project) and `role` when applicable in `search_performed` and `filter_apply`.
   - Done when: role search and split view work with correct ranking; closed posts excluded from role results; form uses combobox with duplicate prevention; indexes present; docs/tests updated.
 
-- Stage 17 — Collaboration visibility (auth-only) — Planned
-  - Tasks: gate `/collaborations` and `/collaborations/[id]` behind authentication; anonymous users are redirected to sign-in or see a friendly login-required screen; update navbar/links to hide collaboration entry points for non-auth users; enforce RLS to deny `select` on collaboration tables for anon; update tests and docs accordingly.
+- Stage 17 — Collaboration visibility (auth-only) — In Progress
+  - Tasks: gate `/collaborations` and `/collaborations/[id]` behind authentication; anonymous users see a friendly login-required screen on `/collaborations`; navbar still links to the page; enforce RLS to deny `select` on collaboration tables for anon; update tests and docs accordingly.
+  - Status: RLS updated (auth-only selects) with tests; server list/get require session; API routes return 401 for anon; `/collaborations` renders a login-required screen for anon; navbar shows link to page. Next: consider gating `[id]` page similarly and adjust sitemap/search if needed.
+  - Update: `/collaborations/[id]` now also renders a login‑required screen for anon; `/search` immediately shows a login‑required card and skips API calls when switching to Collaborations while anonymous; sitemap excludes collaborations.
   - Done when: non-logged-in users cannot view collaboration lists or details (server and client enforced); logged-in users retain normal access.
 
 - Stage 18 — QA, docs, deploy — Planned

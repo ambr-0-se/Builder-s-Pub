@@ -39,6 +39,9 @@ Purpose: keep `main` stable while shipping small, reviewable PRs per stage.
 
 ## Common commands
 ```bash
+# Go to the right directory
+cd "/Users/ahbo/Desktop/Builder's Pub"
+
 # Create a feature branch from main
 git checkout main && git pull
 git checkout -b feat/stage-2-auth

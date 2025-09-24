@@ -1,7 +1,7 @@
 "use server"
 
-import { createClient } from "@supabase/supabase-js"
 import { getServerSupabase } from "@/lib/supabaseServer"
+import type { SupabaseClient } from "@supabase/supabase-js"
 import { checkRateLimit } from "@/lib/server/rate-limiting"
 import { formatDurationHMS } from "@/lib/utils"
 import type { Profile, Tag } from "@/lib/types"
@@ -11,12 +11,8 @@ import { buildObjectPath, normalizeExt, pathBelongsToId } from "@/lib/server/log
 import { isTempPathForUser, destForCollab, moveObject } from "@/lib/server/logo-finalize"
 import { toPublicUrl } from "@/lib/server/logo-public-url"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-
-function getAnonServerClient() {
-  return createClient(supabaseUrl, supabaseAnonKey)
-}
+// Note: Stage 17 — Auth-only reads for collaborations. Use server client (cookie-based),
+// not an anonymous client, and require a session before listing/fetching.
 
 export interface CollaborationRow {
   id: string
@@ -195,7 +191,13 @@ export interface ListCollabsParams {
 }
 
 export async function listCollabs(params: ListCollabsParams = {}): Promise<{ items: CollaborationWithRelations[]; nextCursor?: string }> {
-  const anon = getAnonServerClient()
+  const supabase = await getServerSupabase()
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) {
+    // Auth required (Stage 17). Avoid DB reads under anon to respect RLS; callers (API/pages)
+    // are expected to enforce 401/redirect. Return empty list as a safe default.
+    return { items: [] }
+  }
   const limit = params.limit && params.limit > 0 ? params.limit : 20
   const hasQuery = typeof params.q === "string" && params.q.trim() !== ""
   const q = hasQuery ? params.q!.trim() : ""
@@ -213,7 +215,7 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
   }
 
   async function fetchRows(selectCols: string) {
-    let query = anon.from("collaborations").select(selectCols).eq("soft_deleted", false)
+    let query = supabase.from("collaborations").select(selectCols).eq("soft_deleted", false)
     // Optional filters
     if (Array.isArray(params.stages) && params.stages.length > 0) query = (query as any).in("stage", params.stages)
     if (Array.isArray(params.projectTypes) && params.projectTypes.length > 0) {
@@ -224,7 +226,7 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
     // First collect candidate collaboration ids by tags
     let candidateIds: string[] | null = null
     if (params.techTagIds && params.techTagIds.length > 0) {
-      const { data, error } = await anon
+      const { data, error } = await supabase
         .from("collaboration_tags")
         .select("collaboration_id")
         .in("tag_id", params.techTagIds)
@@ -232,7 +234,7 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
       candidateIds = (data || []).map((r: any) => r.collaboration_id as string)
     }
     if (params.categoryTagIds && params.categoryTagIds.length > 0) {
-      const { data, error } = await anon
+      const { data, error } = await supabase
         .from("collaboration_tags")
         .select("collaboration_id")
         .in("tag_id", params.categoryTagIds)
@@ -290,7 +292,7 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
   let roleMatchSet: Set<string> | null = null
   if (hasRoleQuery) {
     try {
-      const { data: roleRows } = await anon
+      const { data: roleRows } = await supabase
         .from("collaboration_roles")
         .select("collaboration_id")
         .ilike("role", `%${roleNeedle}%`)
@@ -359,15 +361,13 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
 
   const collabIds = (filtered as any[]).map((r) => r.id as string)
   const [tagsByCollab, ownersByUser, upvoteCounts] = await Promise.all([
-    fetchTagsByCollabIds(collabIds, anon),
-    fetchOwnersByUserIds((rows as any[]).map((r) => r.owner_id as string), anon),
-    fetchUpvoteCounts(collabIds, anon),
+    fetchTagsByCollabIds(collabIds, supabase),
+    fetchOwnersByUserIds((rows as any[]).map((r) => r.owner_id as string), supabase),
+    fetchUpvoteCounts(collabIds, supabase),
   ])
 
-  const supabase = await getServerSupabase()
-  const { data: auth } = await supabase.auth.getUser()
   const currentUserId = auth.user?.id || null
-  const userUpvotes = await fetchUserCollabUpvotes(collabIds, currentUserId, anon)
+  const userUpvotes = await fetchUserCollabUpvotes(collabIds, currentUserId, supabase)
 
   let items: CollaborationWithRelations[] = (filtered as any[]).slice(0, limit).map((r) => {
     return toCollabWithRelations(r as CollaborationRow, tagsByCollab.get(r.id) || { technology: [], category: [] }, ownersByUser.get(r.owner_id), upvoteCounts.get(r.id) || 0, userUpvotes.get(r.id) || false)
@@ -395,9 +395,11 @@ export async function listCollabs(params: ListCollabsParams = {}): Promise<{ ite
 }
 
 export async function getCollab(id: string): Promise<CollaborationWithRelations | null> {
-  const anon = getAnonServerClient()
+  const supabase = await getServerSupabase()
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) return null
   async function fetchOne(selectCols: string) {
-    const { data, error } = await anon.from("collaborations").select(selectCols).eq("id", id).maybeSingle()
+    const { data, error } = await supabase.from("collaborations").select(selectCols).eq("id", id).maybeSingle()
     if (error) throw error
     return data as any
   }
@@ -413,17 +415,13 @@ export async function getCollab(id: string): Promise<CollaborationWithRelations 
   }
   if (!r || r.soft_deleted) return null
 
-  const supabase = await getServerSupabase()
-  const { data: auth } = await supabase.auth.getUser()
-  const currentUserId = auth.user?.id || null
-
   const [tags, owner, voteCounts, userUpvotes, commentCount, comments] = await Promise.all([
-    fetchTagsByCollabIds([r.id], anon),
-    fetchOwnersByUserIds([r.owner_id], anon),
-    fetchUpvoteCounts([r.id], anon),
-    fetchUserCollabUpvotes([r.id], currentUserId, anon),
-    fetchCommentCount([r.id], anon),
-    fetchCollabComments(r.id, anon, currentUserId),
+    fetchTagsByCollabIds([r.id], supabase),
+    fetchOwnersByUserIds([r.owner_id], supabase),
+    fetchUpvoteCounts([r.id], supabase),
+    fetchUserCollabUpvotes([r.id], auth.user.id, supabase),
+    fetchCommentCount([r.id], supabase),
+    fetchCollabComments(r.id, supabase, auth.user.id),
   ])
 
   const result = toCollabWithRelations(r as CollaborationRow, tags.get(r.id) || { technology: [], category: [] }, owner.get(r.owner_id), voteCounts.get(r.id) || 0, userUpvotes.get(r.id) || false, commentCount.get(r.id) || 0)
@@ -727,9 +725,9 @@ function toCollabWithRelations(
   }
 }
 
-async function fetchTagsByCollabIds(collabIds: string[], anon: ReturnType<typeof getAnonServerClient>) {
+async function fetchTagsByCollabIds(collabIds: string[], supabase: SupabaseClient) {
   if (collabIds.length === 0) return new Map<string, { technology: Tag[]; category: Tag[] }>()
-  const { data: rows, error } = await anon
+  const { data: rows, error } = await supabase
     .from("collaboration_tags")
     .select("collaboration_id, tag_id")
     .in("collaboration_id", collabIds)
@@ -738,7 +736,7 @@ async function fetchTagsByCollabIds(collabIds: string[], anon: ReturnType<typeof
   const tagIds = Array.from(new Set(((rows || []) as any[]).map((r) => r.tag_id as number)))
   let tagsById = new Map<number, Tag>()
   if (tagIds.length > 0) {
-    const { data: tags, error: tagErr } = await anon.from("tags").select("id,name,type").in("id", tagIds)
+    const { data: tags, error: tagErr } = await supabase.from("tags").select("id,name,type").in("id", tagIds)
     if (tagErr) throw tagErr
     for (const t of (tags || []) as any[]) tagsById.set(t.id as number, { id: t.id, name: t.name, type: t.type })
   }
@@ -754,9 +752,9 @@ async function fetchTagsByCollabIds(collabIds: string[], anon: ReturnType<typeof
   return map
 }
 
-async function fetchOwnersByUserIds(userIds: string[], anon: ReturnType<typeof getAnonServerClient>) {
+async function fetchOwnersByUserIds(userIds: string[], supabase: SupabaseClient) {
   if (userIds.length === 0) return new Map<string, { userId: string; displayName: string }>()
-  const { data, error } = await anon
+  const { data, error } = await supabase
     .from("profiles")
     .select("user_id, display_name")
     .in("user_id", userIds)
@@ -768,10 +766,10 @@ async function fetchOwnersByUserIds(userIds: string[], anon: ReturnType<typeof g
   return map
 }
 
-async function fetchUpvoteCounts(ids: string[], anon: ReturnType<typeof getAnonServerClient>) {
+async function fetchUpvoteCounts(ids: string[], supabase: SupabaseClient) {
   const map = new Map<string, number>()
   if (ids.length === 0) return map
-  const { data, error } = await anon.from("collaboration_upvotes").select("collaboration_id").in("collaboration_id", ids)
+  const { data, error } = await supabase.from("collaboration_upvotes").select("collaboration_id").in("collaboration_id", ids)
   if (error) throw error
   for (const id of ids) map.set(id, 0)
   for (const r of (data || []) as any[]) {
@@ -781,10 +779,10 @@ async function fetchUpvoteCounts(ids: string[], anon: ReturnType<typeof getAnonS
   return map
 }
 
-async function fetchUserCollabUpvotes(ids: string[], userId: string | null, anon: ReturnType<typeof getAnonServerClient>) {
+async function fetchUserCollabUpvotes(ids: string[], userId: string | null, supabase: SupabaseClient) {
   const map = new Map<string, boolean>()
   if (ids.length === 0 || !userId) return map
-  const { data, error } = await anon
+  const { data, error } = await supabase
     .from("collaboration_upvotes")
     .select("collaboration_id")
     .in("collaboration_id", ids)
@@ -796,10 +794,10 @@ async function fetchUserCollabUpvotes(ids: string[], userId: string | null, anon
   return map
 }
 
-async function fetchCommentCount(ids: string[], anon: ReturnType<typeof getAnonServerClient>) {
+async function fetchCommentCount(ids: string[], supabase: SupabaseClient) {
   const map = new Map<string, number>()
   if (ids.length === 0) return map
-  const { data, error } = await anon
+  const { data, error } = await supabase
     .from("collab_comments")
     .select("collaboration_id")
     .in("collaboration_id", ids)
@@ -811,8 +809,8 @@ async function fetchCommentCount(ids: string[], anon: ReturnType<typeof getAnonS
   return map
 }
 
-async function fetchCollabComments(collaborationId: string, anon: ReturnType<typeof getAnonServerClient>, currentUserId: string | null) {
-  const { data: topRows, error: topErr } = await anon
+async function fetchCollabComments(collaborationId: string, supabase: SupabaseClient, currentUserId: string | null) {
+  const { data: topRows, error: topErr } = await supabase
     .from("collab_comments")
     .select("id, collaboration_id, author_id, body, created_at, soft_deleted")
     .eq("collaboration_id", collaborationId)
@@ -826,7 +824,7 @@ async function fetchCollabComments(collaborationId: string, anon: ReturnType<typ
   const parentIds = (topRows || []).map((r: any) => r.id as string)
   let replyMap = new Map<string, any[]>()
   if (parentIds.length > 0) {
-    const { data: replyRows, error: repErr } = await anon
+    const { data: replyRows, error: repErr } = await supabase
       .from("collab_comments")
       .select("id, collaboration_id, author_id, body, created_at, soft_deleted, parent_comment_id")
       .in("parent_comment_id", parentIds)
@@ -840,7 +838,7 @@ async function fetchCollabComments(collaborationId: string, anon: ReturnType<typ
     }
   }
   const authorIds = Array.from(new Set([...(topRows || []), ...Array.from(replyMap.values()).flat()].map((r: any) => r.author_id as string)))
-  const authors = await fetchOwnersByUserIds(authorIds, anon)
+  const authors = await fetchOwnersByUserIds(authorIds, supabase)
 
   const toComment = (r: any) => {
     const profile = authors.get(r.author_id as string)

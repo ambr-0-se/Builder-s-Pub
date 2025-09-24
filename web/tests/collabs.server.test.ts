@@ -16,12 +16,48 @@ function buildSelectChain(data: any[]) {
 vi.mock("@/lib/supabaseServer", () => ({
   getServerSupabase: vi.fn(async () => ({
     auth: { getUser: async () => ({ data: { user: { id: "u1" } } }) },
-    from: vi.fn().mockImplementation((table: string) => ({
-      insert: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: vi.fn(async () => ({ data: { id: "c1" } })) }) }),
-      delete: vi.fn().mockReturnValue({ eq: vi.fn(async () => ({}) ) }),
-      update: vi.fn().mockReturnValue({ eq: vi.fn(async () => ({}) ) }),
-      select: vi.fn().mockReturnValue({ single: vi.fn(async () => ({ data: { id: "c1" } })) }),
-    })),
+    from: (table: string) => {
+      // Mirror supabase-js mock behavior for server client
+      if (table === "collaborations") {
+        const rows = [
+          { id: "c1", owner_id: "u1", kind: "ongoing", title: "t1", description: "d", looking_for: [{ role: "React Dev" }], created_at: new Date().toISOString(), soft_deleted: false, is_hiring: true },
+          { id: "c2", owner_id: "u1", kind: "planned", title: "t2", description: "d", looking_for: [{ role: "Designer" }], created_at: new Date().toISOString(), soft_deleted: false, is_hiring: true },
+          { id: "c3", owner_id: "u1", kind: "ongoing", title: "t3", description: "d", looking_for: [{ role: "PM" }], created_at: new Date().toISOString(), soft_deleted: false, is_hiring: false },
+        ]
+        const chain = buildSelectChain(rows)
+        return {
+          select: vi.fn(() => chain),
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: rows[0], error: null }),
+          update: vi.fn().mockReturnValue({ eq: vi.fn(async () => ({}) ) }),
+          insert: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: vi.fn(async () => ({ data: { id: "c1" } })) }) }),
+          delete: vi.fn().mockReturnValue({ eq: vi.fn(async () => ({}) ) }),
+        }
+      }
+      if (table === "collaboration_tags" || table === "tags" || table === "profiles" || table === "collaboration_upvotes" || table === "collab_comments") {
+        const base = {
+          select: vi.fn(() => buildSelectChain([])),
+          in: vi.fn(() => buildSelectChain([])),
+        }
+        if (table === "collaboration_tags") {
+          return {
+            ...base,
+            insert: vi.fn(async () => ({ data: null, error: null })),
+          }
+        }
+        return base
+      }
+      if (table === "collaboration_roles") {
+        return {
+          insert: vi.fn(async () => ({})),
+          delete: vi.fn(() => ({ eq: vi.fn(async () => ({}) ) })),
+          select: vi.fn(() => ({ ilike: vi.fn(async () => ({ data: [], error: null })) })),
+        }
+      }
+      return {
+        select: vi.fn(() => buildSelectChain([])),
+      }
+    },
   }))
 }))
 
@@ -97,7 +133,7 @@ describe("server collaborations", () => {
     expect(res).toEqual({ formError: "unauthorized" })
   })
 
-  it("listCollabs ranks q and respects is_hiring filter by default", async () => {
+  it("listCollabs ranks q and respects is_hiring filter by default (requires auth)", async () => {
     const { listCollabs } = await import("@/lib/server/collabs")
     const { items } = await listCollabs({ q: "react" })
     // Only c1 matches react in looking_for and is_hiring true; c3 is closed
