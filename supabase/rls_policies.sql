@@ -1,6 +1,9 @@
 -- Purpose: Defines Row-Level Security policies for all MVP tables.
 -- See also: schema.sql and ../docs/MVP_TECH_SPEC.md
 
+-- =============================================================
+-- Section: Profiles (core user profile visibility)
+-- =============================================================
 -- Profiles
 alter table profiles enable row level security;
 
@@ -13,6 +16,9 @@ create policy profiles_insert_own on profiles for insert with check (auth.uid() 
 drop policy if exists profiles_update_own on profiles;
 create policy profiles_update_own on profiles for update using (auth.uid() = user_id);
 
+-- =============================================================
+-- Section: Projects (project posts)
+-- =============================================================
 -- Projects
 alter table projects enable row level security;
 
@@ -28,6 +34,9 @@ create policy projects_update_own on projects for update using (auth.uid() = own
 drop policy if exists projects_delete_own on projects;
 create policy projects_delete_own on projects for delete using (auth.uid() = owner_id);
 
+-- -------------------------------------------------------------
+-- Project Comments (on projects)
+-- -------------------------------------------------------------
 -- Comments
 alter table comments enable row level security;
 
@@ -40,6 +49,9 @@ create policy comments_insert_auth on comments for insert with check (auth.uid()
 drop policy if exists comments_delete_own on comments;
 create policy comments_delete_own on comments for delete using (auth.uid() = author_id);
 
+-- Project Comment Upvotes
+-- (keep public select if needed by UI aggregation)
+-- -------------------------------------------------------------
 -- Comment Upvotes
 alter table if exists comment_upvotes enable row level security;
 
@@ -52,6 +64,9 @@ create policy comment_upvotes_insert_auth on comment_upvotes for insert with che
 drop policy if exists comment_upvotes_delete_own on comment_upvotes;
 create policy comment_upvotes_delete_own on comment_upvotes for delete using (auth.uid() = user_id);
 
+-- =============================================================
+-- Section: Tags (controlled vocabulary; public read-only)
+-- =============================================================
 -- Tags (read-only for public; writes remain admin-only via service role or dashboard)
 alter table tags enable row level security;
 
@@ -93,6 +108,9 @@ create policy project_tags_delete_owner on project_tags for delete using (
   )
 );
 
+-- =============================================================
+-- Section: Shared Utilities (Rate limits)
+-- =============================================================
 -- Rate limits (per-user counters for throttling)
 alter table if exists rate_limits enable row level security;
 
@@ -105,11 +123,14 @@ create policy rate_limits_insert_own on rate_limits for insert with check (auth.
 drop policy if exists rate_limits_update_own on rate_limits;
 create policy rate_limits_update_own on rate_limits for update using (auth.uid() = user_id);
 
--- Collaborations
+-- =============================================================
+-- Section: Collaborations (team matching)
+-- =============================================================
+-- Collaborations core row policies
 alter table collaborations enable row level security;
 
 drop policy if exists collab_select_all on collaborations;
-create policy collab_select_all on collaborations for select using (soft_deleted = false);
+create policy collab_select_all on collaborations for select using (soft_deleted = false and auth.uid() is not null);
 
 drop policy if exists collab_insert_own on collaborations;
 create policy collab_insert_own on collaborations for insert with check (auth.uid() = owner_id);
@@ -124,7 +145,7 @@ create policy collab_delete_own on collaborations for delete using (auth.uid() =
 alter table if exists collaboration_tags enable row level security;
 
 drop policy if exists collaboration_tags_select_all on collaboration_tags;
-create policy collaboration_tags_select_all on collaboration_tags for select using (true);
+create policy collaboration_tags_select_all on collaboration_tags for select using (auth.uid() is not null);
 
 -- Only the owner of the collaboration can modify its tags
 drop policy if exists collaboration_tags_insert_owner on collaboration_tags;
@@ -147,7 +168,7 @@ create policy collaboration_tags_delete_owner on collaboration_tags for delete u
 alter table if exists collaboration_upvotes enable row level security;
 
 drop policy if exists collab_upvotes_select_all on collaboration_upvotes;
-create policy collab_upvotes_select_all on collaboration_upvotes for select using (true);
+create policy collab_upvotes_select_all on collaboration_upvotes for select using (auth.uid() is not null);
 
 drop policy if exists collab_upvotes_insert_auth on collaboration_upvotes;
 create policy collab_upvotes_insert_auth on collaboration_upvotes for insert with check (auth.uid() = user_id);
@@ -155,11 +176,11 @@ create policy collab_upvotes_insert_auth on collaboration_upvotes for insert wit
 drop policy if exists collab_upvotes_delete_own on collaboration_upvotes;
 create policy collab_upvotes_delete_own on collaboration_upvotes for delete using (auth.uid() = user_id);
 
--- Collaboration Roles (join table for roles search)
+-- Collaboration Roles (normalized roles index for search)
 alter table if exists collaboration_roles enable row level security;
 
 drop policy if exists collaboration_roles_select_all on collaboration_roles;
-create policy collaboration_roles_select_all on collaboration_roles for select using (true);
+create policy collaboration_roles_select_all on collaboration_roles for select using (auth.uid() is not null);
 
 -- Only the owner of the collaboration can modify its roles index
 drop policy if exists collaboration_roles_insert_owner on collaboration_roles;
@@ -184,11 +205,11 @@ alter table if exists roles_catalog enable row level security;
 drop policy if exists roles_catalog_select_all on roles_catalog;
 create policy roles_catalog_select_all on roles_catalog for select using (true);
 
--- Collaboration Comments (top-level only for MVP)
+-- Collaboration Comments (top-level + replies)
 alter table if exists collab_comments enable row level security;
 
 drop policy if exists collab_comments_select_all on collab_comments;
-create policy collab_comments_select_all on collab_comments for select using (soft_deleted = false);
+create policy collab_comments_select_all on collab_comments for select using (soft_deleted = false and auth.uid() is not null);
 
 drop policy if exists collab_comments_insert_auth on collab_comments;
 create policy collab_comments_insert_auth on collab_comments for insert with check (auth.uid() = author_id);
@@ -196,5 +217,6 @@ create policy collab_comments_insert_auth on collab_comments for insert with che
 drop policy if exists collab_comments_delete_own on collab_comments;
 create policy collab_comments_delete_own on collab_comments for delete using (auth.uid() = author_id);
 
--- Replies allowed only if parent belongs to same collaboration; enforced at app level. RLS already covers author-only inserts.
+-- Note: Replies allowed only if parent belongs to same collaboration; enforced at app level.
+-- RLS already covers author-only inserts.
 
