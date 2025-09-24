@@ -1,8 +1,8 @@
 # Stage 17 Implementation Plan: Collaboration visibility (auth-only)
 
-**Status:** In Progress  
+**Status:** Completed  
 **Started:** 24/9/2025
-**Completed:** —
+**Completed:** 24/9/2025
 
 ## Overview
 
@@ -217,11 +217,89 @@ Add/adjust tests for RLS, redirects, API 401s, and UI visibility. Update docs an
 **What we are doing:** Add/adjust tests across layers to reflect auth-only behavior for collaborations.
 
 **Technical details:**
-- New tests:
-  - `web/tests/collabs.api.auth.test.ts` → 401 on anon for list/get.
-  - `web/tests/routes.collaborations.redirect.test.tsx` → pages redirect to sign-in when anon.
-  - `web/tests/navbar.auth-visibility.test.tsx` → nav/footer hide collaboration links on anon.
-  - Update existing tests that relied on public collab data or sitemap.
+**Test coverage (cases & edge cases):**
+
+1) Database/RLS
+- Anonymous session cannot `select` from:
+  - `collaborations` (also enforces `soft_deleted=false`)
+  - `collaboration_tags`
+  - `collaboration_upvotes`
+  - `collaboration_roles`
+  - `collab_comments` (also enforces `soft_deleted=false`)
+- Authenticated session can `select` from the above (respecting `soft_deleted=false`).
+- `roles_catalog` remains publicly selectable.
+
+2) Server helpers (auth-only reads)
+- `listCollabs` with anonymous server session:
+  - Performs an auth check and short-circuits (no DB query is made).
+  - Callers that rely on it should not render collab content for anon.
+- `listCollabs` with authenticated session:
+  - Returns items with relations; excludes soft-deleted.
+- `getCollab` with anonymous session → returns `null` (or is not called due to page gating).
+- `getCollab` with authenticated session:
+  - Existing id → returns item
+  - Missing/soft-deleted → returns `null` (Not Found path)
+
+3) API routes
+- Anonymous:
+  - `GET /api/collaborations/list` → 401 `{ error: 'unauthorized' }`
+  - `GET /api/collaborations/get?id=...` → 401 `{ error: 'unauthorized' }`
+- Authenticated:
+  - Returns 200 with items/payload.
+- Query params (q, tags, stages, projectTypes) are ignored in anon path (since route returns 401).
+
+4) Route gating — `/collaborations` and `/collaborations/[id]`
+- Anonymous on `/collaborations`:
+  - Renders login-required screen (no client fetch called)
+  - Title text: "Sign in to find collaborators"
+  - Button href: `/auth/sign-in?redirectTo=/collaborations` (properly URL-encoded)
+- Authenticated on `/collaborations` → renders list normally.
+- Anonymous on `/collaborations/[id]`:
+  - Renders login-required screen; button `redirectTo` includes the concrete id path
+- Authenticated on `/collaborations/[id]`:
+  - Existing id → renders detail
+  - Missing/soft-deleted → Not Found page
+
+5) Navbar visibility
+- Navbar always shows `Collaborations` link for both anon and authed.
+- Clicking while anon leads to the login-required screen (no redirect loop).
+
+6) Landing page (`/`) gating
+- Anonymous:
+  - Does NOT fetch collaboration previews on the server
+  - Shows compact sign-in CTA for collaborations
+  - "Find Collaborators" CTA links to `/auth/sign-in?redirectTo=/collaborations`
+- Authenticated:
+  - Previews render as before
+
+7) Search page gating (`/search`)
+- Anonymous:
+  - Initial type=projects → normal projects UX
+  - Switching to type=collabs → immediately shows login-required card; no API call to `/api/collaborations/list`
+  - Placeholder text switches to collaborations context only when authed; for anon, shows login-required state
+  - Loading direct link `/search?type=collabs` (no session) → login-required card and no API call
+- Authenticated:
+  - Switching to collabs tab updates placeholder to "Search for Collaborations"
+  - Search triggers the API and renders results
+  - Switching back to projects resets placeholder appropriately
+
+8) Sitemap
+- Generated XML does not include `/collaborations` nor `/collaborations/[id]` URLs.
+- Projects and other public pages remain included.
+
+9) Error-handling regressions
+- No unhandled promise rejections on `/collaborations` for anon (previous issue was client fetch 401 → now gated server-side).
+- No client error toast for anon on `/search` collabs tab (no fetch attempted).
+
+**New/updated test files:**
+- Keep (already passing):
+  - `web/tests/rls.collaborations.auth-only.test.ts` (RLS presence)
+  - `web/tests/collabs.api.test.ts` (API 401)
+  - `web/tests/routes.collaborations.detail.auth.test.tsx` (detail gating)
+  - `web/tests/sitemap.test.ts` (exclusion)
+- Add:
+  - `web/tests/routes.collaborations.list.auth.test.tsx` → list page login-required screen (anon) and normal render (authed)
+  - `web/tests/search.collabs.auth-gating.test.tsx` → search tab gating for anon (no API call; login card), authed placeholder and fetch
 
 **Files:**
 - Add: `web/tests/collabs.api.auth.test.ts`
@@ -231,7 +309,7 @@ Add/adjust tests for RLS, redirects, API 401s, and UI visibility. Update docs an
 
 **Tests:** As above; ensure green locally.
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 
@@ -321,9 +399,9 @@ If you need help from user, give clear instructions to user on how to do it or w
 | 6. Landing page gating | Completed | 24/9/2025 | 24/9/2025 | CTA shown for anon; no collab fetch |
 | 7. Search page gating | Completed | 24/9/2025 | 24/9/2025 | Immediate login prompt; no API call when anon |
 | 8. Sitemap changes | Completed | 24/9/2025 | 24/9/2025 | Collab URLs excluded; tests updated |
-| 9. Tests (auth-only behavior) | Not Started | — | — |  |
-| 10. Docs & changelog | Not Started | — | — |  |
-| 11. Quality gate | Not Started | — | — |  |
+| 9. Tests (auth-only behavior) | Completed | 24/9/2025 | 24/9/2025 | Added list/detail/search gating + API/RLS/sitemap coverage |
+| 10. Docs & changelog | Completed | 24/9/2025 | 24/9/2025 | AUTH/SERVER_ACTIONS/MVP_TECH_SPEC/schema + CHANGELOG updated |
+| 11. Quality gate | Completed | 24/9/2025 | 24/9/2025 | Build/tests green |
 
 ## Risk Mitigation
 
