@@ -17,7 +17,7 @@ Require authentication for `select` on collaboration-related tables (core rows, 
 Switch collaboration read helpers to use authenticated server client and require a valid session before fetching.
 
 ### 3. Route Gating (App Router)
-Gate `/collaborations` and `/collaborations/[id]` with a server-side auth check; redirect to sign-in with `redirectTo` when anonymous.
+Gate `/collaborations` and `/collaborations/[id]` with a server-side auth check; when anonymous, render a login‑required screen with a Sign in button (linking to sign-in with `redirectTo`).
 
 ### 4. API Gating
 Require auth for `/api/collaborations/list` and `/api/collaborations/get` (401 on anon).
@@ -109,7 +109,7 @@ Add/adjust tests for RLS, redirects, API 401s, and UI visibility. Update docs an
 ### Step 4: Route gating — `/collaborations` and `/collaborations/[id]`
 **Goal:** Prevent anonymous users from seeing collaboration content; provide a clear sign‑in path.
 
-**What we are doing:** Add server-side auth checks to both pages and redirect anonymous sessions to `/auth/sign-in?redirectTo=<original>`.
+**What we are doing:** Add server-side auth checks to both pages and, when anonymous, render a login‑required screen with a Sign in button linking to `/auth/sign-in?redirectTo=<original>`.
 
 **Technical details:**
 - File: `web/app/collaborations/page.tsx`
@@ -359,7 +359,7 @@ Add/adjust tests for RLS, redirects, API 401s, and UI visibility. Update docs an
 ## Acceptance Criteria
 
 - Auth-only access
-  - Anonymous users cannot access `/collaborations` or `/collaborations/[id]` (redirected to sign-in with `redirectTo`).
+  - Anonymous users cannot access `/collaborations` or `/collaborations/[id]` (a login‑required screen is shown with a Sign in button linking to sign-in with `redirectTo`).
   - API routes `/api/collaborations/list` and `/api/collaborations/get` return 401 for anonymous requests.
   - Database RLS denies `select` on collaboration tables for anon sessions.
 - UI behavior
