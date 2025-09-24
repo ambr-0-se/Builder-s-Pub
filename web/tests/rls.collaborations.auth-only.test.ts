@@ -16,17 +16,15 @@ describe("RLS policies enforce auth-only selects for collaboration tables", () =
     ]
 
     for (const { table, policyName } of checks) {
-      const tableBlock = new RegExp(
-        String.raw`(?s)alter table.*?${table}.*?create policy\s+${policyName.source}.*?for select using \((.*?)\);`,
-        "i"
-      )
-      const match = sql.match(tableBlock)
-      expect(match, `missing select policy for ${table}`).toBeTruthy()
-      const usingClause = match?.[1] || ""
-      expect(/auth\.uid\(\)\s+is\s+not\s+null/i.test(usingClause), `auth guard missing for ${table}`).toBe(true)
-      // For collaborations and collab_comments, also assert soft_deleted=false is preserved
+      // Find the specific policy line first, then capture the USING clause until semicolon
+      const policyIndex = sql.search(new RegExp(String.raw`create policy\s+${policyName.source}\s+on\s+${table}\s+for\s+select\s+using\s*\(`, "i"))
+      expect(policyIndex >= 0, `missing select policy for ${table}`).toBe(true)
+      const tail = sql.slice(policyIndex)
+      const endIdx = tail.indexOf(";")
+      const snippet = endIdx >= 0 ? tail.slice(0, endIdx) : tail
+      expect(/auth\.uid\(\)\s+is\s+not\s+null/i.test(snippet), `auth guard missing for ${table}`).toBe(true)
       if (table === "collaborations" || table === "collab_comments") {
-        expect(/soft_deleted\s*=\s*false/i.test(usingClause), `soft_deleted=false missing for ${table}`).toBe(true)
+        expect(/soft_deleted\s*=\s*false/i.test(snippet), `soft_deleted=false missing for ${table}`).toBe(true)
       }
     }
   })

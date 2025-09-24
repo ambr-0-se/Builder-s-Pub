@@ -33,7 +33,27 @@ describe("role-mode fallback scans looking_for when join table empty", () => {
       })),
     }))
 
-    vi.mock("@/lib/supabaseServer", () => ({ getServerSupabase: vi.fn(async () => ({ auth: { getUser: async () => ({ data: { user: null } }) } })) }))
+    // Provide auth + bridge .from calls to the supabase-js mock
+    vi.mock("@/lib/supabaseServer", () => ({
+      getServerSupabase: vi.fn(async () => ({
+        auth: { getUser: async () => ({ data: { user: { id: "u1" } } }) },
+        from: (table: string) => {
+          if (table === "collaborations") {
+            const rows = [
+              { id: "c1", owner_id: "u1", kind: "ongoing", title: "Zeta", description: "text", looking_for: [{ role: "Agent Engineer" }], created_at: new Date().toISOString(), soft_deleted: false, is_hiring: true },
+            ]
+            return { select: vi.fn(() => chain(rows)) }
+          }
+          if (table === "collaboration_roles") {
+            return { select: vi.fn(() => ({ ilike: vi.fn(async () => ({ data: [], error: null })) })) }
+          }
+          if (table === "collaboration_tags" || table === "profiles" || table === "tags" || table === "collaboration_upvotes" || table === "collab_comments") {
+            return { select: vi.fn(() => chain([])), in: vi.fn(() => chain([])) }
+          }
+          return { select: vi.fn(() => chain([])) }
+        },
+      })),
+    }))
 
     const { listCollabs } = await import("@/lib/server/collabs")
     const res = await listCollabs({ mode: "role", role: "Agent" })

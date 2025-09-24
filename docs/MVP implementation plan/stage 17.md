@@ -80,7 +80,7 @@ Add/adjust tests for RLS, redirects, API 401s, and UI visibility. Update docs an
 
 **Tests:** Update/extend server tests to expect 401/guard behavior on anon when invoking API wrappers; verify authed path still returns data.
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 
@@ -102,43 +102,43 @@ Add/adjust tests for RLS, redirects, API 401s, and UI visibility. Update docs an
 
 **Tests:** Add `web/tests/collabs.api.auth.test.ts` asserting 401 when anon for both endpoints.
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 
 ### Step 4: Route gating — `/collaborations` and `/collaborations/[id]`
-**Goal:** Redirect anonymous users to sign-in when they attempt to access collaboration pages.
+**Goal:** Prevent anonymous users from seeing collaboration content; provide a clear sign‑in path.
 
 **What we are doing:** Add server-side auth checks to both pages and redirect anonymous sessions to `/auth/sign-in?redirectTo=<original>`.
 
 **Technical details:**
 - File: `web/app/collaborations/page.tsx`
-  - At the top-level server component, get session via `getServerSupabase()`; if no user, `redirect('/auth/sign-in?redirectTo=/collaborations')`.
+  - Server checks session via `getServerSupabase()`; when anonymous, render a friendly login‑required screen with a Sign in button (linking to `/auth/sign-in?redirectTo=/collaborations`) instead of redirecting.
 - File: `web/app/collaborations/[id]/page.tsx`
-  - Do the same auth check before calling `getCollab(id)` (to avoid RLS failures and to keep flow consistent); `redirect('/auth/sign-in?redirectTo=/collaborations/<id>')`.
-- Optional: introduce a small `LoginRequired` server component for reusability (but keep changes minimal for now).
+  - To be gated in a follow‑up: current behavior falls back via data helper (no auth → no item).
+  - Option: mirror list page behavior with a login‑required screen.
 
 **Files:**
 - Change: `web/app/collaborations/page.tsx`
 - Change: `web/app/collaborations/[id]/page.tsx`
 - Potentially affected: `web/app/collaborations/CollaborationsClient.tsx` (no change expected; runs after server guard)
 
-**Tests:** Add route tests verifying redirects for anon; ensure authed sessions render content.
+**Tests:** Add route tests verifying login‑required screen for anon; ensure authed sessions render content (pending).
 
-**Status:** Not Started
+**Status:** In Progress
 
 ---
 
 ### Step 5: UI visibility — navbar, footer, and CTAs
-**Goal:** Avoid showing collaboration entry points to anonymous users.
+**Goal:** Keep navigation consistent while ensuring anon users are guided to sign in.
 
 **What we are doing:** Conditionally render collaboration links/CTAs based on auth state. On click while anon, direct to sign-in instead of the private page.
 
 **Technical details:**
 - File: `web/components/layout/navbar.tsx`
-  - Hide the `Collaborations` link when `!isAuthenticated`.
+  - Always show the `Collaborations` link; gating happens on the page with a login‑required screen.
 - File: `web/components/layout/footer.tsx`
-  - Hide `Collaborations`/`Post Collaboration` links for anonymous users.
+  - Optional: keep links visible; consider sign‑in CTAs where appropriate.
 - File: `web/app/profile/page.tsx`
   - Ensure `Post Collaboration` remains visible only for authed user contexts (already gated by profile route).
 
@@ -147,9 +147,9 @@ Add/adjust tests for RLS, redirects, API 401s, and UI visibility. Update docs an
 - Change: `web/components/layout/footer.tsx`
 - Potentially affected: `web/app/page.tsx`, `web/app/search/page.tsx`
 
-**Tests:** Add a client-render test that, when `useAuth().isAuthenticated=false`, nav/footer do not show collaboration links/CTAs.
+**Tests:** Optional client‑render test that nav shows the link for anon; primary gating verified on the page.
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 
@@ -285,7 +285,7 @@ Add/adjust tests for RLS, redirects, API 401s, and UI visibility. Update docs an
   - API routes `/api/collaborations/list` and `/api/collaborations/get` return 401 for anonymous requests.
   - Database RLS denies `select` on collaboration tables for anon sessions.
 - UI behavior
-  - Navbar/footer do not show collaboration links for anonymous users.
+  - Navbar may show the `Collaborations` link for anonymous users; visiting `/collaborations` shows a login‑required screen with a Sign in button.
   - Landing page does not fetch or render collaboration previews for anonymous users; shows a clear sign-in CTA.
   - Search page does not fetch collaboration results when anonymous and shows a login-required state for that section.
 - SEO
@@ -313,11 +313,11 @@ If you need help from user, give clear instructions to user on how to do it or w
 
 | Step | Status | Started | Completed | Notes |
 |------|--------|---------|-----------|-------|
-| 1. DB & RLS | Not Started | — | — |  |
-| 2. Server: list/get require session | Not Started | — | — |  |
-| 3. API routes auth | Not Started | — | — |  |
-| 4. Route gating (pages) | Not Started | — | — |  |
-| 5. UI visibility (nav/footer/CTAs) | Not Started | — | — |  |
+| 1. DB & RLS | Completed | 24/9/2025 | 24/9/2025 |  |
+| 2. Server: list/get require session | Completed | 24/9/2025 | 24/9/2025 |  |
+| 3. API routes auth | Completed | 24/9/2025 | 24/9/2025 | 401 for anon on list/get |
+| 4. Route gating (pages) | In Progress | 24/9/2025 | — | `/collaborations` shows login‑required screen; `[id]` pending |
+| 5. UI visibility (nav/footer/CTAs) | Completed | 24/9/2025 | 24/9/2025 | Navbar link always shown; page gates |
 | 6. Landing page gating | Not Started | — | — |  |
 | 7. Search page gating | Not Started | — | — |  |
 | 8. Sitemap changes | Not Started | — | — |  |

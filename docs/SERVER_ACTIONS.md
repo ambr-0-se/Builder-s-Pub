@@ -57,6 +57,7 @@ Collaborations
   - Empty or absent filters are ignored. Tag filters are AND across types, OR within a type. `stages?` is an array (OR inside stage facet).
 - getCollab(id): `-> { collaboration, tags, owner, upvoteCount, hasUserUpvoted, comments }`
   - Auth-only (Stage 17): Requires an authenticated server session. Anonymous requests receive 401 at API routes; DB RLS denies anonymous selects.
+  - UI note: When anonymous users visit `/collaborations`, the page renders a login-required screen instead of calling this API.
 - updateCollab(id, fields): owner-only, fields optional: `{ title?, affiliatedOrg?, description?, stage?, lookingFor?, contact?, remarks?, isHiring? } -> { ok: true } | validation_error`
 - deleteCollab(id): owner-only `-> { ok: true }`
 - toggleCollabUpvote(collaborationId): `-> { ok: true, upvoted: boolean } | { error: 'unauthorized'|'rate_limited' }`

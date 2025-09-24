@@ -39,6 +39,11 @@ References
 - Tech Spec: `docs/MVP_TECH_SPEC.md`
 - Env setup: `ops/ENVIRONMENT.md`
 
+Collaboration visibility (Stage 17)
+- Reads for collaborations are auth-only (RLS enforced; server list/get require session; API returns 401 for anon).
+- `/collaborations` when anonymous renders a login-required screen with a Sign in button linking to `/auth/sign-in?redirectTo=/collaborations`.
+- Navbar continues to link to `/collaborations`; gating happens on the page.
+
 Cookie sync for server actions (Profiles)
 - After the callback sets the session, the app calls `/api/profile/ensure`.
 - If the server hasn’t seen the auth cookies yet (fresh sign-in), the callback also sends the `access_token` and `refresh_token` once so the server can set the cookie via `supabase.auth.setSession(...)`.

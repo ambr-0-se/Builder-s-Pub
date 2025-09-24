@@ -22,7 +22,7 @@ vi.mock("@/lib/api/collabs", () => ({
 vi.stubGlobal("fetch", vi.fn(async (url: string) => {
   const u = new URL(url, "http://localhost")
   if (u.pathname === "/api/collaborations/get" && u.searchParams.get("id") === "c2") {
-    return { ok: true, json: async () => ({ item: { collaboration: { id: "c2", title: "Beta", description: "Detail", lookingFor: [{ role: "AI Engineer" }] }, owner: { displayName: "B" } } }) } as any
+    return { ok: true, json: async () => ({ item: { collaboration: { id: "c2", title: "Beta", description: "Detail", createdAt: new Date().toISOString(), lookingFor: [{ role: "AI Engineer" }] }, owner: { displayName: "B" }, tags: { technology: [], category: [] }, upvoteCount: 0 } }) } as any
   }
   return { ok: false, json: async () => ({}) } as any
 }) as any)

@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server"
 import { listCollabs } from "@/lib/server/collabs"
+import { getServerSupabase } from "@/lib/supabaseServer"
 
 export async function GET(req: Request) {
+  // Stage 17: Auth-only. Require an authenticated session.
+  const supabase = await getServerSupabase()
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 })
+  }
   const { searchParams } = new URL(req.url)
   const limit = Number(searchParams.get("limit") || "20")
   const q = searchParams.get("q") || undefined
